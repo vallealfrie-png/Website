@@ -11,114 +11,172 @@
             --primary: #386641;
             --secondary: #6a994e;
             --light: #a7c957;
+            --accent-red: #bc2c2c; /* Matching the red from your reference */
         }
 
-        /* Hover-to-Expand Navigation */
-        .nav-trigger {
-            width: 50px;
-            height: 50px;
-            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            background-color: var(--primary);
+        body { background-color: #f8faf9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+
+        /* Top Curved Header Container */
+        .hero-container {
+            position: relative;
+            background: linear-gradient(180deg, var(--primary) 0%, #1a3321 100%);
+            border-bottom-left-radius: 80px;
+            border-bottom-right-radius: 80px;
             overflow: hidden;
-            display: flex;
-            align-items: center;
-            border-radius: 99px;
-            white-space: nowrap;
-            color: white;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
-        }
-        
-        .nav-trigger:hover {
-            width: 380px; 
+            min-height: 70vh;
         }
 
-        .nav-items {
-            opacity: 0;
-            transform: translateX(-15px);
-            transition: opacity 0.3s ease 0.1s, transform 0.3s ease 0.1s;
-            margin-left: 20px;
-            display: flex;
-            gap: 20px;
-        }
-
-        .nav-trigger:hover .nav-items {
-            opacity: 1;
-            transform: translateX(0);
-        }
-
-        /* Video Container - Optimized for Visibility */
-        .video-wrapper {
+        /* Video containment logic */
+        .video-box {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
-            height: 100vh;
-            background-color: #0d1b11; /* Dark base matching your primary vibe */
+            height: 100%;
             display: flex;
-            align-items: center;
             justify-content: center;
-            z-index: -1;
-            overflow: hidden;
+            align-items: center;
+            z-index: 1;
         }
 
         video {
             width: 100%;
             height: 100%;
-            /* Changed from cover to contain to ensure the whole video is seen */
-            object-fit: contain; 
+            object-fit: contain; /* Ensures whole video is visible */
+            opacity: 0.8;
         }
 
-        /* Refined Overlay */
-        .overlay-dim {
+        .hero-overlay {
             position: absolute;
             inset: 0;
-            background: rgba(0, 0, 0, 0.3); /* Lighter tint to let video details pop */
-            pointer-events: none;
+            background: linear-gradient(to right, rgba(56, 102, 65, 0.9) 20%, transparent 60%);
+            z-index: 2;
         }
+
+        /* Hover Navigation */
+        .nav-pill {
+            width: 50px;
+            transition: width 0.4s ease;
+            overflow: hidden;
+            white-space: nowrap;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .nav-pill:hover { width: 350px; }
+
+        /* Card Styling */
+        .cta-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            transition: transform 0.3s ease;
+            border: 1px solid #e0e0e0;
+        }
+        .cta-card:hover { transform: translateY(-5px); }
     </style>
 </head>
-<body class="m-0 p-0 overflow-hidden font-sans bg-[#0d1b11]">
+<body>
 
-    <header class="fixed top-0 w-full z-50 p-6 flex justify-between items-center">
-        <div class="nav-trigger px-4 cursor-pointer">
-            <i class="fa-solid fa-bars-staggered text-xl min-w-[20px]"></i>
-            <div class="nav-items font-medium text-sm tracking-wide">
-                <a href="#" class="hover:text-[#a7c957] transition">Intelligence Hub</a>
-                <a href="#" class="hover:text-[#a7c957] transition">Analytics</a>
-                <a href="#" class="hover:text-[#a7c957] transition">Strategy</a>
-                <a href="#" class="hover:text-[#a7c957] transition">Portal</a>
+    <header class="fixed top-0 w-full z-50 p-6 flex justify-between items-center px-12">
+        <div class="nav-pill flex items-center h-12 rounded-full px-4 text-white cursor-pointer">
+            <i class="fa-solid fa-bars-staggered"></i>
+            <div class="ml-6 flex gap-6 text-sm font-semibold">
+                <a href="#">DASHBOARD</a>
+                <a href="#">INSIGHTS</a>
+                <a href="#">STRATEGY</a>
+                <a href="#">REPORTS</a>
             </div>
         </div>
 
-        <div class="bg-white/10 backdrop-blur-lg p-2 rounded-xl border border-white/20 shadow-xl">
-            <img src="https://i.imgur.com/VWEvNnK.png" alt="Logo" class="h-10 w-auto">
+        <div class="flex items-center gap-6">
+            <span class="text-white font-medium hidden md:block">(02) 887-1776</span>
+            <img src="https://i.imgur.com/VWEvNnK.png" alt="Logo" class="h-10 bg-white/90 p-1 rounded-lg">
         </div>
     </header>
 
-    <section class="relative h-screen w-full flex flex-col items-center justify-center text-white text-center">
-        
-        <div class="video-wrapper">
+    <section class="hero-container shadow-2xl">
+        <div class="video-box">
             <video autoplay muted loop playsinline>
                 <source src="https://i.imgur.com/f0hf38l.mp4" type="video/mp4">
             </video>
-            <div class="overlay-dim"></div>
+            <div class="hero-overlay"></div>
         </div>
 
-        <div class="relative z-10 px-6 max-w-4xl drop-shadow-2xl">
-            <h1 class="text-5xl md:text-7xl font-black mb-2 tracking-tight">
-                MARKETING CENTRAL
-            </h1>
-            <h2 class="text-xl md:text-3xl font-light text-[#a7c957] tracking-[0.4em] uppercase mb-10">
-                Intelligence
-            </h2>
-            
-            <div class="flex flex-wrap justify-center gap-4">
-                <button class="bg-[#386641] hover:bg-[#6a994e] text-white px-10 py-4 rounded-full font-bold transition-all shadow-lg">
-                    ENTER HUB
+        <div class="relative z-10 container mx-auto px-12 pt-44 pb-20 text-white">
+            <div class="max-w-xl">
+                <h1 class="text-5xl font-bold leading-tight mb-4">
+                    Providing <span class="text-[#a7c957]">Intelligent Insights</span> for a Better Tomorrow
+                </h1>
+                <p class="text-lg opacity-90 mb-8">
+                    Trusted, high-quality marketing data and strategy for you and your business growth.
+                </p>
+                <div class="bg-white/10 backdrop-blur-md inline-block p-2 rounded-lg border border-white/20">
+                    <span class="text-sm font-bold uppercase tracking-widest">Marketing Central Intelligence</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="container mx-auto px-12 -mt-16 relative z-30">
+        <div class="grid md:grid-cols-3 gap-6">
+            <div class="cta-card p-6 flex flex-col items-center text-center">
+                <div class="w-12 h-12 bg-[#a7c957]/20 rounded-full flex items-center justify-center mb-4">
+                    <i class="fa-solid fa-chart-pie text-[#386641] text-xl"></i>
+                </div>
+                <h3 class="font-bold text-gray-800 mb-4">Our Services</h3>
+                <button class="w-full py-3 bg-[#6a994e] text-white rounded-lg font-bold hover:bg-[#386641] transition">
+                    View Services <i class="fa-solid fa-chevron-right ml-2 text-xs"></i>
+                </button>
+            </div>
+            <div class="cta-card p-6 flex flex-col items-center text-center">
+                <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                    <i class="fa-solid fa-magnifying-glass text-[#bc2c2c] text-xl"></i>
+                </div>
+                <h3 class="font-bold text-gray-800 mb-4">Find Your Strategy</h3>
+                <button class="w-full py-3 bg-[#bc2c2c] text-white rounded-lg font-bold hover:opacity-90 transition">
+                    Search Now <i class="fa-solid fa-chevron-right ml-2 text-xs"></i>
+                </button>
+            </div>
+            <div class="cta-card p-6 flex flex-col items-center text-center">
+                <div class="w-12 h-12 bg-[#386641]/10 rounded-full flex items-center justify-center mb-4">
+                    <i class="fa-solid fa-calendar-check text-[#386641] text-xl"></i>
+                </div>
+                <h3 class="font-bold text-gray-800 mb-4">Book Consultation</h3>
+                <button class="w-full py-3 bg-[#386641] text-white rounded-lg font-bold hover:bg-black transition">
+                    Get Started <i class="fa-solid fa-chevron-right ml-2 text-xs"></i>
                 </button>
             </div>
         </div>
+    </section>
 
+    <section class="py-20 container mx-auto px-12">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl font-bold text-gray-800">Comprehensive <span class="text-[#386641]">Market Solutions</span></h2>
+        </div>
+        
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+            <div class="p-8 text-center bg-white rounded-2xl shadow-sm border border-gray-100">
+                <i class="fa-solid fa-house-signal text-4xl text-[#386641] mb-4"></i>
+                <h4 class="font-bold text-gray-700">Digital Pulse</h4>
+                <p class="text-xs text-gray-500 mt-2">Real-time market tracking</p>
+            </div>
+            <div class="p-8 text-center bg-white rounded-2xl shadow-sm border border-gray-100">
+                <i class="fa-solid fa-brain text-4xl text-[#386641] mb-4"></i>
+                <h4 class="font-bold text-gray-700">Neural Growth</h4>
+                <p class="text-xs text-gray-500 mt-2">AI-driven optimizations</p>
+            </div>
+            <div class="p-8 text-center bg-white rounded-2xl shadow-sm border border-gray-100">
+                <i class="fa-solid fa-chart-line text-4xl text-[#386641] mb-4"></i>
+                <h4 class="font-bold text-gray-700">Analytics</h4>
+                <p class="text-xs text-gray-500 mt-2">Deep dive data metrics</p>
+            </div>
+            <div class="p-8 text-center bg-white rounded-2xl shadow-sm border border-gray-100">
+                <i class="fa-solid fa-shield-halved text-4xl text-[#386641] mb-4"></i>
+                <h4 class="font-bold text-gray-700">Brand Safety</h4>
+                <p class="text-xs text-gray-500 mt-2">Compliance and security</p>
+            </div>
+        </div>
     </section>
 
 </body>
