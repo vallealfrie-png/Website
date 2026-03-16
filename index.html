@@ -14,9 +14,9 @@
             --accent-red: #bc2c2c;
         }
 
-        body { background-color: #f8faf9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f8faf9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; }
 
-        /* Glass Header Effect */
+        /* Glass Header */
         header {
             background: rgba(56, 102, 65, 0.15);
             backdrop-filter: blur(12px);
@@ -24,41 +24,52 @@
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        /* Top Curved Header Container */
+        /* Hero Container - Height now follows the video */
         .hero-container {
             position: relative;
-            background: linear-gradient(180deg, var(--primary) 0%, #1a3321 100%);
+            background: var(--primary);
             border-bottom-left-radius: 80px;
             border-bottom-right-radius: 80px;
             overflow: hidden;
-            min-height: 70vh;
+            width: 100%;
         }
 
-        /* Video logic: Whole and Stretched */
+        /* Video logic: Scaled to fit width without cropping the center */
         .video-box {
-            position: absolute;
-            top: 0;
-            left: 0;
+            position: relative;
             width: 100%;
-            height: 100%;
             z-index: 1;
+            line-height: 0; /* Removes bottom gap */
         }
 
         video {
             width: 100%;
-            height: 100%;
-            object-fit: fill; /* Stretches the video to cover the entire container */
+            height: auto;
+            max-height: 85vh; /* Prevents video from becoming too tall on desktops */
+            object-fit: cover; 
             opacity: 0.8;
         }
 
         .hero-overlay {
             position: absolute;
             inset: 0;
-            background: linear-gradient(to right, rgba(56, 102, 65, 0.8) 10%, transparent 70%);
+            background: linear-gradient(to right, rgba(56, 102, 65, 0.85) 0%, transparent 80%);
             z-index: 2;
         }
 
-        /* Hover Navigation */
+        /* Floating Text Content Overlay */
+        .text-overlay {
+            position: absolute;
+            top: 55%;
+            left: 5%;
+            transform: translateY(-50%);
+            z-index: 10;
+            width: 90%;
+            pointer-events: none;
+        }
+        .text-overlay * { pointer-events: auto; }
+
+        /* Navigation Pill */
         .nav-pill {
             width: 50px;
             transition: width 0.4s ease;
@@ -108,22 +119,22 @@
             <div class="hero-overlay"></div>
         </div>
 
-        <div class="relative z-10 container mx-auto px-12 pt-44 pb-20 text-white">
-            <div class="max-w-xl">
-                <h1 class="text-5xl font-bold leading-tight mb-4">
+        <div class="text-overlay text-white">
+            <div class="max-w-2xl">
+                <h1 class="text-4xl md:text-6xl font-bold leading-tight mb-4 drop-shadow-lg">
                     Providing <span class="text-[#a7c957]">Intelligent Insights</span> for a Better Tomorrow
                 </h1>
-                <p class="text-lg opacity-90 mb-8">
+                <p class="text-lg opacity-95 mb-8 max-w-lg drop-shadow-md">
                     Trusted, high-quality marketing data and strategy for you and your business growth.
                 </p>
-                <div class="bg-white/10 backdrop-blur-md inline-block p-2 rounded-lg border border-white/20">
+                <div class="bg-white/10 backdrop-blur-md inline-block p-2 px-4 rounded-lg border border-white/20">
                     <span class="text-sm font-bold uppercase tracking-widest">Marketing Central Intelligence</span>
                 </div>
             </div>
         </div>
     </section>
 
-    <section class="container mx-auto px-12 -mt-16 relative z-30">
+    <section class="container mx-auto px-12 -mt-12 relative z-30">
         <div class="grid md:grid-cols-3 gap-6">
             <div class="cta-card p-6 flex flex-col items-center text-center">
                 <div class="w-12 h-12 bg-[#a7c957]/20 rounded-full flex items-center justify-center mb-4">
@@ -155,28 +166,29 @@
         </div>
     </section>
 
-    <section class="py-20 container mx-auto px-12">
-        <div class="text-center mb-12">
-            <h2 class="text-3xl font-bold text-gray-800">Comprehensive <span class="text-[#386641]">Market Solutions</span></h2>
+    <section class="py-24 container mx-auto px-12">
+        <div class="text-center mb-16">
+            <h2 class="text-3xl font-bold text-gray-800 tracking-tight">Comprehensive <span class="text-[#386641]">Market Solutions</span></h2>
+            <div class="w-20 h-1 bg-[#a7c957] mx-auto mt-4"></div>
         </div>
         
         <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <div class="p-8 text-center bg-white rounded-2xl shadow-sm border border-gray-100">
+            <div class="p-8 text-center bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition">
                 <i class="fa-solid fa-house-signal text-4xl text-[#386641] mb-4"></i>
                 <h4 class="font-bold text-gray-700">Digital Pulse</h4>
                 <p class="text-xs text-gray-500 mt-2">Real-time market tracking</p>
             </div>
-            <div class="p-8 text-center bg-white rounded-2xl shadow-sm border border-gray-100">
+            <div class="p-8 text-center bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition">
                 <i class="fa-solid fa-brain text-4xl text-[#386641] mb-4"></i>
                 <h4 class="font-bold text-gray-700">Neural Growth</h4>
                 <p class="text-xs text-gray-500 mt-2">AI-driven optimizations</p>
             </div>
-            <div class="p-8 text-center bg-white rounded-2xl shadow-sm border border-gray-100">
+            <div class="p-8 text-center bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition">
                 <i class="fa-solid fa-chart-line text-4xl text-[#386641] mb-4"></i>
                 <h4 class="font-bold text-gray-700">Analytics</h4>
                 <p class="text-xs text-gray-500 mt-2">Deep dive data metrics</p>
             </div>
-            <div class="p-8 text-center bg-white rounded-2xl shadow-sm border border-gray-100">
+            <div class="p-8 text-center bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition">
                 <i class="fa-solid fa-shield-halved text-4xl text-[#386641] mb-4"></i>
                 <h4 class="font-bold text-gray-700">Brand Safety</h4>
                 <p class="text-xs text-gray-500 mt-2">Compliance and security</p>
