@@ -11,170 +11,154 @@
             --primary: #386641;
             --secondary: #6a994e;
             --light: #a7c957;
-            --accent-red: #bc2c2c; /* Matching the red from your reference */
         }
 
-        body { background-color: #f8faf9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-
-        /* Top Curved Header Container */
-        .hero-container {
-            position: relative;
-            background: linear-gradient(180deg, var(--primary) 0%, #1a3321 100%);
-            border-bottom-left-radius: 80px;
-            border-bottom-right-radius: 80px;
-            overflow: hidden;
-            min-height: 70vh;
-        }
-
-        /* Video containment logic */
-        .video-box {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+        body { 
+            background-color: #f8faf9; 
+            margin: 0;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Fixed Header */
+        header {
+            height: 80px;
+            background: var(--primary);
+            display: flex;
+            justify-content: space-between;
             align-items: center;
-            z-index: 1;
-        }
-
-        video {
+            padding: 0 50px;
+            position: fixed;
+            top: 0;
             width: 100%;
-            height: 100%;
-            object-fit: contain; /* Ensures whole video is visible */
-            opacity: 0.8;
-        }
-
-        .hero-overlay {
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(to right, rgba(56, 102, 65, 0.9) 20%, transparent 60%);
-            z-index: 2;
+            z-index: 100;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
 
         /* Hover Navigation */
         .nav-pill {
             width: 50px;
-            transition: width 0.4s ease;
+            height: 45px;
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             overflow: hidden;
             white-space: nowrap;
-            background: rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.15);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 99px;
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            color: white;
+            cursor: pointer;
         }
-        .nav-pill:hover { width: 350px; }
+        .nav-pill:hover { width: 380px; }
+        .nav-items { margin-left: 20px; display: flex; gap: 20px; font-size: 0.85rem; font-weight: 600; }
 
-        /* Card Styling */
-        .cta-card {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-            transition: transform 0.3s ease;
-            border: 1px solid #e0e0e0;
+        /* Main Hero Section - Adjusted to start below header */
+        .main-section {
+            margin-top: 80px; /* Exact height of header */
+            position: relative;
+            width: 100%;
+            background: #000; /* Black bars if aspect ratio differs */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            /* Curved bottom like your reference */
+            border-bottom-left-radius: 60px;
+            border-bottom-right-radius: 60px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
         }
-        .cta-card:hover { transform: translateY(-5px); }
+
+        .video-container {
+            width: 100%;
+            max-height: calc(100vh - 80px); /* Fill remaining screen but not more */
+            display: flex;
+            justify-content: center;
+        }
+
+        video {
+            width: 100%;
+            height: auto;
+            max-height: calc(100vh - 80px);
+            object-fit: contain; /* Shows the WHOLE video */
+        }
+
+        /* Overlay for the text/content */
+        .video-content-overlay {
+            position: absolute;
+            bottom: 40px;
+            left: 50px;
+            z-index: 10;
+            color: white;
+            max-width: 600px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        }
     </style>
 </head>
 <body>
 
-    <header class="fixed top-0 w-full z-50 p-6 flex justify-between items-center px-12">
-        <div class="nav-pill flex items-center h-12 rounded-full px-4 text-white cursor-pointer">
+    <header>
+        <div class="nav-pill">
             <i class="fa-solid fa-bars-staggered"></i>
-            <div class="ml-6 flex gap-6 text-sm font-semibold">
-                <a href="#">DASHBOARD</a>
-                <a href="#">INSIGHTS</a>
-                <a href="#">STRATEGY</a>
-                <a href="#">REPORTS</a>
+            <div class="nav-items">
+                <a href="#" class="hover:text-[#a7c957]">INTELLIGENCE</a>
+                <a href="#" class="hover:text-[#a7c957]">SERVICES</a>
+                <a href="#" class="hover:text-[#a7c957]">REPORTS</a>
+                <a href="#" class="hover:text-[#a7c957]">PORTAL</a>
             </div>
         </div>
 
-        <div class="flex items-center gap-6">
-            <span class="text-white font-medium hidden md:block">(02) 887-1776</span>
-            <img src="https://i.imgur.com/VWEvNnK.png" alt="Logo" class="h-10 bg-white/90 p-1 rounded-lg">
+        <div class="flex items-center gap-4">
+            <span class="text-white/80 text-sm font-medium hidden sm:block">HOTLINE: (02) 887-1776</span>
+            <img src="https://i.imgur.com/VWEvNnK.png" alt="Logo" class="h-10 bg-white p-1 rounded">
         </div>
     </header>
 
-    <section class="hero-container shadow-2xl">
-        <div class="video-box">
+    <section class="main-section">
+        <div class="video-container">
             <video autoplay muted loop playsinline>
                 <source src="https://i.imgur.com/f0hf38l.mp4" type="video/mp4">
             </video>
-            <div class="hero-overlay"></div>
         </div>
 
-        <div class="relative z-10 container mx-auto px-12 pt-44 pb-20 text-white">
-            <div class="max-w-xl">
-                <h1 class="text-5xl font-bold leading-tight mb-4">
-                    Providing <span class="text-[#a7c957]">Intelligent Insights</span> for a Better Tomorrow
-                </h1>
-                <p class="text-lg opacity-90 mb-8">
-                    Trusted, high-quality marketing data and strategy for you and your business growth.
-                </p>
-                <div class="bg-white/10 backdrop-blur-md inline-block p-2 rounded-lg border border-white/20">
-                    <span class="text-sm font-bold uppercase tracking-widest">Marketing Central Intelligence</span>
-                </div>
+        <div class="video-content-overlay">
+            <div class="bg-[#a7c957] text-[#386641] inline-block px-3 py-1 rounded-md text-xs font-bold mb-4 uppercase tracking-widest">
+                Marketing Central Intelligence
             </div>
+            <h1 class="text-4xl md:text-5xl font-bold mb-4 leading-tight">
+                Providing Strategic <br><span class="text-[#a7c957]">Healthcare for Growth</span>
+            </h1>
+            <p class="text-white/90 text-sm md:text-base mb-6 max-w-md">
+                Experience the next generation of data visualization and marketing intelligence.
+            </p>
+            <button class="bg-[#6a994e] hover:bg-[#386641] text-white px-8 py-3 rounded-lg font-bold transition shadow-lg">
+                Explore Dashboard
+            </button>
         </div>
     </section>
 
-    <section class="container mx-auto px-12 -mt-16 relative z-30">
-        <div class="grid md:grid-cols-3 gap-6">
-            <div class="cta-card p-6 flex flex-col items-center text-center">
-                <div class="w-12 h-12 bg-[#a7c957]/20 rounded-full flex items-center justify-center mb-4">
-                    <i class="fa-solid fa-chart-pie text-[#386641] text-xl"></i>
-                </div>
-                <h3 class="font-bold text-gray-800 mb-4">Our Services</h3>
-                <button class="w-full py-3 bg-[#6a994e] text-white rounded-lg font-bold hover:bg-[#386641] transition">
-                    View Services <i class="fa-solid fa-chevron-right ml-2 text-xs"></i>
-                </button>
+    <section class="container mx-auto px-12 py-12">
+        <div class="grid md:grid-cols-3 gap-8 -mt-24 relative z-20">
+            <div class="bg-white p-8 rounded-2xl shadow-xl border border-gray-100 text-center">
+                <i class="fa-solid fa-microscope text-3xl text-[#386641] mb-4"></i>
+                <h3 class="font-bold text-gray-800">Our Services</h3>
+                <p class="text-gray-500 text-sm mt-2 mb-6">Comprehensive data analysis tools.</p>
+                <button class="text-[#6a994e] font-bold text-sm">LEARN MORE <i class="fa-solid fa-arrow-right ml-1"></i></button>
             </div>
-            <div class="cta-card p-6 flex flex-col items-center text-center">
-                <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
-                    <i class="fa-solid fa-magnifying-glass text-[#bc2c2c] text-xl"></i>
-                </div>
-                <h3 class="font-bold text-gray-800 mb-4">Find Your Strategy</h3>
-                <button class="w-full py-3 bg-[#bc2c2c] text-white rounded-lg font-bold hover:opacity-90 transition">
-                    Search Now <i class="fa-solid fa-chevron-right ml-2 text-xs"></i>
-                </button>
+            <div class="bg-white p-8 rounded-2xl shadow-xl border border-gray-100 text-center">
+                <i class="fa-solid fa-user-tie text-3xl text-[#bc2c2c] mb-4"></i>
+                <h3 class="font-bold text-gray-800">Expert Analysts</h3>
+                <p class="text-gray-500 text-sm mt-2 mb-6">Find the right consultant for you.</p>
+                <button class="text-[#bc2c2c] font-bold text-sm">SEARCH DIRECTORY <i class="fa-solid fa-arrow-right ml-1"></i></button>
             </div>
-            <div class="cta-card p-6 flex flex-col items-center text-center">
-                <div class="w-12 h-12 bg-[#386641]/10 rounded-full flex items-center justify-center mb-4">
-                    <i class="fa-solid fa-calendar-check text-[#386641] text-xl"></i>
-                </div>
-                <h3 class="font-bold text-gray-800 mb-4">Book Consultation</h3>
-                <button class="w-full py-3 bg-[#386641] text-white rounded-lg font-bold hover:bg-black transition">
-                    Get Started <i class="fa-solid fa-chevron-right ml-2 text-xs"></i>
-                </button>
-            </div>
-        </div>
-    </section>
-
-    <section class="py-20 container mx-auto px-12">
-        <div class="text-center mb-12">
-            <h2 class="text-3xl font-bold text-gray-800">Comprehensive <span class="text-[#386641]">Market Solutions</span></h2>
-        </div>
-        
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <div class="p-8 text-center bg-white rounded-2xl shadow-sm border border-gray-100">
-                <i class="fa-solid fa-house-signal text-4xl text-[#386641] mb-4"></i>
-                <h4 class="font-bold text-gray-700">Digital Pulse</h4>
-                <p class="text-xs text-gray-500 mt-2">Real-time market tracking</p>
-            </div>
-            <div class="p-8 text-center bg-white rounded-2xl shadow-sm border border-gray-100">
-                <i class="fa-solid fa-brain text-4xl text-[#386641] mb-4"></i>
-                <h4 class="font-bold text-gray-700">Neural Growth</h4>
-                <p class="text-xs text-gray-500 mt-2">AI-driven optimizations</p>
-            </div>
-            <div class="p-8 text-center bg-white rounded-2xl shadow-sm border border-gray-100">
-                <i class="fa-solid fa-chart-line text-4xl text-[#386641] mb-4"></i>
-                <h4 class="font-bold text-gray-700">Analytics</h4>
-                <p class="text-xs text-gray-500 mt-2">Deep dive data metrics</p>
-            </div>
-            <div class="p-8 text-center bg-white rounded-2xl shadow-sm border border-gray-100">
-                <i class="fa-solid fa-shield-halved text-4xl text-[#386641] mb-4"></i>
-                <h4 class="font-bold text-gray-700">Brand Safety</h4>
-                <p class="text-xs text-gray-500 mt-2">Compliance and security</p>
+            <div class="bg-white p-8 rounded-2xl shadow-xl border border-gray-100 text-center">
+                <i class="fa-solid fa-calendar-check text-3xl text-[#386641] mb-4"></i>
+                <h3 class="font-bold text-gray-800">Book Audit</h3>
+                <p class="text-gray-500 text-sm mt-2 mb-6">Schedule your monthly review.</p>
+                <button class="text-[#386641] font-bold text-sm">GET STARTED <i class="fa-solid fa-arrow-right ml-1"></i></button>
             </div>
         </div>
     </section>
