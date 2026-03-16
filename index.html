@@ -13,39 +13,41 @@
             --light: #a7c957;
         }
 
-        body { 
-            background-color: #f8faf9; 
+        body, html {
             margin: 0;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow-x: hidden;
+            font-family: 'Inter', sans-serif;
         }
 
-        /* Fixed Header */
+        /* Glassmorphism Header */
         header {
             height: 80px;
-            background: var(--primary);
+            background: rgba(56, 102, 65, 0.6); /* Semi-transparent primary */
+            backdrop-filter: blur(12px); /* The glass effect */
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0 50px;
+            padding: 0 5%;
             position: fixed;
             top: 0;
             width: 100%;
             z-index: 100;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
 
-        /* Hover Navigation */
+        /* Hover Navigation Pill */
         .nav-pill {
             width: 50px;
             height: 45px;
-            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: width 0.4s cubic-bezier(0.23, 1, 0.32, 1);
             overflow: hidden;
             white-space: nowrap;
-            background: rgba(255,255,255,0.15);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 99px;
             display: flex;
             align-items: center;
@@ -53,115 +55,106 @@
             color: white;
             cursor: pointer;
         }
-        .nav-pill:hover { width: 380px; }
-        .nav-items { margin-left: 20px; display: flex; gap: 20px; font-size: 0.85rem; font-weight: 600; }
+        .nav-pill:hover { width: 400px; background: rgba(255, 255, 255, 0.2); }
+        .nav-items { margin-left: 20px; display: flex; gap: 20px; font-size: 0.8rem; font-weight: 700; letter-spacing: 1px; }
 
-        /* Main Hero Section - Adjusted to start below header */
-        .main-section {
-            margin-top: 80px; /* Exact height of header */
+        /* Full Screen Video Section */
+        .hero-section {
             position: relative;
-            width: 100%;
-            background: #000; /* Black bars if aspect ratio differs */
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .video-background {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            transform: translate(-50%, -50%);
+            object-fit: cover; /* Stretches to fill everything */
+            z-index: -1;
+        }
+
+        /* Darkening the video for text readability */
+        .hero-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(26, 51, 33, 0.7));
+            z-index: 1;
+        }
+
+        .content-wrap {
+            position: relative;
+            z-index: 10;
+            height: 100%;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            /* Curved bottom like your reference */
-            border-bottom-left-radius: 60px;
-            border-bottom-right-radius: 60px;
-            overflow: hidden;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
-        }
-
-        .video-container {
-            width: 100%;
-            max-height: calc(100vh - 80px); /* Fill remaining screen but not more */
-            display: flex;
-            justify-content: center;
-        }
-
-        video {
-            width: 100%;
-            height: auto;
-            max-height: calc(100vh - 80px);
-            object-fit: contain; /* Shows the WHOLE video */
-        }
-
-        /* Overlay for the text/content */
-        .video-content-overlay {
-            position: absolute;
-            bottom: 40px;
-            left: 50px;
-            z-index: 10;
+            text-align: center;
             color: white;
-            max-width: 600px;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            padding: 0 20px;
         }
     </style>
 </head>
 <body>
 
     <header>
-        <div class="nav-pill">
+        <div class="nav-pill shadow-lg">
             <i class="fa-solid fa-bars-staggered"></i>
             <div class="nav-items">
-                <a href="#" class="hover:text-[#a7c957]">INTELLIGENCE</a>
-                <a href="#" class="hover:text-[#a7c957]">SERVICES</a>
-                <a href="#" class="hover:text-[#a7c957]">REPORTS</a>
-                <a href="#" class="hover:text-[#a7c957]">PORTAL</a>
+                <a href="#" class="hover:text-[#a7c957] transition">INTELLIGENCE</a>
+                <a href="#" class="hover:text-[#a7c957] transition">SERVICES</a>
+                <a href="#" class="hover:text-[#a7c957] transition">ANALYTICS</a>
+                <a href="#" class="hover:text-[#a7c957] transition">CONTACT</a>
             </div>
         </div>
 
-        <div class="flex items-center gap-4">
-            <span class="text-white/80 text-sm font-medium hidden sm:block">HOTLINE: (02) 887-1776</span>
-            <img src="https://i.imgur.com/VWEvNnK.png" alt="Logo" class="h-10 bg-white p-1 rounded">
+        <div class="flex items-center gap-6">
+            <div class="hidden md:flex flex-col text-right">
+                <span class="text-[10px] text-[#a7c957] font-bold uppercase tracking-widest">Inquiry Hotline</span>
+                <span class="text-white font-medium">(02) 887-1776</span>
+            </div>
+            <img src="https://i.imgur.com/VWEvNnK.png" alt="Logo" class="h-12 bg-white/90 p-1.5 rounded-xl shadow-lg">
         </div>
     </header>
 
-    <section class="main-section">
-        <div class="video-container">
-            <video autoplay muted loop playsinline>
-                <source src="https://i.imgur.com/f0hf38l.mp4" type="video/mp4">
-            </video>
-        </div>
+    <main class="hero-section">
+        <video autoplay muted loop playsinline class="video-background">
+            <source src="https://i.imgur.com/f0hf38l.mp4" type="video/mp4">
+        </video>
+        <div class="hero-overlay"></div>
 
-        <div class="video-content-overlay">
-            <div class="bg-[#a7c957] text-[#386641] inline-block px-3 py-1 rounded-md text-xs font-bold mb-4 uppercase tracking-widest">
-                Marketing Central Intelligence
+        <div class="content-wrap">
+            <div class="mb-6 inline-flex items-center gap-2 px-4 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20">
+                <span class="relative flex h-2 w-2">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#a7c957] opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-[#a7c957]"></span>
+                </span>
+                <span class="text-[10px] font-bold tracking-[0.2em] uppercase">System Online</span>
             </div>
-            <h1 class="text-4xl md:text-5xl font-bold mb-4 leading-tight">
-                Providing Strategic <br><span class="text-[#a7c957]">Healthcare for Growth</span>
+            
+            <h1 class="text-6xl md:text-8xl font-black tracking-tighter mb-4 drop-shadow-2xl">
+                MARKETING CENTRAL
             </h1>
-            <p class="text-white/90 text-sm md:text-base mb-6 max-w-md">
-                Experience the next generation of data visualization and marketing intelligence.
+            <p class="text-xl md:text-2xl font-light tracking-[0.5em] text-[#a7c957] uppercase mb-12">
+                Intelligence
             </p>
-            <button class="bg-[#6a994e] hover:bg-[#386641] text-white px-8 py-3 rounded-lg font-bold transition shadow-lg">
-                Explore Dashboard
-            </button>
-        </div>
-    </section>
-
-    <section class="container mx-auto px-12 py-12">
-        <div class="grid md:grid-cols-3 gap-8 -mt-24 relative z-20">
-            <div class="bg-white p-8 rounded-2xl shadow-xl border border-gray-100 text-center">
-                <i class="fa-solid fa-microscope text-3xl text-[#386641] mb-4"></i>
-                <h3 class="font-bold text-gray-800">Our Services</h3>
-                <p class="text-gray-500 text-sm mt-2 mb-6">Comprehensive data analysis tools.</p>
-                <button class="text-[#6a994e] font-bold text-sm">LEARN MORE <i class="fa-solid fa-arrow-right ml-1"></i></button>
-            </div>
-            <div class="bg-white p-8 rounded-2xl shadow-xl border border-gray-100 text-center">
-                <i class="fa-solid fa-user-tie text-3xl text-[#bc2c2c] mb-4"></i>
-                <h3 class="font-bold text-gray-800">Expert Analysts</h3>
-                <p class="text-gray-500 text-sm mt-2 mb-6">Find the right consultant for you.</p>
-                <button class="text-[#bc2c2c] font-bold text-sm">SEARCH DIRECTORY <i class="fa-solid fa-arrow-right ml-1"></i></button>
-            </div>
-            <div class="bg-white p-8 rounded-2xl shadow-xl border border-gray-100 text-center">
-                <i class="fa-solid fa-calendar-check text-3xl text-[#386641] mb-4"></i>
-                <h3 class="font-bold text-gray-800">Book Audit</h3>
-                <p class="text-gray-500 text-sm mt-2 mb-6">Schedule your monthly review.</p>
-                <button class="text-[#386641] font-bold text-sm">GET STARTED <i class="fa-solid fa-arrow-right ml-1"></i></button>
+            
+            <div class="flex flex-col sm:flex-row gap-4">
+                <button class="bg-[#386641] hover:bg-[#6a994e] text-white px-12 py-4 rounded-full font-bold transition-all transform hover:scale-105 shadow-xl border border-white/10">
+                    ENTER PORTAL
+                </button>
+                <button class="bg-white/10 hover:bg-white/20 backdrop-blur-md text-white px-12 py-4 rounded-full font-bold transition-all border border-white/30 shadow-xl">
+                    LEARN MORE
+                </button>
             </div>
         </div>
-    </section>
+    </main>
 
 </body>
 </html>
