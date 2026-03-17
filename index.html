@@ -16,7 +16,7 @@
 
         body { background-color: #f8faf9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; overflow-x: hidden; }
 
-        /* Header Glassmorphism */
+        /* Header Glassmorphism with Greenish Blur */
         header {
             background: rgba(56, 102, 65, 0.2);
             backdrop-filter: blur(20px) saturate(150%);
@@ -37,44 +37,34 @@
         }
         .nav-pill:hover { width: 380px; }
 
-        /* Section 1: Video Hero - NO CUTOFF */
-        .hero-container {
+        /* Section 1: Cinematic Wide Video (Fits Screen Better) */
+        .video-hero-section {
             position: relative;
-            background: var(--primary);
-            border-bottom-left-radius: 50px;
-            border-bottom-right-radius: 50px;
+            margin-top: 70px;
+            height: 450px; /* Controlled height to fit screen */
+            background: #000;
             overflow: hidden;
-            width: 100%;
-            margin-top: 70px; /* Sits below header */
-            line-height: 0; /* Prevents bottom white gap */
+            display: flex;
+            align-items: center;
         }
 
-        video {
+        .video-hero-section video {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
-            height: auto; /* Let the video's natural height dictate the section size */
-            display: block;
-            object-fit: contain; /* Ensures 100% of the video is visible */
-            opacity: 0.85;
+            height: 100%;
+            object-fit: cover; /* This allows us to "cut" the lower part while filling the width */
+            object-position: top center; /* Focuses on the upper part of the video */
+            opacity: 0.7;
         }
 
         /* Section 2: CEO Section Cinematic */
         .ceo-section {
             background: linear-gradient(145deg, #070f09 0%, #000000 100%);
             position: relative;
-            padding: 50px 0;
+            padding: 60px 0;
             overflow: hidden;
-        }
-
-        .message-emphasis-blur {
-            position: absolute;
-            top: 50%;
-            right: 0;
-            width: 400px;
-            height: 400px;
-            background: radial-gradient(circle, rgba(167, 201, 87, 0.1) 0%, rgba(56, 102, 65, 0) 70%);
-            filter: blur(50px);
-            transform: translateY(-50%);
-            z-index: 1;
         }
 
         .ceo-frame {
@@ -83,7 +73,7 @@
             overflow: hidden;
             border: 1px solid rgba(255, 255, 255, 0.1);
             background: rgba(255, 255, 255, 0.02);
-            max-width: 280px; /* Smaller footprint */
+            max-width: 260px;
         }
 
         .ceo-frame img {
@@ -92,18 +82,23 @@
             display: block;
         }
 
-        .cta-card {
-            background: white;
-            border-radius: 15px;
-            transition: 0.3s;
-            border: 1px solid #f0f0f0;
+        .message-glow {
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(167, 201, 87, 0.08) 0%, rgba(56, 102, 65, 0) 70%);
+            filter: blur(50px);
+            top: 50%;
+            right: -100px;
+            transform: translateY(-50%);
+            z-index: 1;
         }
     </style>
 </head>
 <body>
 
     <header class="fixed top-0 w-full z-50 p-4 px-12 flex justify-between items-center">
-        <div class="nav-pill flex items-center rounded-full px-3 text-white cursor-pointer">
+        <div class="nav-pill flex items-center rounded-full px-3 text-white cursor-pointer group">
             <i class="fa-solid fa-bars-staggered text-sm"></i>
             <div class="ml-6 flex gap-6 text-[10px] font-bold tracking-widest uppercase">
                 <a href="#" class="hover:text-[#a7c957]">Dashboard</a>
@@ -112,81 +107,77 @@
                 <a href="#" class="hover:text-[#a7c957]">Reports</a>
             </div>
         </div>
-
-        <div class="flex items-center gap-6">
-            <span class="text-white text-[10px] font-medium hidden md:block opacity-70">(02) 887-1776</span>
-            <img src="https://i.imgur.com/VWEvNnK.png" alt="Logo" class="h-8 bg-white/90 p-1 rounded-lg">
-        </div>
+        <img src="https://i.imgur.com/VWEvNnK.png" alt="Logo" class="h-8 bg-white/90 p-1 rounded-lg">
     </header>
 
-    <section class="hero-container shadow-2xl">
+    <section class="video-hero-section">
         <video autoplay muted loop playsinline>
             <source src="https://i.imgur.com/f0hf38l.mp4" type="video/mp4">
         </video>
         
-        <div class="absolute inset-0 bg-gradient-to-r from-[#386641]/80 via-[#386641]/20 to-transparent z-10 flex items-center">
-            <div class="container mx-auto px-12 text-white">
-                <div class="max-w-lg">
-                    <h1 class="text-2xl md:text-4xl font-bold leading-tight mb-2 drop-shadow-lg">
-                        Providing <span class="text-[#a7c957]">Intelligent Insights</span>
-                    </h1>
-                    <p class="text-sm opacity-90 mb-4 max-w-xs">
-                        Trusted marketing data and strategy for your business growth.
-                    </p>
-                    <div class="bg-white/10 backdrop-blur-md inline-block p-1 px-3 rounded-lg border border-white/20">
-                        <span class="text-[9px] font-bold uppercase tracking-widest">Marketing Central Intelligence</span>
-                    </div>
+        <div class="absolute inset-0 bg-gradient-to-r from-[#386641]/90 via-[#386641]/30 to-transparent z-10"></div>
+
+        <div class="container mx-auto px-12 relative z-20">
+            <div class="max-w-xl text-white">
+                <h1 class="text-3xl md:text-5xl font-bold leading-tight mb-4">
+                    Providing <span class="text-[#a7c957]">Intelligent Insights</span> for a Better Tomorrow
+                </h1>
+                <p class="text-sm md:text-md opacity-90 mb-6 max-w-sm">
+                    Trusted marketing data and strategy for your business growth.
+                </p>
+                <div class="bg-[#a7c957] text-[#070f09] inline-block p-1 px-4 rounded font-bold text-[9px] uppercase tracking-widest">
+                    Active Operations
                 </div>
             </div>
         </div>
     </section>
 
-    <section class="container mx-auto px-12 -mt-8 relative z-30">
-        <div class="grid md:grid-cols-3 gap-4">
-            <div class="cta-card p-4 flex flex-col items-center text-center">
+    <section class="container mx-auto px-12 -mt-10 relative z-30">
+        <div class="grid md:grid-cols-3 gap-6">
+            <div class="bg-white p-5 flex flex-col items-center text-center shadow-xl rounded-2xl border border-gray-100">
                 <i class="fa-solid fa-chart-pie text-[#386641] text-lg mb-2"></i>
-                <h3 class="font-bold text-gray-800 text-xs mb-2">Our Services</h3>
-                <button class="w-full py-1.5 bg-[#6a994e] text-white rounded-lg text-[10px] font-bold">View Services</button>
+                <h3 class="font-bold text-gray-800 text-xs mb-3">Our Services</h3>
+                <button class="w-full py-2 bg-[#6a994e] text-white rounded-lg text-[10px] font-bold">Explore</button>
             </div>
-            <div class="cta-card p-4 flex flex-col items-center text-center border-t-2 border-red-500">
+            <div class="bg-white p-5 flex flex-col items-center text-center shadow-xl rounded-2xl border-b-4 border-red-500">
                 <i class="fa-solid fa-magnifying-glass text-[#bc2c2c] text-lg mb-2"></i>
-                <h3 class="font-bold text-gray-800 text-xs mb-2">Strategy Hub</h3>
-                <button class="w-full py-1.5 bg-[#bc2c2c] text-white rounded-lg text-[10px] font-bold">Search Now</button>
+                <h3 class="font-bold text-gray-800 text-xs mb-3">Strategy Hub</h3>
+                <button class="w-full py-2 bg-[#bc2c2c] text-white rounded-lg text-[10px] font-bold">Search</button>
             </div>
-            <div class="cta-card p-4 flex flex-col items-center text-center">
+            <div class="bg-white p-5 flex flex-col items-center text-center shadow-xl rounded-2xl border border-gray-100">
                 <i class="fa-solid fa-calendar-check text-[#386641] text-lg mb-2"></i>
-                <h3 class="font-bold text-gray-800 text-xs mb-2">Consultation</h3>
-                <button class="w-full py-1.5 bg-[#386641] text-white rounded-lg text-[10px] font-bold">Get Started</button>
+                <h3 class="font-bold text-gray-800 text-xs mb-3">Consultation</h3>
+                <button class="w-full py-2 bg-[#386641] text-white rounded-lg text-[10px] font-bold">Book Now</button>
             </div>
         </div>
     </section>
 
     <section class="ceo-section">
-        <div class="message-emphasis-blur"></div>
+        <div class="message-glow"></div>
         <div class="container mx-auto px-12 relative z-10">
-            <div class="flex flex-col md:flex-row items-center gap-10">
+            <div class="flex flex-col md:flex-row items-center gap-12">
                 
                 <div class="w-full md:w-4/12 flex justify-center">
                     <div class="ceo-frame">
                         <img src="https://i.imgur.com/d5mC0Xd.png" alt="Luis B. Mendoza">
-                        <div class="p-3 bg-white/5 backdrop-blur-sm">
+                        <div class="p-3 bg-white/5 backdrop-blur-sm border-t border-white/5">
                             <p class="text-white font-bold tracking-widest text-[9px] uppercase">Luis B. Mendoza</p>
-                            <p class="text-[#a7c957] text-[8px] uppercase tracking-tighter">Chief Executive Officer</p>
+                            <p class="text-[#a7c957] text-[8px] uppercase font-semibold">Chief Executive Officer</p>
                         </div>
                     </div>
                 </div>
 
                 <div class="w-full md:w-8/12">
                     <div class="relative">
-                        <span class="text-[#a7c957] text-5xl font-serif opacity-10 absolute -top-8 -left-6">“</span>
-                        <h2 class="text-lg md:text-2xl font-light italic text-white leading-relaxed mb-6 relative z-10">
+                        <span class="text-[#a7c957] text-6xl font-serif opacity-10 absolute -top-8 -left-6">“</span>
+                        <h2 class="text-xl md:text-2xl lg:text-3xl font-light italic text-white leading-relaxed mb-6 relative z-10">
                             "Data tells you <span class="text-[#a7c957] font-bold">what happened</span>. <br>
                             Strategy tells you <span class="text-[#a7c957] font-bold">why it happened</span>. <br>
                             Creative tells you <span class="text-[#a7c957] font-bold">how to make it happen again</span>."
                         </h2>
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-0.5 bg-[#a7c957]/50"></div>
-                            <p class="text-[#a7c957] uppercase tracking-[0.4em] font-bold text-[8px]">Strategic Vision</p>
+                            <div class="w-10 h-0.5 bg-[#a7c957]/40"></div>
+                            <p class="text-[#a7c957]/80 uppercase tracking-[0.4em] font-bold text-[8px]">Strategic Vision</p>
                         </div>
                     </div>
                 </div>
