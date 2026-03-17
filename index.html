@@ -12,9 +12,10 @@
             --secondary: #6a994e;
             --light: #a7c957;
             --accent-red: #bc2c2c;
+            --bg-dark: #0d1b11; /* Custom dark green based on primary */
         }
 
-        body { background-color: #f8faf9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; scroll-behavior: smooth; }
+        body { background-color: #f8faf9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; scroll-behavior: smooth; overflow-x: hidden;}
 
         /* Glass Header */
         header {
@@ -47,13 +48,24 @@
             max-height: 85vh;
             object-fit: cover; 
             opacity: 0.8;
+            filter: contrast(1.1) brightness(0.9) saturate(1.1); /* Subtle "vibe coding" adjustment */
+        }
+        
+        /* Subtle noise pattern over video */
+        .video-box::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAHElEQVQYV2N4//8fAxIYEwNjMDIywiiIEAQQAwAIvUfEonfEhwAAAABJRU5ErkJggg==');
+            opacity: 0.15;
+            z-index: 2;
         }
 
         .hero-overlay {
             position: absolute;
             inset: 0;
             background: linear-gradient(to right, rgba(56, 102, 65, 0.85) 0%, transparent 80%);
-            z-index: 2;
+            z-index: 3;
         }
 
         /* Floating Text Content Overlay */
@@ -90,16 +102,16 @@
         }
         .cta-card:hover { transform: translateY(-5px); }
 
-        /* Boss Image Pulse Effect */
-        .image-glow {
-            box-shadow: 0 0 0 0 rgba(167, 201, 87, 0.4);
-            animation: pulse 2s infinite;
+        /* Gradient Blur Overlay */
+        .blur-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(13, 27, 17, 0) 20%, #000000 70%, rgba(13, 27, 17, 0.6) 100%);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 5;
         }
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(167, 201, 87, 0.4); }
-            70% { box-shadow: 0 0 0 20px rgba(167, 201, 87, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(167, 201, 87, 0); }
-        }
+
     </style>
 </head>
 <body>
@@ -176,39 +188,32 @@
         </div>
     </section>
 
-    <section class="py-32 bg-white overflow-hidden">
-        <div class="container mx-auto px-12">
-            <div class="flex flex-col md:flex-row items-center gap-16">
+    <section class="py-16 md:py-24 relative overflow-hidden" style="background: linear-gradient(135deg, var(--bg-dark) 0%, #000000 50%, #000000 70%, var(--bg-dark) 100%);">
+        <div class="container mx-auto px-12 relative z-10">
+            <div class="flex flex-col md:flex-row items-stretch gap-12 lg:gap-16">
                 
-                <div class="relative w-full md:w-1/3 flex justify-center">
-                    <div class="absolute inset-0 bg-[#a7c957]/10 rounded-full scale-110 blur-xl"></div>
-                    <div class="relative z-10 w-72 h-72 rounded-full border-8 border-white shadow-2xl overflow-hidden group image-glow">
-                        <img src="https://i.imgur.com/d5mC0Xd.png" alt="Lead Strategist" class="w-full h-full object-cover">
+                <div class="w-full md:w-1/3 flex justify-center items-center">
+                    <div class="relative w-72 h-72 md:w-80 md:h-80 lg:w-96 lg:h-96 shrink-0">
+                        <div class="absolute inset-0 bg-[#a7c957]/20 rounded-full scale-105 blur-2xl"></div>
+                        <div class="relative z-10 w-full h-full rounded-full border-8 border-white/90 shadow-2xl overflow-hidden group">
+                            <img src="https://i.imgur.com/d5mC0Xd.png" alt="Lead Strategist" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                        </div>
                     </div>
                 </div>
 
-                <div class="w-full md:w-2/3">
-                    <div class="relative">
-                        <span class="absolute -top-12 -left-8 text-9xl text-[#a7c957]/20 font-serif">“</span>
-                        <h2 class="text-2xl md:text-4xl font-light italic text-gray-700 leading-relaxed relative z-10">
-                            Data tells you <span class="text-[#386641] font-bold">what happened</span>. 
-                            Strategy tells you <span class="text-[#386641] font-bold">why it happened</span>. 
-                            Creative tells you <span class="text-[#386641] font-bold">how to make it happen again</span>.
+                <div class="w-full md:w-2/3 flex items-center relative">
+                    <div class="blur-overlay rounded-3xl"></div>
+
+                    <div class="relative z-10 p-8 lg:p-12">
+                        <span class="absolute -top-10 -left-6 text-9xl text-[#a7c957]/10 font-serif leading-none">“</span>
+                        <h2 class="text-2xl md:text-3xl lg:text-4xl font-light italic text-white/90 leading-relaxed drop-shadow-md">
+                            Data tells you <span class="text-[#a7c957] font-bold">what happened</span>. 
+                            Strategy tells you <span class="text-[#a7c957] font-bold">why it happened</span>. 
+                            Creative tells you <span class="text-[#a7c957] font-bold">how to make it happen again</span>.
                         </h2>
                         <div class="mt-8 flex items-center gap-4">
                             <div class="w-16 h-1 bg-[#a7c957]"></div>
-                            <p class="text-sm font-bold uppercase tracking-[0.3em] text-[#386641]">Core Philosophy</p>
-                        </div>
-                    </div>
-
-                    <div class="mt-12 grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        <div class="p-6 bg-[#f8faf9] rounded-2xl border-l-4 border-[#386641] shadow-sm">
-                            <h4 class="font-bold text-[#386641] uppercase text-xs mb-2">Impact Analysis</h4>
-                            <p class="text-sm text-gray-600">Transforming metrics into tangible growth trajectories.</p>
-                        </div>
-                        <div class="p-6 bg-[#f8faf9] rounded-2xl border-l-4 border-[#6a994e] shadow-sm">
-                            <h4 class="font-bold text-[#6a994e] uppercase text-xs mb-2">Creative Scalability</h4>
-                            <p class="text-sm text-gray-600">Standardizing high-performance innovation cycles.</p>
+                            <p class="text-sm font-bold uppercase tracking-[0.3em] text-[#a7c957]/80">Core Philosophy</p>
                         </div>
                     </div>
                 </div>
