@@ -22,7 +22,7 @@
             backdrop-filter: blur(20px) saturate(150%);
             -webkit-backdrop-filter: blur(20px) saturate(150%);
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            height: 80px;
         }
 
         /* Collapsible Navbar Logic */
@@ -37,30 +37,37 @@
         }
         .nav-pill:hover { width: 400px; }
 
-        /* Section 1: Video Hero (Curved) */
+        /* Section 1: Scaled Down Video Hero */
         .hero-container {
             position: relative;
             background: var(--primary);
-            border-bottom-left-radius: 60px;
-            border-bottom-right-radius: 60px;
+            border-bottom-left-radius: 50px;
+            border-bottom-right-radius: 50px;
             overflow: hidden;
             width: 100%;
-            margin-top: 0; /* Placed immediately after fixed header */
+            margin-top: 80px; /* Aligns perfectly below the header */
+            height: 60vh; /* Reduced height for a smaller section */
+        }
+
+        .video-box {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
         }
 
         video {
             width: 100%;
-            height: auto;
-            max-height: 85vh;
+            height: 100%;
             object-fit: cover;
             opacity: 0.8;
         }
 
-        /* Section 2: CEO Section Cinematic */
+        /* Section 2: CEO Section Cinematic - More Compact */
         .ceo-section {
             background: linear-gradient(145deg, #070f09 0%, #000000 100%);
             position: relative;
-            padding: 80px 0;
+            padding: 60px 0; /* Reduced padding for smaller feel */
             overflow: hidden;
         }
 
@@ -69,22 +76,23 @@
             position: absolute;
             top: 50%;
             right: 0;
-            width: 500px;
-            height: 500px;
+            width: 400px;
+            height: 400px;
             background: radial-gradient(circle, rgba(167, 201, 87, 0.1) 0%, rgba(56, 102, 65, 0) 70%);
-            filter: blur(60px);
+            filter: blur(50px);
             transform: translateY(-50%);
             z-index: 1;
         }
 
-        /* CEO Image Frame - NO CIRCULAR CROP */
+        /* CEO Image Frame */
         .ceo-frame {
             position: relative;
-            border-radius: 20px;
+            border-radius: 15px;
             overflow: hidden;
             border: 1px solid rgba(255, 255, 255, 0.1);
             background: rgba(255, 255, 255, 0.02);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+            max-width: 320px; /* Controlled size */
         }
 
         .ceo-frame img {
@@ -95,18 +103,18 @@
         }
 
         .ceo-info-bar {
-            padding: 12px 20px;
+            padding: 10px 15px;
             background: rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(5px);
         }
 
         .cta-card {
             background: white;
-            border-radius: 20px;
+            border-radius: 15px;
             transition: 0.3s;
             border: 1px solid #f0f0f0;
         }
-        .cta-card:hover { transform: translateY(-10px); box-shadow: 0 20px 40px rgba(0,0,0,0.05); }
+        .cta-card:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.05); }
     </style>
 </head>
 <body>
@@ -114,7 +122,7 @@
     <header class="fixed top-0 w-full z-50 p-4 px-12 flex justify-between items-center">
         <div class="nav-pill flex items-center rounded-full px-4 text-white cursor-pointer group">
             <i class="fa-solid fa-bars-staggered text-lg"></i>
-            <div class="ml-8 flex gap-8 text-xs font-bold tracking-widest uppercase">
+            <div class="ml-8 flex gap-8 text-[10px] font-bold tracking-widest uppercase">
                 <a href="#" class="hover:text-[#a7c957] transition">Dashboard</a>
                 <a href="#" class="hover:text-[#a7c957] transition">Insights</a>
                 <a href="#" class="hover:text-[#a7c957] transition">Strategy</a>
@@ -123,27 +131,27 @@
         </div>
 
         <div class="flex items-center gap-6">
-            <span class="text-white text-sm font-medium hidden md:block opacity-80">(02) 887-1776</span>
-            <img src="https://i.imgur.com/VWEvNnK.png" alt="Logo" class="h-10 bg-white/90 p-1 rounded-lg">
+            <span class="text-white text-[11px] font-medium hidden md:block opacity-80">(02) 887-1776</span>
+            <img src="https://i.imgur.com/VWEvNnK.png" alt="Logo" class="h-8 bg-white/90 p-1 rounded-lg">
         </div>
     </header>
 
     <section class="hero-container shadow-2xl">
-        <div class="relative w-full line-height-0">
+        <div class="video-box">
             <video autoplay muted loop playsinline>
                 <source src="https://i.imgur.com/f0hf38l.mp4" type="video/mp4">
             </video>
-            <div class="absolute inset-0 bg-gradient-to-r from-[#386641]/85 to-transparent z-10 flex items-center">
+            <div class="absolute inset-0 bg-gradient-to-r from-[#386641]/90 to-transparent z-10 flex items-center">
                 <div class="container mx-auto px-12 text-white">
-                    <div class="max-w-2xl">
-                        <h1 class="text-4xl md:text-6xl font-bold leading-tight mb-4 drop-shadow-lg">
-                            Providing <span class="text-[#a7c957]">Intelligent Insights</span> for a Better Tomorrow
+                    <div class="max-w-xl">
+                        <h1 class="text-3xl md:text-5xl font-bold leading-tight mb-3 drop-shadow-lg">
+                            Providing <span class="text-[#a7c957]">Intelligent Insights</span>
                         </h1>
-                        <p class="text-lg opacity-90 mb-8 max-w-lg">
-                            Trusted, high-quality marketing data and strategy for you and your business growth.
+                        <p class="text-md opacity-90 mb-6 max-w-sm">
+                            Trusted marketing data and strategy for your business growth.
                         </p>
-                        <div class="bg-white/10 backdrop-blur-md inline-block p-2 px-4 rounded-lg border border-white/20">
-                            <span class="text-xs font-bold uppercase tracking-widest">Marketing Central Intelligence</span>
+                        <div class="bg-white/10 backdrop-blur-md inline-block p-1.5 px-3 rounded-lg border border-white/20">
+                            <span class="text-[10px] font-bold uppercase tracking-widest">Marketing Central Intelligence</span>
                         </div>
                     </div>
                 </div>
@@ -151,28 +159,28 @@
         </div>
     </section>
 
-    <section class="container mx-auto px-12 -mt-12 relative z-30">
+    <section class="container mx-auto px-12 -mt-10 relative z-30">
         <div class="grid md:grid-cols-3 gap-6">
-            <div class="cta-card p-6 flex flex-col items-center text-center">
-                <div class="w-12 h-12 bg-[#a7c957]/20 rounded-full flex items-center justify-center mb-4">
-                    <i class="fa-solid fa-chart-pie text-[#386641] text-xl"></i>
+            <div class="cta-card p-5 flex flex-col items-center text-center">
+                <div class="w-10 h-10 bg-[#a7c957]/20 rounded-full flex items-center justify-center mb-3">
+                    <i class="fa-solid fa-chart-pie text-[#386641] text-lg"></i>
                 </div>
-                <h3 class="font-bold text-gray-800 mb-4">Our Services</h3>
-                <button class="w-full py-3 bg-[#6a994e] text-white rounded-lg font-bold hover:bg-[#386641] transition">View Services</button>
+                <h3 class="font-bold text-gray-800 text-sm mb-3">Our Services</h3>
+                <button class="w-full py-2 bg-[#6a994e] text-white rounded-lg text-xs font-bold hover:bg-[#386641] transition">View Services</button>
             </div>
-            <div class="cta-card p-6 flex flex-col items-center text-center">
-                <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
-                    <i class="fa-solid fa-magnifying-glass text-[#bc2c2c] text-xl"></i>
+            <div class="cta-card p-5 flex flex-col items-center text-center">
+                <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center mb-3">
+                    <i class="fa-solid fa-magnifying-glass text-[#bc2c2c] text-lg"></i>
                 </div>
-                <h3 class="font-bold text-gray-800 mb-4">Strategy Hub</h3>
-                <button class="w-full py-3 bg-[#bc2c2c] text-white rounded-lg font-bold hover:opacity-90 transition">Search Now</button>
+                <h3 class="font-bold text-gray-800 text-sm mb-3">Strategy Hub</h3>
+                <button class="w-full py-2 bg-[#bc2c2c] text-white rounded-lg text-xs font-bold hover:opacity-90 transition">Search Now</button>
             </div>
-            <div class="cta-card p-6 flex flex-col items-center text-center">
-                <div class="w-12 h-12 bg-[#386641]/10 rounded-full flex items-center justify-center mb-4">
-                    <i class="fa-solid fa-calendar-check text-[#386641] text-xl"></i>
+            <div class="cta-card p-5 flex flex-col items-center text-center">
+                <div class="w-10 h-10 bg-[#386641]/10 rounded-full flex items-center justify-center mb-3">
+                    <i class="fa-solid fa-calendar-check text-[#386641] text-lg"></i>
                 </div>
-                <h3 class="font-bold text-gray-800 mb-4">Consultation</h3>
-                <button class="w-full py-3 bg-[#386641] text-white rounded-lg font-bold hover:bg-black transition">Get Started</button>
+                <h3 class="font-bold text-gray-800 text-sm mb-3">Consultation</h3>
+                <button class="w-full py-2 bg-[#386641] text-white rounded-lg text-xs font-bold hover:bg-black transition">Get Started</button>
             </div>
         </div>
     </section>
@@ -181,29 +189,29 @@
         <div class="message-emphasis-blur"></div>
         
         <div class="container mx-auto px-12 relative z-10">
-            <div class="flex flex-col md:flex-row items-center gap-12 lg:gap-20">
+            <div class="flex flex-col md:flex-row items-center gap-10">
                 
-                <div class="w-full md:w-5/12 lg:w-4/12">
+                <div class="w-full md:w-4/12 flex justify-center">
                     <div class="ceo-frame">
                         <img src="https://i.imgur.com/d5mC0Xd.png" alt="Luis B. Mendoza">
                         <div class="ceo-info-bar">
-                            <p class="text-white font-bold tracking-widest text-[11px] uppercase">Luis B. Mendoza</p>
-                            <p class="text-[#a7c957] text-[10px] font-semibold uppercase tracking-tighter">Chief Executive Officer</p>
+                            <p class="text-white font-bold tracking-widest text-[10px] uppercase">Luis B. Mendoza</p>
+                            <p class="text-[#a7c957] text-[9px] font-semibold uppercase tracking-tighter">Chief Executive Officer</p>
                         </div>
                     </div>
                 </div>
 
-                <div class="w-full md:w-7/12">
+                <div class="w-full md:w-8/12">
                     <div class="relative">
-                        <span class="text-[#a7c957] text-8xl font-serif opacity-10 absolute -top-16 -left-10">“</span>
-                        <h2 class="text-2xl md:text-4xl font-light italic text-white leading-snug mb-10 relative z-10">
+                        <span class="text-[#a7c957] text-6xl font-serif opacity-10 absolute -top-12 -left-8">“</span>
+                        <h2 class="text-xl md:text-3xl font-light italic text-white leading-relaxed mb-8 relative z-10">
                             "Data tells you <span class="text-[#a7c957] font-bold">what happened</span>. <br>
                             Strategy tells you <span class="text-[#a7c957] font-bold">why it happened</span>. <br>
                             Creative tells you <span class="text-[#a7c957] font-bold">how to make it happen again</span>."
                         </h2>
                         <div class="flex items-center gap-4">
-                            <div class="w-16 h-0.5 bg-[#a7c957]/50"></div>
-                            <p class="text-[#a7c957] uppercase tracking-[0.5em] font-bold text-[10px]">Strategic Vision</p>
+                            <div class="w-12 h-0.5 bg-[#a7c957]/50"></div>
+                            <p class="text-[#a7c957] uppercase tracking-[0.4em] font-bold text-[9px]">Strategic Vision</p>
                         </div>
                     </div>
                 </div>
@@ -212,25 +220,25 @@
         </div>
     </section>
 
-    <section class="py-24 bg-white">
+    <section class="py-16 bg-white">
         <div class="container mx-auto px-12 text-center">
-            <h2 class="text-3xl font-bold mb-16 text-gray-800 tracking-tight">Market <span class="text-[#386641]">Solutions</span></h2>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
-                <div class="p-8 bg-[#f8faf9] rounded-2xl border border-gray-100 hover:border-[#a7c957] transition group">
-                    <i class="fa-solid fa-bolt text-3xl text-[#386641] mb-4 group-hover:scale-110 transition"></i>
-                    <h4 class="font-bold text-sm text-gray-700">Digital Pulse</h4>
+            <h2 class="text-2xl font-bold mb-12 text-gray-800 tracking-tight">Market <span class="text-[#386641]">Solutions</span></h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div class="p-6 bg-[#f8faf9] rounded-xl border border-gray-100 hover:border-[#a7c957] transition group">
+                    <i class="fa-solid fa-bolt text-2xl text-[#386641] mb-3"></i>
+                    <h4 class="font-bold text-xs text-gray-700">Digital Pulse</h4>
                 </div>
-                <div class="p-8 bg-[#f8faf9] rounded-2xl border border-gray-100 hover:border-[#a7c957] transition group">
-                    <i class="fa-solid fa-microchip text-3xl text-[#386641] mb-4 group-hover:scale-110 transition"></i>
-                    <h4 class="font-bold text-sm text-gray-700">Neural Growth</h4>
+                <div class="p-6 bg-[#f8faf9] rounded-xl border border-gray-100 hover:border-[#a7c957] transition group">
+                    <i class="fa-solid fa-microchip text-2xl text-[#386641] mb-3"></i>
+                    <h4 class="font-bold text-xs text-gray-700">Neural Growth</h4>
                 </div>
-                <div class="p-8 bg-[#f8faf9] rounded-2xl border border-gray-100 hover:border-[#a7c957] transition group">
-                    <i class="fa-solid fa-chart-area text-3xl text-[#386641] mb-4 group-hover:scale-110 transition"></i>
-                    <h4 class="font-bold text-sm text-gray-700">Analytics</h4>
+                <div class="p-6 bg-[#f8faf9] rounded-xl border border-gray-100 hover:border-[#a7c957] transition group">
+                    <i class="fa-solid fa-chart-area text-2xl text-[#386641] mb-3"></i>
+                    <h4 class="font-bold text-xs text-gray-700">Analytics</h4>
                 </div>
-                <div class="p-8 bg-[#f8faf9] rounded-2xl border border-gray-100 hover:border-[#a7c957] transition group">
-                    <i class="fa-solid fa-shield-halved text-3xl text-[#386641] mb-4 group-hover:scale-110 transition"></i>
-                    <h4 class="font-bold text-sm text-gray-700">Brand Safety</h4>
+                <div class="p-6 bg-[#f8faf9] rounded-xl border border-gray-100 hover:border-[#a7c957] transition group">
+                    <i class="fa-solid fa-shield-halved text-2xl text-[#386641] mb-3"></i>
+                    <h4 class="font-bold text-xs text-gray-700">Brand Safety</h4>
                 </div>
             </div>
         </div>
