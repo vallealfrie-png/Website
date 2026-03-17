@@ -14,7 +14,7 @@
             --accent-red: #bc2c2c;
         }
 
-        body { background-color: #f8faf9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; }
+        body { background-color: #f8faf9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; scroll-behavior: smooth; }
 
         /* Glass Header */
         header {
@@ -24,7 +24,7 @@
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        /* Hero Container - Height now follows the video */
+        /* Hero Container - Height follows video */
         .hero-container {
             position: relative;
             background: var(--primary);
@@ -34,18 +34,17 @@
             width: 100%;
         }
 
-        /* Video logic: Scaled to fit width without cropping the center */
         .video-box {
             position: relative;
             width: 100%;
             z-index: 1;
-            line-height: 0; /* Removes bottom gap */
+            line-height: 0;
         }
 
         video {
             width: 100%;
             height: auto;
-            max-height: 85vh; /* Prevents video from becoming too tall on desktops */
+            max-height: 85vh;
             object-fit: cover; 
             opacity: 0.8;
         }
@@ -60,7 +59,7 @@
         /* Floating Text Content Overlay */
         .text-overlay {
             position: absolute;
-            top: 55%;
+            top: 50%;
             left: 5%;
             transform: translateY(-50%);
             z-index: 10;
@@ -72,7 +71,7 @@
         /* Navigation Pill */
         .nav-pill {
             width: 50px;
-            transition: width 0.4s ease;
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             overflow: hidden;
             white-space: nowrap;
             background: rgba(255,255,255,0.1);
@@ -90,6 +89,17 @@
             border: 1px solid #e0e0e0;
         }
         .cta-card:hover { transform: translateY(-5px); }
+
+        /* Boss Image Pulse Effect */
+        .image-glow {
+            box-shadow: 0 0 0 0 rgba(167, 201, 87, 0.4);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(167, 201, 87, 0.4); }
+            70% { box-shadow: 0 0 0 20px rgba(167, 201, 87, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(167, 201, 87, 0); }
+        }
     </style>
 </head>
 <body>
@@ -106,7 +116,7 @@
         </div>
 
         <div class="flex items-center gap-6">
-            <span class="text-white font-medium hidden md:block">(02) 887-1776</span>
+            <span class="text-white font-medium hidden md:block">HOTLINE: (02) 887-1776</span>
             <img src="https://i.imgur.com/VWEvNnK.png" alt="Logo" class="h-10 bg-white/90 p-1 rounded-lg">
         </div>
     </header>
@@ -125,7 +135,7 @@
                     Providing <span class="text-[#a7c957]">Intelligent Insights</span> for a Better Tomorrow
                 </h1>
                 <p class="text-lg opacity-95 mb-8 max-w-lg drop-shadow-md">
-                    Trusted, high-quality marketing data and strategy for you and your business growth.
+                    Trusted, high-quality marketing data and strategy for your business growth.
                 </p>
                 <div class="bg-white/10 backdrop-blur-md inline-block p-2 px-4 rounded-lg border border-white/20">
                     <span class="text-sm font-bold uppercase tracking-widest">Marketing Central Intelligence</span>
@@ -140,7 +150,7 @@
                 <div class="w-12 h-12 bg-[#a7c957]/20 rounded-full flex items-center justify-center mb-4">
                     <i class="fa-solid fa-chart-pie text-[#386641] text-xl"></i>
                 </div>
-                <h3 class="font-bold text-gray-800 mb-4">Our Services</h3>
+                <h3 class="font-bold text-gray-800 mb-2">Our Services</h3>
                 <button class="w-full py-3 bg-[#6a994e] text-white rounded-lg font-bold hover:bg-[#386641] transition">
                     View Services <i class="fa-solid fa-chevron-right ml-2 text-xs"></i>
                 </button>
@@ -149,7 +159,7 @@
                 <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
                     <i class="fa-solid fa-magnifying-glass text-[#bc2c2c] text-xl"></i>
                 </div>
-                <h3 class="font-bold text-gray-800 mb-4">Find Your Strategy</h3>
+                <h3 class="font-bold text-gray-800 mb-2">Find Your Strategy</h3>
                 <button class="w-full py-3 bg-[#bc2c2c] text-white rounded-lg font-bold hover:opacity-90 transition">
                     Search Now <i class="fa-solid fa-chevron-right ml-2 text-xs"></i>
                 </button>
@@ -158,7 +168,7 @@
                 <div class="w-12 h-12 bg-[#386641]/10 rounded-full flex items-center justify-center mb-4">
                     <i class="fa-solid fa-calendar-check text-[#386641] text-xl"></i>
                 </div>
-                <h3 class="font-bold text-gray-800 mb-4">Book Consultation</h3>
+                <h3 class="font-bold text-gray-800 mb-2">Book Consultation</h3>
                 <button class="w-full py-3 bg-[#386641] text-white rounded-lg font-bold hover:bg-black transition">
                     Get Started <i class="fa-solid fa-chevron-right ml-2 text-xs"></i>
                 </button>
@@ -166,32 +176,74 @@
         </div>
     </section>
 
-    <section class="py-24 container mx-auto px-12">
-        <div class="text-center mb-16">
-            <h2 class="text-3xl font-bold text-gray-800 tracking-tight">Comprehensive <span class="text-[#386641]">Market Solutions</span></h2>
-            <div class="w-20 h-1 bg-[#a7c957] mx-auto mt-4"></div>
+    <section class="py-32 bg-white overflow-hidden">
+        <div class="container mx-auto px-12">
+            <div class="flex flex-col md:flex-row items-center gap-16">
+                
+                <div class="relative w-full md:w-1/3 flex justify-center">
+                    <div class="absolute inset-0 bg-[#a7c957]/10 rounded-full scale-110 blur-xl"></div>
+                    <div class="relative z-10 w-72 h-72 rounded-full border-8 border-white shadow-2xl overflow-hidden group image-glow">
+                        <img src="https://i.imgur.com/d5mC0Xd.png" alt="Lead Strategist" class="w-full h-full object-cover">
+                    </div>
+                </div>
+
+                <div class="w-full md:w-2/3">
+                    <div class="relative">
+                        <span class="absolute -top-12 -left-8 text-9xl text-[#a7c957]/20 font-serif">“</span>
+                        <h2 class="text-2xl md:text-4xl font-light italic text-gray-700 leading-relaxed relative z-10">
+                            Data tells you <span class="text-[#386641] font-bold">what happened</span>. 
+                            Strategy tells you <span class="text-[#386641] font-bold">why it happened</span>. 
+                            Creative tells you <span class="text-[#386641] font-bold">how to make it happen again</span>.
+                        </h2>
+                        <div class="mt-8 flex items-center gap-4">
+                            <div class="w-16 h-1 bg-[#a7c957]"></div>
+                            <p class="text-sm font-bold uppercase tracking-[0.3em] text-[#386641]">Core Philosophy</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-12 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div class="p-6 bg-[#f8faf9] rounded-2xl border-l-4 border-[#386641] shadow-sm">
+                            <h4 class="font-bold text-[#386641] uppercase text-xs mb-2">Impact Analysis</h4>
+                            <p class="text-sm text-gray-600">Transforming metrics into tangible growth trajectories.</p>
+                        </div>
+                        <div class="p-6 bg-[#f8faf9] rounded-2xl border-l-4 border-[#6a994e] shadow-sm">
+                            <h4 class="font-bold text-[#6a994e] uppercase text-xs mb-2">Creative Scalability</h4>
+                            <p class="text-sm text-gray-600">Standardizing high-performance innovation cycles.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <div class="p-8 text-center bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition">
-                <i class="fa-solid fa-house-signal text-4xl text-[#386641] mb-4"></i>
-                <h4 class="font-bold text-gray-700">Digital Pulse</h4>
-                <p class="text-xs text-gray-500 mt-2">Real-time market tracking</p>
+    </section>
+
+    <section class="py-24 bg-[#f8faf9] border-t border-gray-100">
+        <div class="container mx-auto px-12">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl font-bold text-gray-800 tracking-tight">Comprehensive <span class="text-[#386641]">Market Solutions</span></h2>
+                <div class="w-20 h-1 bg-[#a7c957] mx-auto mt-4"></div>
             </div>
-            <div class="p-8 text-center bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition">
-                <i class="fa-solid fa-brain text-4xl text-[#386641] mb-4"></i>
-                <h4 class="font-bold text-gray-700">Neural Growth</h4>
-                <p class="text-xs text-gray-500 mt-2">AI-driven optimizations</p>
-            </div>
-            <div class="p-8 text-center bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition">
-                <i class="fa-solid fa-chart-line text-4xl text-[#386641] mb-4"></i>
-                <h4 class="font-bold text-gray-700">Analytics</h4>
-                <p class="text-xs text-gray-500 mt-2">Deep dive data metrics</p>
-            </div>
-            <div class="p-8 text-center bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition">
-                <i class="fa-solid fa-shield-halved text-4xl text-[#386641] mb-4"></i>
-                <h4 class="font-bold text-gray-700">Brand Safety</h4>
-                <p class="text-xs text-gray-500 mt-2">Compliance and security</p>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+                <div class="p-8 text-center bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition">
+                    <i class="fa-solid fa-house-signal text-4xl text-[#386641] mb-4"></i>
+                    <h4 class="font-bold text-gray-700">Digital Pulse</h4>
+                    <p class="text-xs text-gray-500 mt-2">Real-time market tracking</p>
+                </div>
+                <div class="p-8 text-center bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition">
+                    <i class="fa-solid fa-brain text-4xl text-[#386641] mb-4"></i>
+                    <h4 class="font-bold text-gray-700">Neural Growth</h4>
+                    <p class="text-xs text-gray-500 mt-2">AI-driven optimizations</p>
+                </div>
+                <div class="p-8 text-center bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition">
+                    <i class="fa-solid fa-chart-line text-4xl text-[#386641] mb-4"></i>
+                    <h4 class="font-bold text-gray-700">Analytics</h4>
+                    <p class="text-xs text-gray-500 mt-2">Deep dive data metrics</p>
+                </div>
+                <div class="p-8 text-center bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition">
+                    <i class="fa-solid fa-shield-halved text-4xl text-[#386641] mb-4"></i>
+                    <h4 class="font-bold text-gray-700">Brand Safety</h4>
+                    <p class="text-xs text-gray-500 mt-2">Compliance and security</p>
+                </div>
             </div>
         </div>
     </section>
