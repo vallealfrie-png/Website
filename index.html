@@ -7,13 +7,24 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        /* Background & Canvas Setup */
+        body { 
+            margin: 0; 
+            background: radial-gradient(circle at center, #064e3b 0%, #022c22 100%); 
+            overflow-x: hidden; 
+        }
+        #bg-canvas { position: fixed; top: 0; left: 0; z-index: -1; pointer-events: none; }
+
+        /* UI Elements */
         .glass { background: rgba(56, 102, 65, 0.2); backdrop-filter: blur(20px) saturate(150%); }
         .nav-pill { width: 45px; transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
         .nav-pill:hover { width: 380px; }
         .ceo-glow { background: radial-gradient(circle, rgba(167, 201, 87, 0.2) 0%, transparent 70%); filter: blur(60px); }
     </style>
 </head>
-<body class="bg-[#f8faf9] m-0 overflow-x-hidden">
+<body class="m-0">
+
+    <canvas id="bg-canvas"></canvas>
 
     <header class="fixed top-0 w-full z-50 p-4 px-12 flex justify-between items-center glass border-b border-white/10 h-[70px]">
         <div class="nav-pill h-10 flex items-center rounded-full px-3 text-white bg-white/10 border border-white/20 overflow-hidden whitespace-nowrap cursor-pointer">
@@ -28,11 +39,11 @@
         <img src="https://i.imgur.com/VWEvNnK.png" alt="Logo" class="h-8 bg-white/90 p-1 rounded-lg">
     </header>
 
-    <section class="relative mt-[70px] w-full h-[400px] bg-black overflow-hidden">
-        <video class="w-full h-full object-cover opacity-75" autoplay muted loop playsinline>
+    <section class="relative mt-[70px] w-full h-[400px] bg-black/40 overflow-hidden">
+        <video class="w-full h-full object-cover opacity-60" autoplay muted loop playsinline>
             <source src="https://i.imgur.com/f0hf38l.mp4" type="video/mp4">
         </video>
-        <div class="absolute inset-0 bg-gradient-to-r from-black/80 to-transparent flex items-center px-12">
+        <div class="absolute inset-0 bg-gradient-to-r from-[#022c22]/90 to-transparent flex items-center px-12">
             <div class="max-w-xl text-white">
                 <h1 class="text-3xl md:text-5xl font-bold leading-tight mb-4">Providing <span class="text-[#a7c957]">Intelligent Insights</span></h1>
                 <p class="text-sm opacity-80 mb-6 max-w-sm">Trusted marketing data and strategy for your business growth.</p>
@@ -44,17 +55,17 @@
     </section>
 
     <section class="container mx-auto px-12 -mt-10 relative z-30 grid md:grid-cols-3 gap-6">
-        <div class="bg-white p-6 flex flex-col items-center shadow-xl rounded-2xl border transition hover:-translate-y-2 text-center">
+        <div class="bg-white/90 backdrop-blur-sm p-6 flex flex-col items-center shadow-xl rounded-2xl border border-white/20 transition hover:-translate-y-2 text-center">
             <i class="fa-solid fa-chart-pie text-[#386641] text-xl mb-3"></i>
             <h3 class="font-bold text-gray-800 text-xs uppercase">Our Services</h3>
             <button class="mt-4 w-full py-2 bg-[#6a994e] text-white rounded-lg text-[10px] font-bold uppercase">Explore</button>
         </div>
-        <div class="bg-white p-6 flex flex-col items-center shadow-xl rounded-2xl border-b-4 border-red-500 transition hover:-translate-y-2 text-center">
+        <div class="bg-white/90 backdrop-blur-sm p-6 flex flex-col items-center shadow-xl rounded-2xl border-b-4 border-red-500 transition hover:-translate-y-2 text-center">
             <i class="fa-solid fa-magnifying-glass text-[#bc2c2c] text-xl mb-3"></i>
             <h3 class="font-bold text-gray-800 text-xs uppercase">Strategy Hub</h3>
             <button class="mt-4 w-full py-2 bg-[#bc2c2c] text-white rounded-lg text-[10px] font-bold uppercase">Search</button>
         </div>
-        <div class="bg-white p-6 flex flex-col items-center shadow-xl rounded-2xl border transition hover:-translate-y-2 text-center">
+        <div class="bg-white/90 backdrop-blur-sm p-6 flex flex-col items-center shadow-xl rounded-2xl border border-white/20 transition hover:-translate-y-2 text-center">
             <i class="fa-solid fa-calendar-check text-[#386641] text-xl mb-3"></i>
             <h3 class="font-bold text-gray-800 text-xs uppercase">Consultation</h3>
             <button class="mt-4 w-full py-2 bg-[#386641] text-white rounded-lg text-[10px] font-bold uppercase">Book Now</button>
@@ -62,25 +73,21 @@
     </section>
 
     <section class="container mx-auto px-6 md:px-12 py-16">
-        <div class="relative bg-black rounded-[40px] overflow-hidden shadow-2xl p-10 md:p-20">
+        <div class="relative bg-black/60 backdrop-blur-md rounded-[40px] overflow-hidden shadow-2xl p-10 md:p-20 border border-white/10">
             <div class="ceo-glow absolute w-[500px] h-[500px] top-1/2 right-0 -translate-y-1/2 opacity-60"></div>
-            
-            <div class="relative z-10 flex flex-col md:flex-row items-center gap-12 lg:gap-20">
+            <div class="relative z-10 flex flex-col md:flex-row items-center gap-12 lg:gap-20 text-white">
                 <div class="w-full md:w-4/12 flex justify-center">
                     <div class="rounded-3xl overflow-hidden border border-white/10 bg-white/5 shadow-2xl max-w-[260px]">
-                        <img src="https://i.imgur.com/d5mC0Xd.png" alt="Luis B. Mendoza" class="w-full">
+                        <img src="https://i.imgur.com/d5mC0Xd.png" alt="CEO">
                         <div class="p-5 bg-white/5 backdrop-blur-md text-center">
-                            <p class="text-white font-bold tracking-widest text-[10px] uppercase">Luis B. Mendoza</p>
+                            <p class="font-bold tracking-widest text-[10px] uppercase">Luis B. Mendoza</p>
                             <p class="text-[#a7c957] text-[9px] uppercase font-semibold">Chief Executive Officer</p>
                         </div>
                     </div>
                 </div>
-
-                <div class="w-full md:w-8/12 text-white">
+                <div class="w-full md:w-8/12">
                     <h2 class="text-xl md:text-3xl font-light italic leading-relaxed mb-8">
-                        "Data tells you <span class="text-[#a7c957] font-bold">what happened</span>. <br class="hidden md:block">
-                        Strategy tells you why. <br class="hidden md:block">
-                        Creative tells you <span class="text-[#a7c957] font-bold">how to make it happen again</span>."
+                        "Data tells you <span class="text-[#a7c957] font-bold">what happened</span>. Strategy tells you why. Creative tells you <span class="text-[#a7c957] font-bold">how to make it happen again</span>."
                     </h2>
                     <div class="flex items-center gap-4">
                         <div class="w-16 h-1 bg-[#a7c957]/60"></div>
@@ -91,5 +98,81 @@
         </div>
     </section>
 
+    <script>
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        let molecules = [];
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            initMolecules();
+        }
+
+        class Molecule {
+            constructor() { this.init(); }
+            init() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.vx = (Math.random() - 0.5) * 1.2;
+                this.vy = (Math.random() - 0.5) * 1.2;
+                this.angle = Math.random() * Math.PI * 2;
+                this.rotationSpeed = (Math.random() - 0.5) * 0.015;
+                this.scale = Math.random() * 0.4 + 0.6;
+                this.structure = [
+                    {x:0,y:0,r:8,color:'rgba(255,255,255,.2)'},
+                    {x:30,y:0,r:6,color:'rgba(255,255,255,.1)'},
+                    {x:-20,y:25,r:6,color:'rgba(255,255,255,.1)'},
+                    {x:-20,y:-25,r:6,color:'rgba(255,255,255,.1)'}
+                ];
+                this.bonds = [[0,1],[0,2],[0,3]];
+            }
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+                ctx.scale(this.scale, this.scale);
+                ctx.strokeStyle = 'rgba(255,255,255,.05)';
+                ctx.lineWidth = 1;
+                this.bonds.forEach(b => {
+                    ctx.beginPath();
+                    ctx.moveTo(this.structure[b[0]].x, this.structure[b[0]].y);
+                    ctx.lineTo(this.structure[b[1]].x, this.structure[b[1]].y);
+                    ctx.stroke();
+                });
+                this.structure.forEach(a => {
+                    ctx.beginPath();
+                    ctx.arc(a.x, a.y, a.r, 0, Math.PI * 2);
+                    ctx.fillStyle = a.color;
+                    ctx.fill();
+                });
+                ctx.restore();
+            }
+            update() {
+                this.x += this.vx; this.y += this.vy; this.angle += this.rotationSpeed;
+                const p = 100;
+                if (this.x > canvas.width + p) this.x = -p;
+                if (this.x < -p) this.x = canvas.width + p;
+                if (this.y > canvas.height + p) this.y = -p;
+                if (this.y < -p) this.y = canvas.height + p;
+            }
+        }
+
+        function initMolecules() {
+            molecules = [];
+            const density = window.innerWidth < 640 ? 70000 : 50000;
+            const count = Math.floor((canvas.width * canvas.height) / density);
+            for (let i = 0; i < count; i++) molecules.push(new Molecule());
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            molecules.forEach(m => { m.update(); m.draw(); });
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', resize);
+        resize(); animate();
+    </script>
 </body>
 </html>
