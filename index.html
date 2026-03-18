@@ -7,11 +7,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        /* Specific Glass & Animation Effects */
         .glass { background: rgba(56, 102, 65, 0.2); backdrop-filter: blur(20px) saturate(150%); }
         .nav-pill { width: 45px; transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
         .nav-pill:hover { width: 380px; }
-        .ceo-glow { background: radial-gradient(circle, rgba(167, 201, 87, 0.1) 0%, transparent 70%); filter: blur(50px); }
+        .ceo-glow { background: radial-gradient(circle, rgba(167, 201, 87, 0.2) 0%, transparent 70%); filter: blur(60px); }
     </style>
 </head>
 <body class="bg-[#f8faf9] m-0 overflow-x-hidden">
@@ -33,7 +32,7 @@
         <video class="w-full h-full object-cover opacity-75" autoplay muted loop playsinline>
             <source src="https://i.imgur.com/f0hf38l.mp4" type="video/mp4">
         </video>
-        <div class="absolute inset-0 bg-gradient-to-r from-[#070f09]/80 to-transparent flex items-center px-12">
+        <div class="absolute inset-0 bg-gradient-to-r from-black/80 to-transparent flex items-center px-12">
             <div class="max-w-xl text-white">
                 <h1 class="text-3xl md:text-5xl font-bold leading-tight mb-4">Providing <span class="text-[#a7c957]">Intelligent Insights</span></h1>
                 <p class="text-sm opacity-80 mb-6 max-w-sm">Trusted marketing data and strategy for your business growth.</p>
@@ -45,42 +44,48 @@
     </section>
 
     <section class="container mx-auto px-12 -mt-10 relative z-30 grid md:grid-cols-3 gap-6">
-        <div class="bg-white p-6 flex flex-col items-center shadow-xl rounded-2xl border transition hover:-translate-y-2">
+        <div class="bg-white p-6 flex flex-col items-center shadow-xl rounded-2xl border transition hover:-translate-y-2 text-center">
             <i class="fa-solid fa-chart-pie text-[#386641] text-xl mb-3"></i>
             <h3 class="font-bold text-gray-800 text-xs uppercase">Our Services</h3>
             <button class="mt-4 w-full py-2 bg-[#6a994e] text-white rounded-lg text-[10px] font-bold uppercase">Explore</button>
         </div>
-        <div class="bg-white p-6 flex flex-col items-center shadow-xl rounded-2xl border-b-4 border-red-500 transition hover:-translate-y-2">
+        <div class="bg-white p-6 flex flex-col items-center shadow-xl rounded-2xl border-b-4 border-red-500 transition hover:-translate-y-2 text-center">
             <i class="fa-solid fa-magnifying-glass text-[#bc2c2c] text-xl mb-3"></i>
             <h3 class="font-bold text-gray-800 text-xs uppercase">Strategy Hub</h3>
             <button class="mt-4 w-full py-2 bg-[#bc2c2c] text-white rounded-lg text-[10px] font-bold uppercase">Search</button>
         </div>
-        <div class="bg-white p-6 flex flex-col items-center shadow-xl rounded-2xl border transition hover:-translate-y-2">
+        <div class="bg-white p-6 flex flex-col items-center shadow-xl rounded-2xl border transition hover:-translate-y-2 text-center">
             <i class="fa-solid fa-calendar-check text-[#386641] text-xl mb-3"></i>
             <h3 class="font-bold text-gray-800 text-xs uppercase">Consultation</h3>
             <button class="mt-4 w-full py-2 bg-[#386641] text-white rounded-lg text-[10px] font-bold uppercase">Book Now</button>
         </div>
     </section>
 
-    <section class="bg-black py-20 relative overflow-hidden mt-12">
-        <div class="ceo-glow absolute w-[400px] h-[400px] top-1/2 right-0 -translate-y-1/2"></div>
-        <div class="container mx-auto px-12 relative z-10 flex flex-col md:flex-row items-center gap-16">
-            <div class="w-full md:w-4/12 flex justify-center">
-                <div class="rounded-xl overflow-hidden border border-white/10 bg-white/5 shadow-2xl max-w-[280px]">
-                    <img src="https://i.imgur.com/d5mC0Xd.png" alt="CEO" class="w-full">
-                    <div class="p-4 bg-white/5 backdrop-blur-sm text-center">
-                        <p class="text-white font-bold tracking-widest text-[10px] uppercase">Luis B. Mendoza</p>
-                        <p class="text-[#a7c957] text-[9px] uppercase font-semibold">Chief Executive Officer</p>
+    <section class="container mx-auto px-6 md:px-12 py-16">
+        <div class="relative bg-black rounded-[40px] overflow-hidden shadow-2xl p-10 md:p-20">
+            <div class="ceo-glow absolute w-[500px] h-[500px] top-1/2 right-0 -translate-y-1/2 opacity-60"></div>
+            
+            <div class="relative z-10 flex flex-col md:flex-row items-center gap-12 lg:gap-20">
+                <div class="w-full md:w-4/12 flex justify-center">
+                    <div class="rounded-3xl overflow-hidden border border-white/10 bg-white/5 shadow-2xl max-w-[260px]">
+                        <img src="https://i.imgur.com/d5mC0Xd.png" alt="Luis B. Mendoza" class="w-full">
+                        <div class="p-5 bg-white/5 backdrop-blur-md text-center">
+                            <p class="text-white font-bold tracking-widest text-[10px] uppercase">Luis B. Mendoza</p>
+                            <p class="text-[#a7c957] text-[9px] uppercase font-semibold">Chief Executive Officer</p>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="w-full md:w-8/12 text-white">
-                <h2 class="text-xl md:text-3xl font-light italic leading-relaxed mb-8">
-                    "Data tells you <span class="text-[#a7c957] font-bold">what happened</span>. Strategy tells you why. Creative tells you <span class="text-[#a7c957] font-bold">how to make it happen again</span>."
-                </h2>
-                <div class="flex items-center gap-4">
-                    <div class="w-16 h-1 bg-[#a7c957]/60"></div>
-                    <p class="text-[#a7c957] uppercase tracking-[0.5em] font-bold text-[9px]">Strategic Vision</p>
+
+                <div class="w-full md:w-8/12 text-white">
+                    <h2 class="text-xl md:text-3xl font-light italic leading-relaxed mb-8">
+                        "Data tells you <span class="text-[#a7c957] font-bold">what happened</span>. <br class="hidden md:block">
+                        Strategy tells you why. <br class="hidden md:block">
+                        Creative tells you <span class="text-[#a7c957] font-bold">how to make it happen again</span>."
+                    </h2>
+                    <div class="flex items-center gap-4">
+                        <div class="w-16 h-1 bg-[#a7c957]/60"></div>
+                        <p class="text-[#a7c957] uppercase tracking-[0.4em] font-bold text-[10px]">Strategic Vision</p>
+                    </div>
                 </div>
             </div>
         </div>
