@@ -14,9 +14,6 @@
         .pulse-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 8px; }
         .dot-in { background: #34d399; box-shadow: 0 0 10px #34d399; }
         .dot-out { background: #f87171; box-shadow: 0 0 10px #f87171; }
-        /* Simple scrollbar for mobile */
-        ::-webkit-scrollbar { width: 5px; height: 5px; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -54,7 +51,7 @@
                     <tbody id="status-table-body" class="text-sm">
                         <tr><td colspan="5" class="p-24 text-center">
                             <i class="fa-solid fa-circle-notch fa-spin text-3xl text-emerald-500 mb-4"></i>
-                            <p class="opacity-40 uppercase tracking-widest text-[10px] font-bold">Establishing Secure Connection...</p>
+                            <p class="opacity-40 uppercase tracking-widest text-[10px] font-bold">Connecting...</p>
                         </td></tr>
                     </tbody>
                 </table>
@@ -66,35 +63,31 @@
         const S_URL = 'https://jvjxrwmarwzbzlagqhhh.supabase.co';
         const S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2anhyd21hcnd6YnpsYWdxaGhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4OTYzNzYsImV4cCI6MjA4OTQ3MjM3Nn0.4cviind0KHFRMSM20UN5-dDEAYi-3vQbLB6wAebzlcQ';
         
-        const supabase = window.supabase.createClient(S_URL, S_KEY);
+        // Changed variable name to avoid "Identifier already declared" error
+        const dbClient = window.supabase.createClient(S_URL, S_KEY);
         
         async function loadLogs() {
             const tbody = document.getElementById('status-table-body');
             const debugBox = document.getElementById('debug-error');
 
             try {
-                // Fetching all data. Note: using 'timestamp' as per your column info
-                const { data, error } = await supabase
+                const { data, error } = await dbClient
                     .from('document_logs')
                     .select('*')
                     .order('timestamp', { ascending: false });
 
                 if (error) {
-                    debugBox.innerText = "SUPABASE ERROR: " + error.message;
+                    debugBox.innerText = "DB ERROR: " + error.message;
                     debugBox.classList.remove('hidden');
-                    tbody.innerHTML = `<tr><td colspan="5" class="p-10 text-center text-red-400 font-bold italic underline">Check Database Connection</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="5" class="p-10 text-center text-red-400">Database Error</td></tr>`;
                     return;
                 }
 
                 if (!data || data.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="5" class="p-24 text-center">
-                        <div class="opacity-20 text-4xl mb-4"><i class="fa-solid fa-folder-open"></i></div>
-                        <p class="opacity-50 uppercase tracking-widest text-xs font-bold">No Records Found</p>
-                    </td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="5" class="p-24 text-center opacity-50 text-xs font-bold uppercase tracking-widest">No Records Found</td></tr>`;
                     return;
                 }
 
-                // Grouping by Document Name
                 const groups = {};
                 data.forEach(log => {
                     if (!groups[log.document_name]) groups[log.document_name] = [];
@@ -108,14 +101,13 @@
                     const logs = groups[docName];
                     const latest = logs[0]; 
                     
-                    // History breakdown (Last 3 movements)
                     const historyHtml = logs.slice(0, 3).map(l => {
                         const time = new Date(l.timestamp).toLocaleString('en-PH', { 
                             month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' 
                         });
                         return `
                             <div class="flex items-center gap-2 text-[10px] mb-1.5 font-bold">
-                                <span class="${l.action === 'IN' ? 'text-emerald-400' : 'text-red-400'} uppercase">${l.action}</span>
+                                <span class="${l.action === 'IN' ? 'text-emerald-400' : 'text-red-400'}">${l.action}</span>
                                 <span class="opacity-30">|</span>
                                 <span class="opacity-80">${l.department}</span>
                                 <span class="opacity-30">|</span>
@@ -126,8 +118,6 @@
 
                     const row = document.createElement('tr');
                     row.className = "hover:bg-white/5 transition-all cursor-pointer group";
-                    
-                    // Action: Clicking row sends you to logger to "toggle" the status
                     row.onclick = () => {
                         const nextAction = latest.action === 'IN' ? 'OUT' : 'IN';
                         window.location.href = `logger.html?name=${encodeURIComponent(docName)}&cat=${encodeURIComponent(latest.category)}&dept=${encodeURIComponent(latest.department)}&suggestAction=${nextAction}`;
@@ -135,7 +125,7 @@
                     
                     row.innerHTML = `
                         <td class="p-6 border-b border-white/5">
-                            <div class="font-bold text-white group-hover:text-[#a7c957] transition-colors text-base">${docName}</div>
+                            <div class="font-bold text-white group-hover:text-[#a7c957] text-base">${docName}</div>
                             <div class="text-[9px] text-emerald-500 uppercase font-black tracking-widest mt-1">${latest.category}</div>
                         </td>
                         <td class="p-6 border-b border-white/5 font-semibold opacity-90">${latest.department}</td>
@@ -155,13 +145,12 @@
                     tbody.appendChild(row);
                 });
             } catch (err) {
-                debugBox.innerText = "CRITICAL JS ERROR: " + err.message;
+                debugBox.innerText = "JS ERROR: " + err.message;
                 debugBox.classList.remove('hidden');
             }
         }
 
         window.onload = loadLogs;
-        // Refresh data every minute
         setInterval(loadLogs, 60000);
     </script>
 </body>
