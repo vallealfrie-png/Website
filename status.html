@@ -8,24 +8,30 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <style>
-        body { background: #022c22; color: white; font-family: sans-serif; }
-        .glass-card { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .status-in { color: #34d399; }
-        .status-out { color: #f87171; }
+        body { background: #022c22; color: white; font-family: sans-serif; margin: 0; padding: 0; }
+        .glass-card { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); }
         tr:nth-child(even) { background: rgba(255, 255, 255, 0.02); }
+        .pulse-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+        .dot-in { background: #34d399; box-shadow: 0 0 10px #34d399; }
+        .dot-out { background: #f87171; box-shadow: 0 0 10px #f87171; }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
     <div class="max-w-6xl mx-auto">
-        <div class="flex justify-between items-end mb-8">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
             <div>
                 <h1 class="text-2xl font-black tracking-tighter uppercase">Document Status Board</h1>
                 <p class="text-emerald-500 text-[10px] font-bold tracking-[0.3em]">Live Tracking System</p>
             </div>
-            <a href="logger.html" class="bg-white/10 px-4 py-2 rounded-xl text-xs font-bold hover:bg-white/20 transition">
-                <i class="fa-solid fa-plus mr-2"></i> New Log
-            </a>
+            <div class="flex gap-3">
+                <button onclick="loadLogs()" class="bg-white/5 px-4 py-2 rounded-xl text-xs font-bold hover:bg-white/10 transition">
+                    <i class="fa-solid fa-rotate mr-2"></i> Refresh
+                </button>
+                <a href="logger.html" class="bg-[#a7c957] text-[#022c22] px-4 py-2 rounded-xl text-xs font-bold hover:opacity-90 transition">
+                    <i class="fa-solid fa-plus mr-2"></i> New Log
+                </a>
+            </div>
         </div>
 
         <div class="glass-card rounded-[2rem] overflow-hidden shadow-2xl">
@@ -41,7 +47,10 @@
                         </tr>
                     </thead>
                     <tbody id="status-table-body" class="text-sm">
-                        <tr><td colspan="5" class="p-10 text-center opacity-50">Fetching live data...</td></tr>
+                        <tr><td colspan="5" class="p-20 text-center">
+                            <i class="fa-solid fa-circle-notch fa-spin text-2xl text-emerald-500 mb-4"></i>
+                            <p class="opacity-50 uppercase tracking-widest text-xs">Connecting to Supabase...</p>
+                        </td></tr>
                     </tbody>
                 </table>
             </div>
@@ -50,83 +59,99 @@
 
     <script>
         const S_URL = 'https://jvjxrwmarwzbzlagqhhh.supabase.co';
-        const S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2anhyd21hcnd6YnpsYWdxaGhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4OTYzNzYsImV4cCI6MjA4OTQ3MjM3Nn0.4cviind0KHFRMSM20UN5-dDEAYi-3vQbLB6wAebzlcQ';
-        const supabase = window.supabase.createClient(S_URL, S_KEY);
+        const S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2anhyd21hcnd6YnpsYWdxaGhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4OTYzNzYsImV4cCI6MjA4OTQ3MjM3Nn0.4cviind0KHFRMS)20UN5-dDEAYi-3vQbLB6wAebzlcQ';
+        
+        // Use a slight delay to ensure the Supabase library is fully initialized
+        let supabase;
+        
+        async function init() {
+            try {
+                supabase = window.supabase.createClient(S_URL, S_KEY);
+                await loadLogs();
+            } catch (err) {
+                document.getElementById('status-table-body').innerHTML = `<tr><td colspan="5" class="p-10 text-center text-red-400">Connection Error: ${err.message}</td></tr>`;
+            }
+        }
 
         async function loadLogs() {
-            // Get all logs ordered by timestamp
+            const tbody = document.getElementById('status-table-body');
+            
             const { data, error } = await supabase
                 .from('document_logs')
                 .select('*')
                 .order('timestamp', { ascending: false });
 
             if (error) {
-                console.error(error);
+                tbody.innerHTML = `<tr><td colspan="5" class="p-10 text-center text-red-400 font-bold">SQL Error: ${error.message} <br> <span class="text-xs opacity-50 text-white font-normal">Check if table 'document_logs' exists.</span></td></tr>`;
+                return;
+            }
+
+            if (!data || data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-20 text-center opacity-50 uppercase tracking-widest text-xs font-bold">No documents found in database.</td></tr>`;
                 return;
             }
 
             // Group logs by Document Name
             const groups = {};
             data.forEach(log => {
-                if (!groups[log.document_name]) {
-                    groups[log.document_name] = [];
-                }
+                if (!groups[log.document_name]) groups[log.document_name] = [];
                 groups[log.document_name].push(log);
             });
 
-            const tbody = document.getElementById('status-table-body');
             tbody.innerHTML = '';
 
             Object.keys(groups).forEach(docName => {
                 const logs = groups[docName];
-                const latest = logs[0]; // First in array due to descending order
+                const latest = logs[0]; 
                 
-                // Build History String
-                const historyHtml = logs.slice(0, 3).map(l => `
-                    <div class="text-[10px] mb-1 opacity-80">
-                        <span class="${l.action === 'IN' ? 'text-emerald-400' : 'text-red-400'} font-bold">${l.action}</span> 
-                        ${l.department} | ${new Date(l.timestamp).toLocaleString([], {month: 'numeric', day: 'numeric', hour: '2-digit', minute:'2-digit'})}
-                    </div>
-                `).join('');
+                // Build history view (Last 3 movements)
+                const historyHtml = logs.slice(0, 3).map(l => {
+                    const dateStr = new Date(l.timestamp).toLocaleString('en-PH', { 
+                        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' 
+                    });
+                    return `
+                        <div class="flex items-center gap-2 text-[11px] mb-1">
+                            <span class="font-bold uppercase ${l.action === 'IN' ? 'text-emerald-400' : 'text-red-400'}">${l.action}</span>
+                            <span class="opacity-40">|</span>
+                            <span class="opacity-70">${l.department}</span>
+                            <span class="opacity-40">|</span>
+                            <span class="opacity-50">${dateStr}</span>
+                        </div>
+                    `;
+                }).join('');
 
                 const row = document.createElement('tr');
-                row.className = "hover:bg-white/5 transition-colors cursor-pointer";
-                row.onclick = () => redirectToLogger(latest);
+                row.className = "hover:bg-white/5 transition-all cursor-pointer group";
+                // When clicked, send to logger with pre-filled info
+                row.onclick = () => {
+                    const nextAction = latest.action === 'IN' ? 'OUT' : 'IN';
+                    window.location.href = `logger.html?name=${encodeURIComponent(docName)}&cat=${encodeURIComponent(latest.category)}&dept=${encodeURIComponent(latest.department)}&suggestAction=${nextAction}`;
+                };
                 
                 row.innerHTML = `
-                    <td class="p-5">
-                        <div class="font-bold text-white">${docName}</div>
-                        <div class="text-[10px] text-emerald-500 uppercase tracking-tighter">${latest.category}</div>
+                    <td class="p-5 border-b border-white/5">
+                        <div class="font-bold text-white group-hover:text-[#a7c957] transition-colors">${docName}</div>
+                        <div class="text-[10px] text-emerald-500 uppercase font-black tracking-tighter">${latest.category}</div>
                     </td>
-                    <td class="p-5 font-medium">${latest.department}</td>
-                    <td class="p-5">
-                        <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase ${latest.action === 'IN' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}">
+                    <td class="p-5 border-b border-white/5 font-medium opacity-90">${latest.department}</td>
+                    <td class="p-5 border-b border-white/5">
+                        <span class="flex items-center px-3 py-1.5 rounded-lg text-[10px] font-black uppercase w-fit ${latest.action === 'IN' ? 'bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/30' : 'bg-red-500/10 text-red-400 ring-1 ring-red-500/30'}">
+                            <span class="pulse-dot ${latest.action === 'IN' ? 'dot-in' : 'dot-out'}"></span>
                             ${latest.action}
                         </span>
                     </td>
-                    <td class="p-5">${historyHtml}</td>
-                    <td class="p-5 text-right">
-                        <i class="fa-solid fa-chevron-right opacity-20"></i>
+                    <td class="p-5 border-b border-white/5">${historyHtml}</td>
+                    <td class="p-5 border-b border-white/5 text-right">
+                        <i class="fa-solid fa-arrow-right-from-bracket opacity-0 group-hover:opacity-100 transition-all transform translate-x-[-10px] group-hover:translate-x-0"></i>
                     </td>
                 `;
                 tbody.appendChild(row);
             });
         }
 
-        function redirectToLogger(log) {
-            // Pass the data to logger via URL parameters
-            const params = new URLSearchParams({
-                name: log.document_name,
-                cat: log.category,
-                dept: log.department,
-                suggestAction: log.action === 'IN' ? 'OUT' : 'IN'
-            });
-            window.location.href = `logger.html?${params.toString()}`;
-        }
-
-        loadLogs();
-        // Refresh every 30 seconds
-        setInterval(loadLogs, 30000);
+        window.onload = init;
+        // Auto refresh every 60 seconds
+        setInterval(loadLogs, 60000);
     </script>
 </body>
 </html>
