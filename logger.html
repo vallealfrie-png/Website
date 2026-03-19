@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Document Logger | Mobile</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        body {
+            background: radial-gradient(circle at center, #064e3b 0%, #022c22 100%);
+            min-height: 100vh;
+            color: white;
+            font-family: ui-sans-serif, system-ui;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        select, input {
+            background: rgba(0, 0, 0, 0.3) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            color: white !important;
+            appearance: none;
+        }
+        select:focus, input:focus {
+            border-color: #10b981 !important;
+            outline: none;
+        }
+    </style>
+</head>
+<body class="p-4 flex flex-col items-center">
+
+    <div class="w-full max-w-md text-center mb-6 pt-4">
+        <img src="https://i.imgur.com/VbZKWAf.png" class="h-12 mx-auto mb-2 opacity-90" />
+        <h2 class="text-xl font-bold tracking-tight">Intelligence Logger</h2>
+        <p class="text-emerald-400 text-[10px] uppercase tracking-[0.3em] font-bold">Document Tracking System</p>
+    </div>
+
+    <div class="w-full max-w-md glass-panel rounded-[2.5rem] p-8 shadow-2xl">
+        <form id="logger-form" class="space-y-6">
+            
+            <div>
+                <label class="block text-[10px] font-bold text-emerald-500 uppercase mb-2 ml-1">Document Category</label>
+                <div class="relative">
+                    <select id="category" required class="w-full px-4 py-4 rounded-2xl text-sm">
+                        <option value="" disabled selected>Select Category</option>
+                        <option>Memo</option><option>MRF</option><option>Liquidation</option>
+                        <option>Audio Reservation Form</option><option>Housekeeping Service Call</option>
+                        <option>Food Request</option><option>Request for Payment</option>
+                        <option>Care</option><option>Request for Vehicle/Trip Ticket</option>
+                        <option>Design Approval</option><option>IT Help Desk</option>
+                        <option>Costing</option><option>External Training Request</option>
+                        <option>Employees Recommendation</option><option>Manpower Request</option>
+                        <option>Petty Cash Voucher</option><option>Confidential Document</option>
+                        <option>Contacts</option>
+                    </select>
+                    <i class="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-emerald-500 pointer-events-none"></i>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-[10px] font-bold text-emerald-500 uppercase mb-2 ml-1">Document Name / Subject</label>
+                <input id="doc_name" type="text" required placeholder="Enter reference name..." 
+                    class="w-full px-4 py-4 rounded-2xl text-sm outline-none" />
+            </div>
+
+            <div>
+                <label class="block text-[10px] font-bold text-emerald-500 uppercase mb-2 ml-1">Department</label>
+                <div class="relative">
+                    <select id="department" required class="w-full px-4 py-4 rounded-2xl text-sm">
+                        <option value="" disabled selected>Select Department</option>
+                        <option>Property</option><option>Accounting</option><option>Finance</option>
+                        <option>Purchasing</option><option>HR</option><option>Legal</option>
+                        <option>Admin Office</option><option>Building Management</option>
+                        <option>ER Medicine</option><option>Office of the President</option>
+                        <option>Chairmans Office</option><option>OPD</option>
+                        <option>Laboratory</option><option>Hospital Director's Office</option>
+                        <option>Medical Director Office</option><option>OR Complex</option>
+                    </select>
+                    <i class="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-emerald-500 pointer-events-none"></i>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 pt-2">
+                <button type="button" onclick="logEntry('IN')" 
+                    class="py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-all">
+                    <i class="fa-solid fa-right-to-bracket mr-2"></i> Log In
+                </button>
+                <button type="button" onclick="logEntry('OUT')" 
+                    class="py-4 bg-red-600 hover:bg-red-500 text-white font-bold rounded-2xl text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-all">
+                    <i class="fa-solid fa-right-from-bracket mr-2"></i> Log Out
+                </button>
+            </div>
+        </form>
+
+        <p id="status-msg" class="hidden text-center mt-6 text-[11px] p-3 rounded-xl"></p>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://jvjxrwmarwzbzlagqhhh.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2anhyd21hcnd6YnpsYWdxaGhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4OTYzNzYsImV4cCI6MjA4OTQ3MjM3Nn0.4cviind0KHFRMSM20UN5-dDEAYi-3vQbLB6wAebzlcQ';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        async function logEntry(actionType) {
+            const category = document.getElementById('category').value;
+            const docName = document.getElementById('doc_name').value;
+            const department = document.getElementById('department').value;
+            const statusMsg = document.getElementById('status-msg');
+
+            if (!category || !docName || !department) {
+                showStatus("Please fill all fields", "bg-red-900/40 text-red-300");
+                return;
+            }
+
+            const timestamp = new Date().toISOString();
+            const logData = {
+                category: category,
+                document_name: docName,
+                department: department,
+                action: actionType,
+                timestamp: timestamp
+            };
+
+            const { error } = await supabase.from('document_logs').insert([logData]);
+
+            if (error) {
+                showStatus("Error: " + error.message, "bg-red-900/40 text-red-300");
+            } else {
+                showStatus(`${actionType} Recorded: ${new Date().toLocaleTimeString()}`, "bg-emerald-900/40 text-emerald-300");
+                if(actionType === 'OUT') document.getElementById('logger-form').reset();
+            }
+        }
+
+        function showStatus(text, classes) {
+            const statusMsg = document.getElementById('status-msg');
+            statusMsg.className = `mt-6 text-center text-[11px] p-3 rounded-xl ${classes}`;
+            statusMsg.textContent = text;
+            statusMsg.classList.remove('hidden');
+            setTimeout(() => statusMsg.classList.add('hidden'), 5000);
+        }
+    </script>
+</body>
+</html>
