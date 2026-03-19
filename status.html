@@ -14,24 +14,36 @@
         .pulse-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 8px; }
         .dot-in { background: #34d399; box-shadow: 0 0 10px #34d399; }
         .dot-out { background: #f87171; box-shadow: 0 0 10px #f87171; }
+        .dot-finish { background: #f59e0b; box-shadow: 0 0 10px #f59e0b; }
+        
+        .tab-active { border-bottom: 3px solid #a7c957; color: #a7c957; font-weight: 900; }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
     <div class="max-w-6xl mx-auto">
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <div>
-                <h1 class="text-2xl font-black tracking-tighter uppercase italic">Document Status Board</h1>
-                <p class="text-emerald-500 text-[10px] font-bold tracking-[0.3em]">Live Intelligence Tracking</p>
+                <h1 class="text-2xl font-black tracking-tighter uppercase italic">Document Intelligence</h1>
+                <p class="text-emerald-500 text-[10px] font-bold tracking-[0.3em]">Live Tracking System</p>
             </div>
             <div class="flex gap-3">
                 <button onclick="loadLogs()" class="bg-white/5 px-4 py-2 rounded-xl text-xs font-bold hover:bg-white/10 transition">
                     <i class="fa-solid fa-rotate mr-2"></i> Sync
                 </button>
-                <a href="logger.html" class="bg-[#a7c957] text-[#022c22] px-4 py-2 rounded-xl text-xs font-bold hover:opacity-90 transition shadow-lg">
-                    <i class="fa-solid fa-plus mr-2"></i> New Entry
+                <a href="logger.html" class="bg-[#a7c957] text-[#022c22] px-4 py-2 rounded-xl text-xs font-bold hover:opacity-90 transition">
+                    <i class="fa-solid fa-plus mr-2"></i> New Log
                 </a>
             </div>
+        </div>
+
+        <div class="flex gap-8 mb-6 border-b border-white/10 px-4">
+            <button id="tab-active" onclick="switchTab('active')" class="pb-3 text-xs uppercase tracking-widest font-bold transition-all tab-active">
+                Active Docs
+            </button>
+            <button id="tab-finished" onclick="switchTab('finished')" class="pb-3 text-xs uppercase tracking-widest font-bold transition-all opacity-40 hover:opacity-100">
+                Finished
+            </button>
         </div>
 
         <div id="debug-error" class="hidden mb-6 p-4 bg-red-900/50 border border-red-500 text-red-200 rounded-2xl text-xs font-mono"></div>
@@ -44,14 +56,13 @@
                             <th class="p-6">Document Info</th>
                             <th class="p-6">Current Dept</th>
                             <th class="p-6">Status</th>
-                            <th class="p-6">Recent History</th>
-                            <th class="p-6 text-right">Update</th>
+                            <th class="p-6">History</th>
+                            <th class="p-6 text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="status-table-body" class="text-sm">
                         <tr><td colspan="5" class="p-24 text-center">
                             <i class="fa-solid fa-circle-notch fa-spin text-3xl text-emerald-500 mb-4"></i>
-                            <p class="opacity-40 uppercase tracking-widest text-[10px] font-bold">Connecting...</p>
                         </td></tr>
                     </tbody>
                 </table>
@@ -62,32 +73,39 @@
     <script>
         const S_URL = 'https://jvjxrwmarwzbzlagqhhh.supabase.co';
         const S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2anhyd21hcnd6YnpsYWdxaGhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4OTYzNzYsImV4cCI6MjA4OTQ3MjM3Nn0.4cviind0KHFRMSM20UN5-dDEAYi-3vQbLB6wAebzlcQ';
-        
-        // Changed variable name to avoid "Identifier already declared" error
         const dbClient = window.supabase.createClient(S_URL, S_KEY);
-        
+
+        let currentView = 'active'; // 'active' or 'finished'
+
+        function switchTab(view) {
+            currentView = view;
+            document.getElementById('tab-active').classList.toggle('tab-active', view === 'active');
+            document.getElementById('tab-active').classList.toggle('opacity-40', view !== 'active');
+            document.getElementById('tab-finished').classList.toggle('tab-active', view === 'finished');
+            document.getElementById('tab-finished').classList.toggle('opacity-40', view !== 'finished');
+            loadLogs();
+        }
+
+        async function finishDoc(e, name, cat, dept) {
+            e.stopPropagation();
+            if(!confirm(`Finish tracking for "${name}"?`)) return;
+            
+            const { error } = await dbClient.from('document_logs').insert([{
+                category: cat, document_name: name, department: dept, action: 'FINISHED', timestamp: new Date().toISOString()
+            }]);
+            
+            if(error) alert(error.message);
+            else loadLogs();
+        }
+
         async function loadLogs() {
             const tbody = document.getElementById('status-table-body');
-            const debugBox = document.getElementById('debug-error');
-
             try {
-                const { data, error } = await dbClient
-                    .from('document_logs')
-                    .select('*')
-                    .order('timestamp', { ascending: false });
+                const { data, error } = await dbClient.from('document_logs').select('*').order('timestamp', { ascending: false });
 
-                if (error) {
-                    debugBox.innerText = "DB ERROR: " + error.message;
-                    debugBox.classList.remove('hidden');
-                    tbody.innerHTML = `<tr><td colspan="5" class="p-10 text-center text-red-400">Database Error</td></tr>`;
-                    return;
-                }
+                if (error) throw error;
 
-                if (!data || data.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="5" class="p-24 text-center opacity-50 text-xs font-bold uppercase tracking-widest">No Records Found</td></tr>`;
-                    return;
-                }
-
+                // Grouping Logic
                 const groups = {};
                 data.forEach(log => {
                     if (!groups[log.document_name]) groups[log.document_name] = [];
@@ -95,63 +113,69 @@
                 });
 
                 tbody.innerHTML = '';
-                debugBox.classList.add('hidden');
-
+                
+                let count = 0;
                 Object.keys(groups).forEach(docName => {
                     const logs = groups[docName];
-                    const latest = logs[0]; 
-                    
-                    const historyHtml = logs.slice(0, 3).map(l => {
-                        const time = new Date(l.timestamp).toLocaleString('en-PH', { 
-                            month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' 
-                        });
-                        return `
-                            <div class="flex items-center gap-2 text-[10px] mb-1.5 font-bold">
-                                <span class="${l.action === 'IN' ? 'text-emerald-400' : 'text-red-400'}">${l.action}</span>
-                                <span class="opacity-30">|</span>
-                                <span class="opacity-80">${l.department}</span>
-                                <span class="opacity-30">|</span>
-                                <span class="opacity-40 font-normal">${time}</span>
-                            </div>
-                        `;
-                    }).join('');
+                    const latest = logs[0];
 
+                    // Filter based on Tab
+                    const isFinished = latest.action === 'FINISHED';
+                    if (currentView === 'active' && isFinished) return;
+                    if (currentView === 'finished' && !isFinished) return;
+
+                    count++;
                     const row = document.createElement('tr');
                     row.className = "hover:bg-white/5 transition-all cursor-pointer group";
                     row.onclick = () => {
-                        const nextAction = latest.action === 'IN' ? 'OUT' : 'IN';
-                        window.location.href = `logger.html?name=${encodeURIComponent(docName)}&cat=${encodeURIComponent(latest.category)}&dept=${encodeURIComponent(latest.department)}&suggestAction=${nextAction}`;
+                        const next = latest.action === 'IN' ? 'OUT' : 'IN';
+                        window.location.href = `logger.html?name=${encodeURIComponent(docName)}&cat=${encodeURIComponent(latest.category)}&dept=${encodeURIComponent(latest.department)}&suggestAction=${next}`;
                     };
-                    
+
+                    const historyHtml = logs.slice(0, 2).map(l => `
+                        <div class="text-[10px] opacity-60 font-bold uppercase mb-1">
+                            <span class="${l.action==='IN'?'text-emerald-400':l.action==='OUT'?'text-red-400':'text-amber-400'}">${l.action}</span> - ${l.department}
+                        </div>
+                    `).join('');
+
                     row.innerHTML = `
                         <td class="p-6 border-b border-white/5">
-                            <div class="font-bold text-white group-hover:text-[#a7c957] text-base">${docName}</div>
-                            <div class="text-[9px] text-emerald-500 uppercase font-black tracking-widest mt-1">${latest.category}</div>
+                            <div class="font-bold text-white text-base">${docName}</div>
+                            <div class="text-[9px] text-emerald-500 uppercase font-black mt-1">${latest.category}</div>
                         </td>
                         <td class="p-6 border-b border-white/5 font-semibold opacity-90">${latest.department}</td>
                         <td class="p-6 border-b border-white/5">
-                            <span class="inline-flex items-center px-3 py-1.5 rounded-full text-[10px] font-black uppercase ${latest.action === 'IN' ? 'bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/30' : 'bg-red-500/10 text-red-400 ring-1 ring-red-500/30'}">
-                                <span class="pulse-dot ${latest.action === 'IN' ? 'dot-in' : 'dot-out'}"></span>
+                            <span class="inline-flex items-center px-3 py-1.5 rounded-full text-[10px] font-black uppercase ${latest.action === 'IN' ? 'bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/30' : latest.action === 'OUT' ? 'bg-red-500/10 text-red-400 ring-1 ring-red-500/30' : 'bg-amber-500/10 text-amber-400 ring-1 ring-amber-500/30'}">
+                                <span class="pulse-dot ${latest.action === 'IN' ? 'dot-in' : latest.action === 'OUT' ? 'dot-out' : 'dot-finish'}"></span>
                                 ${latest.action}
                             </span>
                         </td>
                         <td class="p-6 border-b border-white/5">${historyHtml}</td>
                         <td class="p-6 border-b border-white/5 text-right">
-                            <div class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center ml-auto group-hover:bg-[#a7c957] group-hover:text-[#022c22] transition-all">
-                                <i class="fa-solid fa-arrow-right-arrow-left text-[10px]"></i>
+                            <div class="flex justify-end gap-2">
+                                ${latest.action !== 'FINISHED' ? `
+                                    <button onclick="finishDoc(event, '${docName}', '${latest.category}', '${latest.department}')" class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center hover:bg-emerald-500 hover:text-white transition-all shadow-lg">
+                                        <i class="fa-solid fa-check"></i>
+                                    </button>
+                                ` : '<span class="text-[10px] font-black opacity-30 uppercase tracking-widest">Archived</span>'}
+                                <div class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center opacity-30"><i class="fa-solid fa-chevron-right text-[10px]"></i></div>
                             </div>
                         </td>
                     `;
                     tbody.appendChild(row);
                 });
+
+                if(count === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" class="p-24 text-center opacity-30 uppercase tracking-widest text-xs font-bold">No ${currentView} Documents</td></tr>`;
+                }
+
             } catch (err) {
-                debugBox.innerText = "JS ERROR: " + err.message;
-                debugBox.classList.remove('hidden');
+                document.getElementById('debug-error').innerText = err.message;
+                document.getElementById('debug-error').classList.remove('hidden');
             }
         }
 
         window.onload = loadLogs;
-        setInterval(loadLogs, 60000);
     </script>
 </body>
 </html>
