@@ -19,11 +19,11 @@
             top: 0; left: 0;
             width: 100%; height: 100%;
             z-index: 1;
-            pointer-events: none; /* Crucial: clicks go THROUGH the canvas */
+            pointer-events: none;
         }
         .ui-wrapper {
             position: relative;
-            z-index: 999; /* Put the form on the very top layer */
+            z-index: 999;
             width: 100%;
             display: flex;
             flex-direction: column;
@@ -35,7 +35,6 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
             box-shadow: 0 20px 50px rgba(0,0,0,0.5);
         }
-        /* The Pulsing Animation */
         @keyframes pulse-emerald {
             0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); transform: scale(1); }
             50% { box-shadow: 0 0 0 15px rgba(16, 185, 129, 0); transform: scale(1.05); }
@@ -126,28 +125,47 @@
         </div>
 
         <div id="msg_box" class="hidden mt-6 p-3 rounded-xl text-center text-[11px] font-bold"></div>
+
+        <div class="text-center mt-8 border-t border-white/10 pt-6">
+            <a href="status.html" class="text-emerald-400 text-[10px] font-bold uppercase tracking-[0.3em] hover:text-white transition-colors">
+                <i class="fa-solid fa-chart-line mr-2"></i> View Status Board
+            </a>
+        </div>
     </div>
 </div>
 
 <script>
-    // Config
     const S_URL = 'https://jvjxrwmarwzbzlagqhhh.supabase.co';
     const S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2anhyd21hcnd6YnpsYWdxaGhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4OTYzNzYsImV4cCI6MjA4OTQ3MjM3Nn0.4cviind0KHFRMSM20UN5-dDEAYi-3vQbLB6wAebzlcQ';
     const client = window.supabase.createClient(S_URL, S_KEY);
 
     let current_action = null;
 
+    // --- AUTO-FILL LOGIC FROM STATUS PAGE ---
+    window.onload = function() {
+        const params = new URLSearchParams(window.location.search);
+        if (params.has('name')) {
+            document.getElementById('f_docname').value = params.get('name');
+            document.getElementById('f_category').value = params.get('cat');
+            document.getElementById('f_dept').value = params.get('dept');
+            
+            // Auto-select the logical next action (IN -> OUT or OUT -> IN)
+            const suggest = params.get('suggestAction');
+            if(suggest) handleToggle(suggest);
+            
+            // Clean up URL so refresh doesn't keep the data
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    };
+
     function handleToggle(val) {
-        console.log("Button clicked:", val);
         current_action = val;
         const bIn = document.getElementById('btn_in');
         const bOut = document.getElementById('btn_out');
 
-        // Clear classes
         bIn.classList.remove('is-active-in');
         bOut.classList.remove('is-active-out');
 
-        // Apply pulse
         if(val === 'IN') {
             bIn.classList.add('is-active-in');
         } else {
@@ -156,7 +174,6 @@
     }
 
     async function sendData() {
-        console.log("Logged It clicked");
         const btn = document.getElementById('submit_btn');
         const cat = document.getElementById('f_category').value;
         const name = document.getElementById('f_docname').value;
@@ -179,27 +196,29 @@
         }]);
 
         if(error) {
-            console.error(error);
             btn.innerText = "ERROR!";
             setTimeout(() => { btn.innerText = "LOGGED IT"; btn.disabled = false; }, 2000);
         } else {
-            document.getElementById('msg_box').innerText = "DATA SAVED!";
-            document.getElementById('msg_box').classList.remove('hidden', 'bg-red-500');
-            document.getElementById('msg_box').classList.add('bg-emerald-500', 'text-emerald-950');
+            const msg = document.getElementById('msg_box');
+            msg.innerText = "DATA SAVED!";
+            msg.classList.remove('hidden', 'bg-red-500');
+            msg.classList.add('bg-emerald-500', 'text-emerald-950');
             
-            // Reset
+            // Reset fields
             document.getElementById('f_docname').value = '';
+            document.getElementById('f_category').selectedIndex = 0;
+            document.getElementById('f_dept').selectedIndex = 0;
             document.getElementById('btn_in').classList.remove('is-active-in');
             document.getElementById('btn_out').classList.remove('is-active-out');
             current_action = null;
             
             btn.innerText = "LOGGED IT";
             btn.disabled = false;
-            setTimeout(() => document.getElementById('msg_box').classList.add('hidden'), 3000);
+            setTimeout(() => msg.classList.add('hidden'), 3000);
         }
     }
 
-    // BG Animation Code (simplified for performance)
+    // Background Animation
     const cvs = document.getElementById('bg-canvas');
     const ctx = cvs.getContext('2d');
     let mol = [];
