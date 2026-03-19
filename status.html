@@ -15,8 +15,8 @@
         .dot-in { background: #34d399; box-shadow: 0 0 10px #34d399; }
         .dot-out { background: #f87171; box-shadow: 0 0 10px #f87171; }
         .dot-finish { background: #f59e0b; box-shadow: 0 0 10px #f59e0b; }
-        
         .tab-active { border-bottom: 3px solid #a7c957; color: #a7c957; font-weight: 900; }
+        .history-line { border-left: 1px solid rgba(255,255,255,0.1); padding-left: 8px; margin-bottom: 4px; }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -31,22 +31,16 @@
                 <button onclick="loadLogs()" class="bg-white/5 px-4 py-2 rounded-xl text-xs font-bold hover:bg-white/10 transition">
                     <i class="fa-solid fa-rotate mr-2"></i> Sync
                 </button>
-                <a href="logger.html" class="bg-[#a7c957] text-[#022c22] px-4 py-2 rounded-xl text-xs font-bold hover:opacity-90 transition">
+                <a href="logger.html" class="bg-[#a7c957] text-[#022c22] px-4 py-2 rounded-xl text-xs font-bold hover:opacity-90 transition shadow-lg">
                     <i class="fa-solid fa-plus mr-2"></i> New Log
                 </a>
             </div>
         </div>
 
         <div class="flex gap-8 mb-6 border-b border-white/10 px-4">
-            <button id="tab-active" onclick="switchTab('active')" class="pb-3 text-xs uppercase tracking-widest font-bold transition-all tab-active">
-                Active Docs
-            </button>
-            <button id="tab-finished" onclick="switchTab('finished')" class="pb-3 text-xs uppercase tracking-widest font-bold transition-all opacity-40 hover:opacity-100">
-                Finished
-            </button>
+            <button id="tab-active" onclick="switchTab('active')" class="pb-3 text-xs uppercase tracking-widest font-bold transition-all tab-active">Active Docs</button>
+            <button id="tab-finished" onclick="switchTab('finished')" class="pb-3 text-xs uppercase tracking-widest font-bold transition-all opacity-40 hover:opacity-100">Finished</button>
         </div>
-
-        <div id="debug-error" class="hidden mb-6 p-4 bg-red-900/50 border border-red-500 text-red-200 rounded-2xl text-xs font-mono"></div>
 
         <div class="glass-card rounded-[2.5rem] overflow-hidden shadow-2xl">
             <div class="overflow-x-auto">
@@ -54,16 +48,14 @@
                     <thead>
                         <tr class="bg-white/10 text-[10px] uppercase tracking-[0.2em] text-emerald-400 font-black">
                             <th class="p-6">Document Info</th>
-                            <th class="p-6">Current Dept</th>
+                            <th class="p-6">Current Location</th>
                             <th class="p-6">Status</th>
-                            <th class="p-6">History</th>
+                            <th class="p-6">Full Movement History</th>
                             <th class="p-6 text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="status-table-body" class="text-sm">
-                        <tr><td colspan="5" class="p-24 text-center">
-                            <i class="fa-solid fa-circle-notch fa-spin text-3xl text-emerald-500 mb-4"></i>
-                        </td></tr>
+                        <tr><td colspan="5" class="p-24 text-center"><i class="fa-solid fa-circle-notch fa-spin text-3xl text-emerald-500"></i></td></tr>
                     </tbody>
                 </table>
             </div>
@@ -75,7 +67,7 @@
         const S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2anhyd21hcnd6YnpsYWdxaGhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4OTYzNzYsImV4cCI6MjA4OTQ3MjM3Nn0.4cviind0KHFRMSM20UN5-dDEAYi-3vQbLB6wAebzlcQ';
         const dbClient = window.supabase.createClient(S_URL, S_KEY);
 
-        let currentView = 'active'; // 'active' or 'finished'
+        let currentView = 'active';
 
         function switchTab(view) {
             currentView = view;
@@ -89,23 +81,18 @@
         async function finishDoc(e, name, cat, dept) {
             e.stopPropagation();
             if(!confirm(`Finish tracking for "${name}"?`)) return;
-            
             const { error } = await dbClient.from('document_logs').insert([{
                 category: cat, document_name: name, department: dept, action: 'FINISHED', timestamp: new Date().toISOString()
             }]);
-            
-            if(error) alert(error.message);
-            else loadLogs();
+            if(error) alert(error.message); else loadLogs();
         }
 
         async function loadLogs() {
             const tbody = document.getElementById('status-table-body');
             try {
                 const { data, error } = await dbClient.from('document_logs').select('*').order('timestamp', { ascending: false });
-
                 if (error) throw error;
 
-                // Grouping Logic
                 const groups = {};
                 data.forEach(log => {
                     if (!groups[log.document_name]) groups[log.document_name] = [];
@@ -113,37 +100,46 @@
                 });
 
                 tbody.innerHTML = '';
-                
                 let count = 0;
+
                 Object.keys(groups).forEach(docName => {
                     const logs = groups[docName];
                     const latest = logs[0];
 
-                    // Filter based on Tab
-                    const isFinished = latest.action === 'FINISHED';
-                    if (currentView === 'active' && isFinished) return;
-                    if (currentView === 'finished' && !isFinished) return;
+                    if (currentView === 'active' && latest.action === 'FINISHED') return;
+                    if (currentView === 'finished' && latest.action !== 'FINISHED') return;
 
                     count++;
                     const row = document.createElement('tr');
                     row.className = "hover:bg-white/5 transition-all cursor-pointer group";
                     row.onclick = () => {
+                        if(latest.action === 'FINISHED') return;
                         const next = latest.action === 'IN' ? 'OUT' : 'IN';
                         window.location.href = `logger.html?name=${encodeURIComponent(docName)}&cat=${encodeURIComponent(latest.category)}&dept=${encodeURIComponent(latest.department)}&suggestAction=${next}`;
                     };
 
-                    const historyHtml = logs.slice(0, 2).map(l => `
-                        <div class="text-[10px] opacity-60 font-bold uppercase mb-1">
-                            <span class="${l.action==='IN'?'text-emerald-400':l.action==='OUT'?'text-red-400':'text-amber-400'}">${l.action}</span> - ${l.department}
-                        </div>
-                    `).join('');
+                    // RESTORED TIMESTAMP LOGIC HERE
+                    const historyHtml = logs.slice(0, 4).map(l => {
+                        const dateObj = new Date(l.timestamp);
+                        const timeStr = dateObj.toLocaleString('en-PH', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                        return `
+                            <div class="history-line text-[10px]">
+                                <span class="font-black uppercase ${l.action==='IN'?'text-emerald-400':l.action==='OUT'?'text-red-400':'text-amber-400'}">${l.action}</span>
+                                <span class="opacity-80 ml-1">${l.department}</span>
+                                <span class="opacity-40 ml-2 italic">${timeStr}</span>
+                            </div>
+                        `;
+                    }).join('');
 
                     row.innerHTML = `
                         <td class="p-6 border-b border-white/5">
                             <div class="font-bold text-white text-base">${docName}</div>
                             <div class="text-[9px] text-emerald-500 uppercase font-black mt-1">${latest.category}</div>
                         </td>
-                        <td class="p-6 border-b border-white/5 font-semibold opacity-90">${latest.department}</td>
+                        <td class="p-6 border-b border-white/5">
+                            <div class="font-semibold opacity-90">${latest.department}</div>
+                            <div class="text-[9px] opacity-40 uppercase tracking-tighter mt-1">Last Update: ${new Date(latest.timestamp).toLocaleTimeString()}</div>
+                        </td>
                         <td class="p-6 border-b border-white/5">
                             <span class="inline-flex items-center px-3 py-1.5 rounded-full text-[10px] font-black uppercase ${latest.action === 'IN' ? 'bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/30' : latest.action === 'OUT' ? 'bg-red-500/10 text-red-400 ring-1 ring-red-500/30' : 'bg-amber-500/10 text-amber-400 ring-1 ring-amber-500/30'}">
                                 <span class="pulse-dot ${latest.action === 'IN' ? 'dot-in' : latest.action === 'OUT' ? 'dot-out' : 'dot-finish'}"></span>
@@ -154,28 +150,22 @@
                         <td class="p-6 border-b border-white/5 text-right">
                             <div class="flex justify-end gap-2">
                                 ${latest.action !== 'FINISHED' ? `
-                                    <button onclick="finishDoc(event, '${docName}', '${latest.category}', '${latest.department}')" class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center hover:bg-emerald-500 hover:text-white transition-all shadow-lg">
-                                        <i class="fa-solid fa-check"></i>
+                                    <button onclick="finishDoc(event, '${docName}', '${latest.category}', '${latest.department}')" class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center hover:bg-emerald-500 hover:text-white transition-all">
+                                        <i class="fa-solid fa-check-double"></i>
                                     </button>
-                                ` : '<span class="text-[10px] font-black opacity-30 uppercase tracking-widest">Archived</span>'}
-                                <div class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center opacity-30"><i class="fa-solid fa-chevron-right text-[10px]"></i></div>
+                                ` : '<span class="text-[10px] font-black opacity-20 uppercase">ARCHIVED</span>'}
                             </div>
                         </td>
                     `;
                     tbody.appendChild(row);
                 });
 
-                if(count === 0) {
-                    tbody.innerHTML = `<tr><td colspan="5" class="p-24 text-center opacity-30 uppercase tracking-widest text-xs font-bold">No ${currentView} Documents</td></tr>`;
-                }
-
-            } catch (err) {
-                document.getElementById('debug-error').innerText = err.message;
-                document.getElementById('debug-error').classList.remove('hidden');
-            }
+                if(count === 0) tbody.innerHTML = `<tr><td colspan="5" class="p-24 text-center opacity-30 text-xs font-bold uppercase tracking-widest">No ${currentView} Documents</td></tr>`;
+            } catch (err) { console.error(err); }
         }
 
         window.onload = loadLogs;
+        setInterval(loadLogs, 60000);
     </script>
 </body>
 </html>
