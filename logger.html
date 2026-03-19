@@ -3,275 +3,236 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Intelligence Logger | Projectvibe</title>
+    <title>Logger | Projectvibe</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <style>
         body {
-            background: radial-gradient(circle at center, #064e3b 0%, #022c22 100%);
-            min-height: 100vh;
-            color: white;
-            margin: 0;
+            background: #022c22;
+            margin: 0; padding: 0;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+        #bg-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 1;
+            pointer-events: none; /* Crucial: clicks go THROUGH the canvas */
+        }
+        .ui-wrapper {
+            position: relative;
+            z-index: 999; /* Put the form on the very top layer */
+            width: 100%;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
-
-        /* Ensure canvas stays in the deep background */
-        #bg-canvas { 
-            position: fixed; 
-            top: 0; left: 0; 
-            z-index: 1; 
-            pointer-events: none; 
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
         }
-
-        /* Ensure form stays in front of everything */
-        .main-container {
-            position: relative;
-            z-index: 50;
-            width: 100%;
-            max-width: 400px;
-        }
-
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.07);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-        }
-
-        select, input {
-            background: rgba(0, 0, 0, 0.4) !important;
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
-            color: white !important;
-            outline: none;
-        }
-
-        /* Pulsing states */
-        @keyframes pulse-green {
-            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7); }
-            50% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(52, 211, 153, 0); }
-            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+        /* The Pulsing Animation */
+        @keyframes pulse-emerald {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); transform: scale(1); }
+            50% { box-shadow: 0 0 0 15px rgba(16, 185, 129, 0); transform: scale(1.05); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); transform: scale(1); }
         }
         @keyframes pulse-red {
-            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(248, 113, 113, 0.7); }
-            50% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(248, 113, 113, 0); }
-            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(248, 113, 113, 0); }
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); transform: scale(1); }
+            50% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); transform: scale(1.05); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); transform: scale(1); }
         }
-
-        .active-in { 
-            animation: pulse-green 1.5s infinite ease-in-out; 
-            background-color: #059669 !important; 
-            border: 2px solid #34d399 !important; 
+        .is-active-in { 
+            animation: pulse-emerald 1.2s infinite !important; 
+            background-color: #10b981 !important; 
+            color: white !important;
+            border: 2px solid white !important;
         }
-        .active-out { 
-            animation: pulse-red 1.5s infinite ease-in-out; 
-            background-color: #dc2626 !important; 
-            border: 2px solid #f87171 !important; 
+        .is-active-out { 
+            animation: pulse-red 1.2s infinite !important; 
+            background-color: #ef4444 !important; 
+            color: white !important;
+            border: 2px solid white !important;
+        }
+        input, select { 
+            background: rgba(0,0,0,0.5) !important; 
+            color: white !important; 
+            border: 1px solid rgba(255,255,255,0.1) !important;
         }
     </style>
 </head>
 <body class="p-4">
 
-    <canvas id="bg-canvas"></canvas>
+<canvas id="bg-canvas"></canvas>
 
-    <div class="main-container">
-        <div class="text-center mb-6 pt-4">
-            <img src="https://i.imgur.com/VbZKWAf.png" class="h-12 mx-auto mb-2" />
-            <h2 class="text-xl font-bold tracking-tight text-white">Intelligence Logger</h2>
-            <p class="text-emerald-400 text-[10px] uppercase tracking-[0.3em] font-bold">Mobile Entry Portal</p>
-        </div>
-
-        <div class="glass-panel rounded-[2.5rem] p-8">
-            <div class="space-y-5">
-                
-                <div>
-                    <label class="block text-[10px] font-bold text-emerald-500 uppercase mb-2 ml-1">Category</label>
-                    <select id="category" class="w-full px-4 py-4 rounded-2xl text-sm">
-                        <option value="" disabled selected>Select Category</option>
-                        <option>Memo</option><option>MRF</option><option>Liquidation</option>
-                        <option>Audio Reservation Form</option><option>Housekeeping Service Call</option>
-                        <option>Food Request</option><option>Request for Payment</option>
-                        <option>Care</option><option>Request for Vehicle/Trip Ticket</option>
-                        <option>Design Approval</option><option>IT Help Desk</option>
-                        <option>Costing</option><option>External Training Request</option>
-                        <option>Employees Recommendation</option><option>Manpower Request</option>
-                        <option>Petty Cash Voucher</option><option>Confidential Document</option>
-                        <option>Contacts</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block text-[10px] font-bold text-emerald-500 uppercase mb-2 ml-1">Document Name</label>
-                    <input id="doc_name" type="text" placeholder="Name/Subject..." class="w-full px-4 py-4 rounded-2xl text-sm" />
-                </div>
-
-                <div>
-                    <label class="block text-[10px] font-bold text-emerald-500 uppercase mb-2 ml-1">Department</label>
-                    <select id="department" class="w-full px-4 py-4 rounded-2xl text-sm">
-                        <option value="" disabled selected>Select Department</option>
-                        <option>Property</option><option>Accounting</option><option>Finance</option>
-                        <option>Purchasing</option><option>HR</option><option>Legal</option>
-                        <option>Admin Office</option><option>Building Management</option>
-                        <option>ER Medicine</option><option>Office of the President</option>
-                        <option>Chairmans Office</option><option>OPD</option>
-                        <option>Laboratory</option><option>Hospital Director's Office</option>
-                        <option>Medical Director Office</option><option>OR Complex</option>
-                    </select>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4 pt-2">
-                    <button type="button" id="btn-in" onclick="selectAction('IN')" 
-                        class="py-4 bg-emerald-900/40 text-white font-bold rounded-2xl text-xs tracking-widest transition-all">
-                        IN
-                    </button>
-                    <button type="button" id="btn-out" onclick="selectAction('OUT')" 
-                        class="py-4 bg-red-900/40 text-white font-bold rounded-2xl text-xs tracking-widest transition-all">
-                        OUT
-                    </button>
-                </div>
-
-                <button type="button" id="submit-btn" onclick="submitLog()" 
-                    class="w-full mt-4 py-5 bg-[#a7c957] text-[#022c22] font-black rounded-2xl text-sm uppercase tracking-[0.2em] shadow-xl active:scale-95 transition-all">
-                    Logged It
-                </button>
-            </div>
-
-            <p id="status-msg" class="hidden text-center mt-6 text-[11px] p-3 rounded-xl font-bold"></p>
-        </div>
+<div class="ui-wrapper">
+    <div class="w-full max-w-sm pt-6 mb-8 text-center">
+        <img src="https://i.imgur.com/VbZKWAf.png" class="h-10 mx-auto mb-3" />
+        <h1 class="text-white font-bold text-lg tracking-widest uppercase">Intelligence Logger</h1>
     </div>
 
-    <script>
-        // Supabase Configuration
-        const SUPABASE_URL = 'https://jvjxrwmarwzbzlagqhhh.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2anhyd21hcnd6YnpsYWdxaGhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4OTYzNzYsImV4cCI6MjA4OTQ3MjM3Nn0.4cviind0KHFRMSM20UN5-dDEAYi-3vQbLB6wAebzlcQ';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    <div class="w-full max-w-sm glass-card rounded-[2.5rem] p-8">
+        <div class="space-y-4">
+            <div>
+                <label class="block text-[10px] text-emerald-400 font-bold uppercase mb-2">Category</label>
+                <select id="f_category" class="w-full p-4 rounded-2xl text-sm outline-none">
+                    <option value="" disabled selected>Choose...</option>
+                    <option>Memo</option><option>MRF</option><option>Liquidation</option>
+                    <option>Audio Reservation Form</option><option>Housekeeping Service Call</option>
+                    <option>Food Request</option><option>Request for Payment</option>
+                    <option>Care</option><option>Request for Vehicle/Trip Ticket</option>
+                    <option>Design Approval</option><option>IT Help Desk</option>
+                    <option>Costing</option><option>External Training Request</option>
+                    <option>Employees Recommendation</option><option>Manpower Request</option>
+                    <option>Petty Cash Voucher</option><option>Confidential Document</option>
+                    <option>Contacts</option>
+                </select>
+            </div>
 
-        let selectedAction = null;
+            <div>
+                <label class="block text-[10px] text-emerald-400 font-bold uppercase mb-2">Document Name</label>
+                <input id="f_docname" type="text" placeholder="Subject..." class="w-full p-4 rounded-2xl text-sm" />
+            </div>
 
-        function selectAction(type) {
-            selectedAction = type;
-            const btnIn = document.getElementById('btn-in');
-            const btnOut = document.getElementById('btn-out');
+            <div>
+                <label class="block text-[10px] text-emerald-400 font-bold uppercase mb-2">Department</label>
+                <select id="f_dept" class="w-full p-4 rounded-2xl text-sm outline-none">
+                    <option value="" disabled selected>Select Dept...</option>
+                    <option>Property</option><option>Accounting</option><option>Finance</option>
+                    <option>Purchasing</option><option>HR</option><option>Legal</option>
+                    <option>Admin Office</option><option>Building Management</option>
+                    <option>ER Medicine</option><option>Office of the President</option>
+                    <option>Chairmans Office</option><option>OPD</option>
+                    <option>Laboratory</option><option>Hospital Director's Office</option>
+                    <option>Medical Director Office</option><option>OR Complex</option>
+                </select>
+            </div>
 
-            // Reset UI
-            btnIn.classList.remove('active-in');
-            btnOut.classList.remove('active-out');
+            <div class="grid grid-cols-2 gap-4 py-2">
+                <button type="button" id="btn_in" onclick="handleToggle('IN')" 
+                    class="p-4 bg-white/10 rounded-2xl font-bold text-white tracking-widest text-xs transition-all">IN</button>
+                <button type="button" id="btn_out" onclick="handleToggle('OUT')" 
+                    class="p-4 bg-white/10 rounded-2xl font-bold text-white tracking-widest text-xs transition-all">OUT</button>
+            </div>
 
-            // Set Active
-            if (type === 'IN') {
-                btnIn.classList.add('active-in');
-            } else {
-                btnOut.classList.add('active-out');
-            }
+            <button type="button" id="submit_btn" onclick="sendData()" 
+                class="w-full p-5 bg-[#a7c957] text-[#022c22] font-black rounded-2xl text-sm uppercase tracking-[0.2em] shadow-lg active:scale-95 transition-all">
+                Logged It
+            </button>
+        </div>
+
+        <div id="msg_box" class="hidden mt-6 p-3 rounded-xl text-center text-[11px] font-bold"></div>
+    </div>
+</div>
+
+<script>
+    // Config
+    const S_URL = 'https://jvjxrwmarwzbzlagqhhh.supabase.co';
+    const S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2anhyd21hcnd6YnpsYWdxaGhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4OTYzNzYsImV4cCI6MjA4OTQ3MjM3Nn0.4cviind0KHFRMSM20UN5-dDEAYi-3vQbLB6wAebzlcQ';
+    const client = window.supabase.createClient(S_URL, S_KEY);
+
+    let current_action = null;
+
+    function handleToggle(val) {
+        console.log("Button clicked:", val);
+        current_action = val;
+        const bIn = document.getElementById('btn_in');
+        const bOut = document.getElementById('btn_out');
+
+        // Clear classes
+        bIn.classList.remove('is-active-in');
+        bOut.classList.remove('is-active-out');
+
+        // Apply pulse
+        if(val === 'IN') {
+            bIn.classList.add('is-active-in');
+        } else {
+            bOut.classList.add('is-active-out');
+        }
+    }
+
+    async function sendData() {
+        console.log("Logged It clicked");
+        const btn = document.getElementById('submit_btn');
+        const cat = document.getElementById('f_category').value;
+        const name = document.getElementById('f_docname').value;
+        const dept = document.getElementById('f_dept').value;
+
+        if(!cat || !name || !dept || !current_action) {
+            alert("Complete all fields and choose IN/OUT!");
+            return;
         }
 
-        async function submitLog() {
-            const submitBtn = document.getElementById('submit-btn');
-            const category = document.getElementById('category').value;
-            const docName = document.getElementById('doc_name').value;
-            const department = document.getElementById('department').value;
+        btn.innerText = "WAIT...";
+        btn.disabled = true;
 
-            if (!category || !docName || !department || !selectedAction) {
-                showStatus("Missing Info or IN/OUT Selection!", "bg-red-900/60 text-red-200");
-                return;
-            }
+        const { error } = await client.from('document_logs').insert([{
+            category: cat,
+            document_name: name,
+            department: dept,
+            action: current_action,
+            timestamp: new Date().toISOString()
+        }]);
 
-            // Disable button during send
-            submitBtn.innerText = "SENDING...";
-            submitBtn.disabled = true;
-
-            const { error } = await supabase.from('document_logs').insert([{
-                category: category,
-                document_name: docName,
-                department: department,
-                action: selectedAction,
-                timestamp: new Date().toISOString()
-            }]);
-
-            if (error) {
-                showStatus("Error: " + error.message, "bg-red-900/60 text-red-200");
-                submitBtn.disabled = false;
-                submitBtn.innerText = "LOGGED IT";
-            } else {
-                showStatus("SUCCESSFULLY LOGGED", "bg-emerald-500 text-emerald-950");
-                
-                // Clear Form
-                document.getElementById('doc_name').value = '';
-                document.getElementById('category').selectedIndex = 0;
-                document.getElementById('department').selectedIndex = 0;
-                document.getElementById('btn-in').classList.remove('active-in');
-                document.getElementById('btn-out').classList.remove('active-out');
-                selectedAction = null;
-                
-                submitBtn.disabled = false;
-                submitBtn.innerText = "LOGGED IT";
-            }
+        if(error) {
+            console.error(error);
+            btn.innerText = "ERROR!";
+            setTimeout(() => { btn.innerText = "LOGGED IT"; btn.disabled = false; }, 2000);
+        } else {
+            document.getElementById('msg_box').innerText = "DATA SAVED!";
+            document.getElementById('msg_box').classList.remove('hidden', 'bg-red-500');
+            document.getElementById('msg_box').classList.add('bg-emerald-500', 'text-emerald-950');
+            
+            // Reset
+            document.getElementById('f_docname').value = '';
+            document.getElementById('btn_in').classList.remove('is-active-in');
+            document.getElementById('btn_out').classList.remove('is-active-out');
+            current_action = null;
+            
+            btn.innerText = "LOGGED IT";
+            btn.disabled = false;
+            setTimeout(() => document.getElementById('msg_box').classList.add('hidden'), 3000);
         }
+    }
 
-        function showStatus(text, classes) {
-            const msg = document.getElementById('status-msg');
-            msg.className = `mt-6 text-center text-[11px] p-3 rounded-xl font-bold ${classes}`;
-            msg.textContent = text;
-            msg.classList.remove('hidden');
-            setTimeout(() => msg.classList.add('hidden'), 4000);
+    // BG Animation Code (simplified for performance)
+    const cvs = document.getElementById('bg-canvas');
+    const ctx = cvs.getContext('2d');
+    let mol = [];
+    function resize() { cvs.width = window.innerWidth; cvs.height = window.innerHeight; }
+    window.addEventListener('resize', resize);
+    resize();
+    class M {
+        constructor() {
+            this.x = Math.random()*cvs.width;
+            this.y = Math.random()*cvs.height;
+            this.vx = (Math.random()-0.5);
+            this.vy = (Math.random()-0.5);
         }
-
-        // --- Molecule Animation Script (Included to ensure it works in bg) ---
-        const canvas = document.getElementById('bg-canvas');
-        const ctx = canvas.getContext('2d');
-        let molecules = [];
-
-        function resize() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            initMolecules();
+        draw() {
+            ctx.fillStyle = 'rgba(255,255,255,0.1)';
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, 2, 0, Math.PI*2);
+            ctx.fill();
         }
-
-        class Molecule {
-            constructor() { this.init(); }
-            init() {
-                this.x = Math.random() * canvas.width;
-                this.y = Math.random() * canvas.height;
-                this.vx = (Math.random() - 0.5) * 1.2;
-                this.vy = (Math.random() - 0.5) * 1.2;
-                this.angle = Math.random() * Math.PI * 2;
-                this.rotationSpeed = (Math.random() - 0.5) * 0.015;
-                this.scale = Math.random() * 0.4 + 0.6;
-                this.structure = [{x:0,y:0,r:8,color:'rgba(255,255,255,.2)'},{x:30,y:0,r:6,color:'rgba(255,255,255,.1)'},{x:-20,y:25,r:6,color:'rgba(255,255,255,.1)'},{x:-20,y:-25,r:6,color:'rgba(255,255,255,.1)'}];
-                this.bonds = [[0,1],[0,2],[0,3]];
-            }
-            draw() {
-                ctx.save();
-                ctx.translate(this.x, this.y); ctx.rotate(this.angle); ctx.scale(this.scale, this.scale);
-                ctx.strokeStyle = 'rgba(255,255,255,.05)'; ctx.lineWidth = 1;
-                this.bonds.forEach(b => { ctx.beginPath(); ctx.moveTo(this.structure[b[0]].x, this.structure[b[0]].y); ctx.lineTo(this.structure[b[1]].x, this.structure[b[1]].y); ctx.stroke(); });
-                this.structure.forEach(a => { ctx.beginPath(); ctx.arc(a.x, a.y, a.r, 0, Math.PI * 2); ctx.fillStyle = a.color; ctx.fill(); });
-                ctx.restore();
-            }
-            update() {
-                this.x += this.vx; this.y += this.vy; this.angle += this.rotationSpeed;
-                const p = 100;
-                if (this.x > canvas.width + p) this.x = -p; if (this.x < -p) this.x = canvas.width + p;
-                if (this.y > canvas.height + p) this.y = -p; if (this.y < -p) this.y = canvas.height + p;
-            }
+        up() {
+            this.x += this.vx; this.y += this.vy;
+            if(this.x<0||this.x>cvs.width)this.vx*=-1;
+            if(this.y<0||this.y>cvs.height)this.vy*=-1;
         }
+    }
+    for(let i=0;i<30;i++) mol.push(new M());
+    function anim() {
+        ctx.clearRect(0,0,cvs.width,cvs.height);
+        mol.forEach(p=>{p.up();p.draw();});
+        requestAnimationFrame(anim);
+    }
+    anim();
+</script>
 
-        function initMolecules() {
-            molecules = [];
-            const count = Math.floor((canvas.width * canvas.height) / 50000);
-            for (let i = 0; i < count; i++) molecules.push(new Molecule());
-        }
-
-        function animate() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            molecules.forEach(m => { m.update(); m.draw(); });
-            requestAnimationFrame(animate);
-        }
-
-        window.addEventListener('resize', resize);
-        resize(); animate();
-    </script>
 </body>
 </html>
