@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Intelligence Logger | Mobile</title>
+    <title>Intelligence Logger | Projectvibe</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
@@ -12,117 +12,154 @@
             background: radial-gradient(circle at center, #064e3b 0%, #022c22 100%);
             min-height: 100vh;
             color: white;
-            font-family: ui-sans-serif, system-ui;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
+
+        /* Ensure canvas stays in the deep background */
+        #bg-canvas { 
+            position: fixed; 
+            top: 0; left: 0; 
+            z-index: 1; 
+            pointer-events: none; 
+        }
+
+        /* Ensure form stays in front of everything */
+        .main-container {
+            position: relative;
+            z-index: 50;
+            width: 100%;
+            max-width: 400px;
+        }
+
         .glass-panel {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.07);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
+
         select, input {
-            background: rgba(0, 0, 0, 0.3) !important;
+            background: rgba(0, 0, 0, 0.4) !important;
             border: 1px solid rgba(255, 255, 255, 0.1) !important;
             color: white !important;
-            appearance: none;
+            outline: none;
         }
-        /* Pulsing Animation */
-        @keyframes status-pulse {
-            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-            70% { box-shadow: 0 0 0 15px rgba(16, 185, 129, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+
+        /* Pulsing states */
+        @keyframes pulse-green {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7); }
+            50% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(52, 211, 153, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
         }
-        @keyframes status-pulse-red {
-            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-            70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        @keyframes pulse-red {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(248, 113, 113, 0.7); }
+            50% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(248, 113, 113, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(248, 113, 113, 0); }
         }
-        .active-in { animation: status-pulse 1.5s infinite; background-color: #059669 !important; border: 2px solid #34d399 !important; }
-        .active-out { animation: status-pulse-red 1.5s infinite; background-color: #dc2626 !important; border: 2px solid #f87171 !important; }
+
+        .active-in { 
+            animation: pulse-green 1.5s infinite ease-in-out; 
+            background-color: #059669 !important; 
+            border: 2px solid #34d399 !important; 
+        }
+        .active-out { 
+            animation: pulse-red 1.5s infinite ease-in-out; 
+            background-color: #dc2626 !important; 
+            border: 2px solid #f87171 !important; 
+        }
     </style>
 </head>
-<body class="p-4 flex flex-col items-center">
+<body class="p-4">
 
-    <div class="w-full max-w-md text-center mb-6 pt-4">
-        <img src="https://i.imgur.com/VbZKWAf.png" class="h-12 mx-auto mb-2 opacity-90" />
-        <h2 class="text-xl font-bold tracking-tight">Intelligence Logger</h2>
-        <p class="text-emerald-400 text-[10px] uppercase tracking-[0.3em] font-bold">Secure Document Flow</p>
-    </div>
+    <canvas id="bg-canvas"></canvas>
 
-    <div class="w-full max-w-md glass-panel rounded-[2.5rem] p-8 shadow-2xl">
-        <form id="logger-form" class="space-y-5">
-            
-            <div>
-                <label class="block text-[10px] font-bold text-emerald-500 uppercase mb-2 ml-1">Category</label>
-                <select id="category" required class="w-full px-4 py-4 rounded-2xl text-sm">
-                    <option value="" disabled selected>Select Category</option>
-                    <option>Memo</option><option>MRF</option><option>Liquidation</option>
-                    <option>Audio Reservation Form</option><option>Housekeeping Service Call</option>
-                    <option>Food Request</option><option>Request for Payment</option>
-                    <option>Care</option><option>Request for Vehicle/Trip Ticket</option>
-                    <option>Design Approval</option><option>IT Help Desk</option>
-                    <option>Costing</option><option>External Training Request</option>
-                    <option>Employees Recommendation</option><option>Manpower Request</option>
-                    <option>Petty Cash Voucher</option><option>Confidential Document</option>
-                    <option>Contacts</option>
-                </select>
-            </div>
+    <div class="main-container">
+        <div class="text-center mb-6 pt-4">
+            <img src="https://i.imgur.com/VbZKWAf.png" class="h-12 mx-auto mb-2" />
+            <h2 class="text-xl font-bold tracking-tight text-white">Intelligence Logger</h2>
+            <p class="text-emerald-400 text-[10px] uppercase tracking-[0.3em] font-bold">Mobile Entry Portal</p>
+        </div>
 
-            <div>
-                <label class="block text-[10px] font-bold text-emerald-500 uppercase mb-2 ml-1">Document Name</label>
-                <input id="doc_name" type="text" required placeholder="Name or Subject..." class="w-full px-4 py-4 rounded-2xl text-sm outline-none" />
-            </div>
+        <div class="glass-panel rounded-[2.5rem] p-8">
+            <div class="space-y-5">
+                
+                <div>
+                    <label class="block text-[10px] font-bold text-emerald-500 uppercase mb-2 ml-1">Category</label>
+                    <select id="category" class="w-full px-4 py-4 rounded-2xl text-sm">
+                        <option value="" disabled selected>Select Category</option>
+                        <option>Memo</option><option>MRF</option><option>Liquidation</option>
+                        <option>Audio Reservation Form</option><option>Housekeeping Service Call</option>
+                        <option>Food Request</option><option>Request for Payment</option>
+                        <option>Care</option><option>Request for Vehicle/Trip Ticket</option>
+                        <option>Design Approval</option><option>IT Help Desk</option>
+                        <option>Costing</option><option>External Training Request</option>
+                        <option>Employees Recommendation</option><option>Manpower Request</option>
+                        <option>Petty Cash Voucher</option><option>Confidential Document</option>
+                        <option>Contacts</option>
+                    </select>
+                </div>
 
-            <div>
-                <label class="block text-[10px] font-bold text-emerald-500 uppercase mb-2 ml-1">Department</label>
-                <select id="department" required class="w-full px-4 py-4 rounded-2xl text-sm">
-                    <option value="" disabled selected>Select Department</option>
-                    <option>Property</option><option>Accounting</option><option>Finance</option>
-                    <option>Purchasing</option><option>HR</option><option>Legal</option>
-                    <option>Admin Office</option><option>Building Management</option>
-                    <option>ER Medicine</option><option>Office of the President</option>
-                    <option>Chairmans Office</option><option>OPD</option>
-                    <option>Laboratory</option><option>Hospital Director's Office</option>
-                    <option>Medical Director Office</option><option>OR Complex</option>
-                </select>
-            </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-emerald-500 uppercase mb-2 ml-1">Document Name</label>
+                    <input id="doc_name" type="text" placeholder="Name/Subject..." class="w-full px-4 py-4 rounded-2xl text-sm" />
+                </div>
 
-            <div class="grid grid-cols-2 gap-4 pt-2">
-                <button type="button" id="btn-in" onclick="selectAction('IN')" 
-                    class="py-4 bg-emerald-900/40 text-white font-bold rounded-2xl text-xs uppercase tracking-widest transition-all">
-                    IN
+                <div>
+                    <label class="block text-[10px] font-bold text-emerald-500 uppercase mb-2 ml-1">Department</label>
+                    <select id="department" class="w-full px-4 py-4 rounded-2xl text-sm">
+                        <option value="" disabled selected>Select Department</option>
+                        <option>Property</option><option>Accounting</option><option>Finance</option>
+                        <option>Purchasing</option><option>HR</option><option>Legal</option>
+                        <option>Admin Office</option><option>Building Management</option>
+                        <option>ER Medicine</option><option>Office of the President</option>
+                        <option>Chairmans Office</option><option>OPD</option>
+                        <option>Laboratory</option><option>Hospital Director's Office</option>
+                        <option>Medical Director Office</option><option>OR Complex</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 pt-2">
+                    <button type="button" id="btn-in" onclick="selectAction('IN')" 
+                        class="py-4 bg-emerald-900/40 text-white font-bold rounded-2xl text-xs tracking-widest transition-all">
+                        IN
+                    </button>
+                    <button type="button" id="btn-out" onclick="selectAction('OUT')" 
+                        class="py-4 bg-red-900/40 text-white font-bold rounded-2xl text-xs tracking-widest transition-all">
+                        OUT
+                    </button>
+                </div>
+
+                <button type="button" id="submit-btn" onclick="submitLog()" 
+                    class="w-full mt-4 py-5 bg-[#a7c957] text-[#022c22] font-black rounded-2xl text-sm uppercase tracking-[0.2em] shadow-xl active:scale-95 transition-all">
+                    Logged It
                 </button>
-                <button type="button" id="btn-out" onclick="selectAction('OUT')" 
-                    class="py-4 bg-red-900/40 text-white font-bold rounded-2xl text-xs uppercase tracking-widest transition-all">
-                    OUT
-                </button>
             </div>
 
-            <button type="button" onclick="submitLog()" 
-                class="w-full mt-4 py-5 bg-[#a7c957] hover:bg-[#8eb04a] text-[#022c22] font-black rounded-2xl text-sm uppercase tracking-[0.2em] shadow-xl active:scale-95 transition-all">
-                Logged It
-            </button>
-        </form>
-
-        <p id="status-msg" class="hidden text-center mt-6 text-[11px] p-3 rounded-xl font-bold"></p>
+            <p id="status-msg" class="hidden text-center mt-6 text-[11px] p-3 rounded-xl font-bold"></p>
+        </div>
     </div>
 
     <script>
+        // Supabase Configuration
         const SUPABASE_URL = 'https://jvjxrwmarwzbzlagqhhh.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2anhyd21hcnd6YnpsYWdxaGhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4OTYzNzYsImV4cCI6MjA4OTQ3MjM3Nn0.4cviind0KHFRMSM20UN5-dDEAYi-3vQbLB6wAebzlcQ';
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let currentAction = null;
+        let selectedAction = null;
 
         function selectAction(type) {
-            currentAction = type;
+            selectedAction = type;
             const btnIn = document.getElementById('btn-in');
             const btnOut = document.getElementById('btn-out');
 
-            // Reset classes
+            // Reset UI
             btnIn.classList.remove('active-in');
             btnOut.classList.remove('active-out');
 
-            // Apply active pulse
+            // Set Active
             if (type === 'IN') {
                 btnIn.classList.add('active-in');
             } else {
@@ -131,43 +168,110 @@
         }
 
         async function submitLog() {
+            const submitBtn = document.getElementById('submit-btn');
             const category = document.getElementById('category').value;
             const docName = document.getElementById('doc_name').value;
             const department = document.getElementById('department').value;
 
-            if (!category || !docName || !department || !currentAction) {
-                showStatus("Please complete all selections", "bg-red-900/60 text-red-200");
+            if (!category || !docName || !department || !selectedAction) {
+                showStatus("Missing Info or IN/OUT Selection!", "bg-red-900/60 text-red-200");
                 return;
             }
+
+            // Disable button during send
+            submitBtn.innerText = "SENDING...";
+            submitBtn.disabled = true;
 
             const { error } = await supabase.from('document_logs').insert([{
                 category: category,
                 document_name: docName,
                 department: department,
-                action: currentAction,
+                action: selectedAction,
                 timestamp: new Date().toISOString()
             }]);
 
             if (error) {
                 showStatus("Error: " + error.message, "bg-red-900/60 text-red-200");
+                submitBtn.disabled = false;
+                submitBtn.innerText = "LOGGED IT";
             } else {
-                showStatus("DOCUMENT LOGGED SUCCESSFULLY", "bg-emerald-500 text-emerald-950");
+                showStatus("SUCCESSFULLY LOGGED", "bg-emerald-500 text-emerald-950");
                 
-                // Reset Form
-                document.getElementById('logger-form').reset();
-                currentAction = null;
+                // Clear Form
+                document.getElementById('doc_name').value = '';
+                document.getElementById('category').selectedIndex = 0;
+                document.getElementById('department').selectedIndex = 0;
                 document.getElementById('btn-in').classList.remove('active-in');
                 document.getElementById('btn-out').classList.remove('active-out');
+                selectedAction = null;
+                
+                submitBtn.disabled = false;
+                submitBtn.innerText = "LOGGED IT";
             }
         }
 
         function showStatus(text, classes) {
-            const statusMsg = document.getElementById('status-msg');
-            statusMsg.className = `mt-6 text-center text-[11px] p-3 rounded-xl font-bold ${classes}`;
-            statusMsg.textContent = text;
-            statusMsg.classList.remove('hidden');
-            setTimeout(() => statusMsg.classList.add('hidden'), 4000);
+            const msg = document.getElementById('status-msg');
+            msg.className = `mt-6 text-center text-[11px] p-3 rounded-xl font-bold ${classes}`;
+            msg.textContent = text;
+            msg.classList.remove('hidden');
+            setTimeout(() => msg.classList.add('hidden'), 4000);
         }
+
+        // --- Molecule Animation Script (Included to ensure it works in bg) ---
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        let molecules = [];
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            initMolecules();
+        }
+
+        class Molecule {
+            constructor() { this.init(); }
+            init() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.vx = (Math.random() - 0.5) * 1.2;
+                this.vy = (Math.random() - 0.5) * 1.2;
+                this.angle = Math.random() * Math.PI * 2;
+                this.rotationSpeed = (Math.random() - 0.5) * 0.015;
+                this.scale = Math.random() * 0.4 + 0.6;
+                this.structure = [{x:0,y:0,r:8,color:'rgba(255,255,255,.2)'},{x:30,y:0,r:6,color:'rgba(255,255,255,.1)'},{x:-20,y:25,r:6,color:'rgba(255,255,255,.1)'},{x:-20,y:-25,r:6,color:'rgba(255,255,255,.1)'}];
+                this.bonds = [[0,1],[0,2],[0,3]];
+            }
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y); ctx.rotate(this.angle); ctx.scale(this.scale, this.scale);
+                ctx.strokeStyle = 'rgba(255,255,255,.05)'; ctx.lineWidth = 1;
+                this.bonds.forEach(b => { ctx.beginPath(); ctx.moveTo(this.structure[b[0]].x, this.structure[b[0]].y); ctx.lineTo(this.structure[b[1]].x, this.structure[b[1]].y); ctx.stroke(); });
+                this.structure.forEach(a => { ctx.beginPath(); ctx.arc(a.x, a.y, a.r, 0, Math.PI * 2); ctx.fillStyle = a.color; ctx.fill(); });
+                ctx.restore();
+            }
+            update() {
+                this.x += this.vx; this.y += this.vy; this.angle += this.rotationSpeed;
+                const p = 100;
+                if (this.x > canvas.width + p) this.x = -p; if (this.x < -p) this.x = canvas.width + p;
+                if (this.y > canvas.height + p) this.y = -p; if (this.y < -p) this.y = canvas.height + p;
+            }
+        }
+
+        function initMolecules() {
+            molecules = [];
+            const count = Math.floor((canvas.width * canvas.height) / 50000);
+            for (let i = 0; i < count; i++) molecules.push(new Molecule());
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            molecules.forEach(m => { m.update(); m.draw(); });
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', resize);
+        resize(); animate();
     </script>
 </body>
 </html>
