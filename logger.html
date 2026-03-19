@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Document Logger | Mobile</title>
+    <title>Intelligence Logger | Mobile</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
@@ -25,10 +25,19 @@
             color: white !important;
             appearance: none;
         }
-        select:focus, input:focus {
-            border-color: #10b981 !important;
-            outline: none;
+        /* Pulsing Animation */
+        @keyframes status-pulse {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
         }
+        @keyframes status-pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        .active-in { animation: status-pulse 1.5s infinite; background-color: #059669 !important; border: 2px solid #34d399 !important; }
+        .active-out { animation: status-pulse-red 1.5s infinite; background-color: #dc2626 !important; border: 2px solid #f87171 !important; }
     </style>
 </head>
 <body class="p-4 flex flex-col items-center">
@@ -36,67 +45,65 @@
     <div class="w-full max-w-md text-center mb-6 pt-4">
         <img src="https://i.imgur.com/VbZKWAf.png" class="h-12 mx-auto mb-2 opacity-90" />
         <h2 class="text-xl font-bold tracking-tight">Intelligence Logger</h2>
-        <p class="text-emerald-400 text-[10px] uppercase tracking-[0.3em] font-bold">Document Tracking System</p>
+        <p class="text-emerald-400 text-[10px] uppercase tracking-[0.3em] font-bold">Secure Document Flow</p>
     </div>
 
     <div class="w-full max-w-md glass-panel rounded-[2.5rem] p-8 shadow-2xl">
-        <form id="logger-form" class="space-y-6">
+        <form id="logger-form" class="space-y-5">
             
             <div>
-                <label class="block text-[10px] font-bold text-emerald-500 uppercase mb-2 ml-1">Document Category</label>
-                <div class="relative">
-                    <select id="category" required class="w-full px-4 py-4 rounded-2xl text-sm">
-                        <option value="" disabled selected>Select Category</option>
-                        <option>Memo</option><option>MRF</option><option>Liquidation</option>
-                        <option>Audio Reservation Form</option><option>Housekeeping Service Call</option>
-                        <option>Food Request</option><option>Request for Payment</option>
-                        <option>Care</option><option>Request for Vehicle/Trip Ticket</option>
-                        <option>Design Approval</option><option>IT Help Desk</option>
-                        <option>Costing</option><option>External Training Request</option>
-                        <option>Employees Recommendation</option><option>Manpower Request</option>
-                        <option>Petty Cash Voucher</option><option>Confidential Document</option>
-                        <option>Contacts</option>
-                    </select>
-                    <i class="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-emerald-500 pointer-events-none"></i>
-                </div>
+                <label class="block text-[10px] font-bold text-emerald-500 uppercase mb-2 ml-1">Category</label>
+                <select id="category" required class="w-full px-4 py-4 rounded-2xl text-sm">
+                    <option value="" disabled selected>Select Category</option>
+                    <option>Memo</option><option>MRF</option><option>Liquidation</option>
+                    <option>Audio Reservation Form</option><option>Housekeeping Service Call</option>
+                    <option>Food Request</option><option>Request for Payment</option>
+                    <option>Care</option><option>Request for Vehicle/Trip Ticket</option>
+                    <option>Design Approval</option><option>IT Help Desk</option>
+                    <option>Costing</option><option>External Training Request</option>
+                    <option>Employees Recommendation</option><option>Manpower Request</option>
+                    <option>Petty Cash Voucher</option><option>Confidential Document</option>
+                    <option>Contacts</option>
+                </select>
             </div>
 
             <div>
-                <label class="block text-[10px] font-bold text-emerald-500 uppercase mb-2 ml-1">Document Name / Subject</label>
-                <input id="doc_name" type="text" required placeholder="Enter reference name..." 
-                    class="w-full px-4 py-4 rounded-2xl text-sm outline-none" />
+                <label class="block text-[10px] font-bold text-emerald-500 uppercase mb-2 ml-1">Document Name</label>
+                <input id="doc_name" type="text" required placeholder="Name or Subject..." class="w-full px-4 py-4 rounded-2xl text-sm outline-none" />
             </div>
 
             <div>
                 <label class="block text-[10px] font-bold text-emerald-500 uppercase mb-2 ml-1">Department</label>
-                <div class="relative">
-                    <select id="department" required class="w-full px-4 py-4 rounded-2xl text-sm">
-                        <option value="" disabled selected>Select Department</option>
-                        <option>Property</option><option>Accounting</option><option>Finance</option>
-                        <option>Purchasing</option><option>HR</option><option>Legal</option>
-                        <option>Admin Office</option><option>Building Management</option>
-                        <option>ER Medicine</option><option>Office of the President</option>
-                        <option>Chairmans Office</option><option>OPD</option>
-                        <option>Laboratory</option><option>Hospital Director's Office</option>
-                        <option>Medical Director Office</option><option>OR Complex</option>
-                    </select>
-                    <i class="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-emerald-500 pointer-events-none"></i>
-                </div>
+                <select id="department" required class="w-full px-4 py-4 rounded-2xl text-sm">
+                    <option value="" disabled selected>Select Department</option>
+                    <option>Property</option><option>Accounting</option><option>Finance</option>
+                    <option>Purchasing</option><option>HR</option><option>Legal</option>
+                    <option>Admin Office</option><option>Building Management</option>
+                    <option>ER Medicine</option><option>Office of the President</option>
+                    <option>Chairmans Office</option><option>OPD</option>
+                    <option>Laboratory</option><option>Hospital Director's Office</option>
+                    <option>Medical Director Office</option><option>OR Complex</option>
+                </select>
             </div>
 
             <div class="grid grid-cols-2 gap-4 pt-2">
-                <button type="button" onclick="logEntry('IN')" 
-                    class="py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-all">
-                    <i class="fa-solid fa-right-to-bracket mr-2"></i> Log In
+                <button type="button" id="btn-in" onclick="selectAction('IN')" 
+                    class="py-4 bg-emerald-900/40 text-white font-bold rounded-2xl text-xs uppercase tracking-widest transition-all">
+                    IN
                 </button>
-                <button type="button" onclick="logEntry('OUT')" 
-                    class="py-4 bg-red-600 hover:bg-red-500 text-white font-bold rounded-2xl text-xs uppercase tracking-widest shadow-lg active:scale-95 transition-all">
-                    <i class="fa-solid fa-right-from-bracket mr-2"></i> Log Out
+                <button type="button" id="btn-out" onclick="selectAction('OUT')" 
+                    class="py-4 bg-red-900/40 text-white font-bold rounded-2xl text-xs uppercase tracking-widest transition-all">
+                    OUT
                 </button>
             </div>
+
+            <button type="button" onclick="submitLog()" 
+                class="w-full mt-4 py-5 bg-[#a7c957] hover:bg-[#8eb04a] text-[#022c22] font-black rounded-2xl text-sm uppercase tracking-[0.2em] shadow-xl active:scale-95 transition-all">
+                Logged It
+            </button>
         </form>
 
-        <p id="status-msg" class="hidden text-center mt-6 text-[11px] p-3 rounded-xl"></p>
+        <p id="status-msg" class="hidden text-center mt-6 text-[11px] p-3 rounded-xl font-bold"></p>
     </div>
 
     <script>
@@ -104,42 +111,62 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2anhyd21hcnd6YnpsYWdxaGhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4OTYzNzYsImV4cCI6MjA4OTQ3MjM3Nn0.4cviind0KHFRMSM20UN5-dDEAYi-3vQbLB6wAebzlcQ';
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        async function logEntry(actionType) {
+        let currentAction = null;
+
+        function selectAction(type) {
+            currentAction = type;
+            const btnIn = document.getElementById('btn-in');
+            const btnOut = document.getElementById('btn-out');
+
+            // Reset classes
+            btnIn.classList.remove('active-in');
+            btnOut.classList.remove('active-out');
+
+            // Apply active pulse
+            if (type === 'IN') {
+                btnIn.classList.add('active-in');
+            } else {
+                btnOut.classList.add('active-out');
+            }
+        }
+
+        async function submitLog() {
             const category = document.getElementById('category').value;
             const docName = document.getElementById('doc_name').value;
             const department = document.getElementById('department').value;
-            const statusMsg = document.getElementById('status-msg');
 
-            if (!category || !docName || !department) {
-                showStatus("Please fill all fields", "bg-red-900/40 text-red-300");
+            if (!category || !docName || !department || !currentAction) {
+                showStatus("Please complete all selections", "bg-red-900/60 text-red-200");
                 return;
             }
 
-            const timestamp = new Date().toISOString();
-            const logData = {
+            const { error } = await supabase.from('document_logs').insert([{
                 category: category,
                 document_name: docName,
                 department: department,
-                action: actionType,
-                timestamp: timestamp
-            };
-
-            const { error } = await supabase.from('document_logs').insert([logData]);
+                action: currentAction,
+                timestamp: new Date().toISOString()
+            }]);
 
             if (error) {
-                showStatus("Error: " + error.message, "bg-red-900/40 text-red-300");
+                showStatus("Error: " + error.message, "bg-red-900/60 text-red-200");
             } else {
-                showStatus(`${actionType} Recorded: ${new Date().toLocaleTimeString()}`, "bg-emerald-900/40 text-emerald-300");
-                if(actionType === 'OUT') document.getElementById('logger-form').reset();
+                showStatus("DOCUMENT LOGGED SUCCESSFULLY", "bg-emerald-500 text-emerald-950");
+                
+                // Reset Form
+                document.getElementById('logger-form').reset();
+                currentAction = null;
+                document.getElementById('btn-in').classList.remove('active-in');
+                document.getElementById('btn-out').classList.remove('active-out');
             }
         }
 
         function showStatus(text, classes) {
             const statusMsg = document.getElementById('status-msg');
-            statusMsg.className = `mt-6 text-center text-[11px] p-3 rounded-xl ${classes}`;
+            statusMsg.className = `mt-6 text-center text-[11px] p-3 rounded-xl font-bold ${classes}`;
             statusMsg.textContent = text;
             statusMsg.classList.remove('hidden');
-            setTimeout(() => statusMsg.classList.add('hidden'), 5000);
+            setTimeout(() => statusMsg.classList.add('hidden'), 4000);
         }
     </script>
 </body>
