@@ -3,86 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pipeline Intelligence | Minimal View</title>
+    <title>Pipeline Intelligence | Executive View</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <style>
-        body { background: #022c22; color: white; font-family: sans-serif; margin: 0; padding: 0; }
-        .glass-card { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        body { background: radial-gradient(circle at center, #064e3b 0%, #022c22 100%); color: white; font-family: sans-serif; min-height: 100vh; margin: 0; padding: 0; }
+        .glass-panel { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); }
         
-        /* THE VISUAL TIMELINE CONTAINER */
-        .timeline-visual { position: relative; display: flex; align-items: center; width: 100%; margin: 3rem 0; overflow-x: auto; padding: 4rem 1rem 3rem 1rem; scrollbar-width: thin; }
+        /* 1. PIPELINE CONTAINER (Structured grid to center elements) */
+        .pipeline-wrapper { position: relative; width: 100%; margin: 3rem 0; padding: 2.5rem 0; overflow-x: auto; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent; }
+        .pipeline-container { display: flex; align-items: center; justify-content: center; position: relative; width: 100%; z-index: 10; padding: 0 5%; }
+
+        /* 2. THE CONNECTING BAR (Exactly like the picture, centered and thick) */
+        .pipeline-bar { position: absolute; top: 50%; left: 10%; right: 10%; height: 16px; transform: translateY(-50%); background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; z-index: 5; box-shadow: inset 0 2px 5px rgba(0,0,0,0.4); }
+
+        /* 3. STEP MARKER */
+        .pipeline-step { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 20; min-width: 130px; }
         
-        /* THE MAIN CONNECTING LINE */
-        .timeline-main-line { height: 4px; background: #34d399; position: absolute; top: 50%; left: 5%; right: 5%; z-index: 1; border-radius: 2px; }
+        /* 4. THE CIRCLE (Matching attach picture bevel + icon) */
+        .pipeline-circle { position: relative; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transform: translateY(0); transition: all 0.3s ease; border: 4px solid #1f2937; /* Grey default */ box-shadow: 0 5px 15px rgba(0,0,0,0.6), inset 0 2px 5px rgba(255,255,255,0.1); }
         
-        /* THE PIPELINE MARKERS */
-        .timeline-marker { position: relative; z-index: 10; display: flex; flex-direction: column; align-items: center; min-width: 140px; text-align: center; }
-        
-        /* THE DOT (matching the picture) */
-        .dot { width: 14px; height: 14px; background: #10b981; border-radius: 50%; z-index: 15; box-shadow: 0 0 10px rgba(16, 185, 129, 0.4); }
-        
-        /* ACTIVE MARKER PULSE */
-        .is-latest .dot { animation: pulse-dot 1.5s infinite; background: #34d399; transform: scale(1.2); }
-        @keyframes pulse-dot { 
-            0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.8); } 
-            70% { box-shadow: 0 0 0 10px rgba(52, 211, 153, 0); } 
-            100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); } 
+        /* THE SMALLER PULSE DOT ABOVE */
+        .pulse-dot-container { position: absolute; top: -1.8rem; display: flex; align-items: center; justify-content: center; height: 1.5rem; }
+        .pulse-dot { width: 10px; height: 10px; border-radius: 50%; z-index: 25; box-shadow: 0 0 10px rgba(255,255,255,0.2); transition: all 0.3s; }
+
+        /* COLOR LOGIC (Matching attach picture gradients) */
+        /* Default/Grey State */
+        .state-active .pipeline-circle { background: linear-gradient(180deg, #374151 0%, #111827 100%); color: rgba(255,255,255,0.5); }
+        .state-active .pulse-dot { background: rgba(255,255,255,0.4); }
+
+        /* Current/Pulsing State (The last In/Out movement) */
+        .is-latest .pipeline-circle { background: linear-gradient(180deg, #065f46 0%, #10b981 100%); color: white; border: 4px solid #10b981; box-shadow: 0 0 25px rgba(16, 185, 129, 0.5), inset 0 2px 5px rgba(255,255,255,0.3); animation: pulse-active 1.5s infinite; }
+        .is-latest .pulse-dot { background: #10b981; box-shadow: 0 0 15px rgba(16, 185, 129, 0.8); }
+
+        /* Completed State (IN/OUT before the latest) */
+        .state-complete .pipeline-circle { background: linear-gradient(180deg, #166534 0%, #10b981 100%); color: white; border: 4px solid rgba(255,255,255,0.3); }
+        .state-complete .pulse-dot { background: #10b981; }
+
+        /* Finished State (The final step) */
+        .state-finished .pipeline-circle { background: linear-gradient(180deg, #92400e 0%, #f59e0b 100%); color: white; border: 4px solid rgba(255,255,255,0.5); box-shadow: 0 0 30px rgba(245, 158, 11, 0.4); }
+        .state-finished .pulse-dot { background: #f59e0b; box-shadow: 0 0 20px rgba(245, 158, 11, 0.8); }
+
+        /* Text positioning above/below circle to match picture */
+        .step-dept { position: absolute; top: 3.5rem; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 120px; font-weight: bold; }
+        .step-time { position: absolute; bottom: -2rem; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 120px; font-weight: bold; }
+
+        @keyframes pulse-active { 
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.8), inset 0 2px 5px rgba(255,255,255,0.3); } 
+            70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0), inset 0 2px 5px rgba(255,255,255,0.3); } 
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0), inset 0 2px 5px rgba(255,255,255,0.3); } 
         }
-
-        /* TEXT POSITIONS (Matching your reference image) */
-        .marker-dept { position: absolute; top: -3rem; font-size: 11px; font-weight: 800; color: white; width: 130px; }
-        .marker-time { position: absolute; bottom: -2.5rem; font-size: 10px; opacity: 0.4; width: 130px; font-weight: bold; }
-
-        /* FINISHED STATUS OVERRIDE */
-        .doc-finished .timeline-main-line { background: #f59e0b; }
-        .doc-finished .dot { background: #f59e0b; box-shadow: 0 0 10px rgba(245, 158, 11, 0.4); }
-        .doc-finished .is-latest .dot { background: white; animation: none; transform: scale(1); border: 3px solid #f59e0b; }
     </style>
 </head>
-<body class="p-4 md:p-10">
+<body class="p-4 md:p-8">
 
     <div class="max-w-7xl mx-auto">
-        <div class="flex flex-col md:flex-row justify-between items-end mb-12 gap-4 border-b border-white/10 pb-8">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4 border-b border-white/5 pb-8">
             <div>
-                <h1 class="text-4xl font-black tracking-tighter uppercase italic text-white">Pipeline Intelligence</h1>
-                <p class="text-emerald-400 text-[11px] font-bold tracking-[0.5em] mt-1">EXECUTIVE TRACKING VIEW</p>
+                <img src="https://i.imgur.com/VbZKWAf.png" class="h-10 mb-2 opacity-90" />
+                <h1 class="text-3xl font-black tracking-tighter uppercase italic text-white">INTELLIGENCE FLOW</h1>
+                <p class="text-emerald-400 text-[10px] font-bold tracking-[0.4em]">Executive Pipeline View</p>
             </div>
             <div class="flex gap-3">
-                <button onclick="loadPipelines()" class="bg-white/5 text-white/80 px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-white/10 transition">
-                    <i class="fa-solid fa-sync mr-2"></i> Sync Data
+                <button onclick="loadIntelligence()" class="bg-white/5 px-5 py-3 rounded-xl text-xs font-bold hover:bg-white/10 transition">
+                    <i class="fa-solid fa-sync fa-fw mr-2"></i> Sync
                 </button>
-                <a href="status.html" class="bg-emerald-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-emerald-500 transition shadow-lg">
-                    <i class="fa-solid fa-arrow-left mr-2"></i> Exit View
+                <a href="status.html" class="bg-emerald-600 text-white px-5 py-3 rounded-xl text-xs font-bold hover:bg-emerald-500 transition shadow-lg">
+                    <i class="fa-solid fa-list-check mr-2"></i> Status Board
                 </a>
             </div>
         </div>
 
-        <div id="intelligence-container" class="space-y-12">
-            <div class="p-20 text-center glass-card rounded-[3rem]">
-                <i class="fa-solid fa-circle-notch fa-spin text-2xl text-emerald-500 mb-4"></i>
-                <p class="uppercase tracking-widest text-[10px] font-black opacity-40">Loading Intelligence...</p>
+        <div id="debug-error" class="hidden mb-6 p-4 bg-red-900/50 border border-red-500 text-red-200 rounded-2xl text-xs font-mono"></div>
+
+        <div id="pipeline-viewer" class="space-y-8">
+            <div class="p-20 text-center glass-card rounded-3xl opacity-40 uppercase tracking-widest text-[11px] font-black">
+                <i class="fa-solid fa-network-wired fa-spin text-3xl text-emerald-500 mb-4"></i><br> Syncing Data...
             </div>
         </div>
     </div>
 
     <script>
-        // RESTORED WORKING API KEY
         const S_URL = 'https://jvjxrwmarwzbzlagqhhh.supabase.co';
-        const S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2anhyd21hcnd6YnpsYWdxaGhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4OTYzNzYsImV4cCI6MjA4OTQ3MjM3Nn0.4cviind0KHFRMSM20UN5-dDEAYi-3vQbLB6wAebzlcQ';
-        
+        const S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2anhyd21hcnd6YnpsYWdxaGhoIiwicm9sZSI6ImFub24}iat":1773896376,"exp":2089472376}.4cviind0KHFRMSM20UN5-dDEAYi-3vQbLB6wAebzlcQ';
         const dbClient = window.supabase.createClient(S_URL, S_KEY);
 
-        async function loadPipelines() {
-            const container = document.getElementById('intelligence-container');
-
+        async function loadIntelligence() {
+            const viewer = document.getElementById('pipeline-viewer');
+            const debug = document.getElementById('debug-error');
+            
             try {
+                // Get all history ordered by time
                 const { data, error } = await dbClient.from('document_logs').select('*').order('timestamp', { ascending: true });
 
                 if (error) throw error;
                 if (!data || data.length === 0) {
-                    container.innerHTML = `<div class="p-20 glass-card rounded-[3rem] text-center opacity-40 text-xs font-black uppercase tracking-widest">No Active Pipelines Found</div>`;
+                    viewer.innerHTML = `<div class="p-20 glass-card rounded-3xl text-center text-xs opacity-50 uppercase tracking-widest font-black">No Records Found</div>`;
                     return;
                 }
 
@@ -92,56 +109,81 @@
                     groups[log.document_name].push(log);
                 });
 
-                container.innerHTML = ''; 
+                viewer.innerHTML = '';
+                debug.classList.add('hidden');
 
                 Object.keys(groups).forEach(docName => {
                     const logs = groups[docName];
-                    const latest = logs[logs.length - 1];
-                    const isFinished = latest.action === 'FINISHED';
+                    const latest = logs[logs.length - 1]; // last log is descending newest
 
-                    const panel = document.createElement('div');
-                    panel.className = `glass-card p-10 rounded-[3.5rem] shadow-2xl overflow-hidden ${isFinished ? 'doc-finished' : ''}`;
+                    const docPanel = document.createElement('div');
+                    docPanel.className = 'glass-panel p-10 rounded-[3rem] shadow-xl overflow-hidden';
                     
                     let headerHtml = `
-                        <div class="flex justify-between items-start mb-10 border-b border-white/5 pb-6">
+                        <div class="flex justify-between items-center mb-10 border-b border-white/5 pb-8">
                             <div>
                                 <h2 class="text-2xl font-black text-white italic tracking-tighter uppercase">${docName}</h2>
-                                <div class="text-[10px] text-emerald-500 uppercase font-black tracking-[0.2em] mt-1">${latest.category}</div>
+                                <div class="text-[10px] text-emerald-500 uppercase font-black tracking-widest mt-1">${latest.category}</div>
                             </div>
-                            <div class="text-right">
-                                <span class="text-[9px] font-black opacity-30 uppercase tracking-widest">Current Location</span>
-                                <div class="text-lg font-black text-white italic">${isFinished ? 'ARCHIVED' : latest.department}</div>
+                            <div class="text-right flex items-center gap-4">
+                                <span class="text-[11px] font-black opacity-30 uppercase">Total Moves</span>
+                                <span class="text-3xl font-black text-white font-mono">${logs.length}</span>
                             </div>
                         </div>
                     `;
 
-                    let timelineHtml = `<div class="timeline-visual"><div class="timeline-main-line"></div>`;
+                    // Generate the Pipeline Visuals (Horizontal View)
+                    let stepsHtml = `
+                        <div class="pipeline-wrapper">
+                            <div class="pipeline-bar"></div>
+                            <div class="pipeline-container">
+                    `;
 
+                    // Building Steps
                     logs.forEach((log, index) => {
                         const dateObj = new Date(log.timestamp);
-                        const timeStr = dateObj.toLocaleString('en-PH', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                        const time = dateObj.toLocaleString('en-PH', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
                         const isLastStep = (index === logs.length - 1);
+                        const isFinished = latest.action === 'FINISHED';
 
-                        timelineHtml += `
-                            <div class="timeline-marker ${isLastStep ? 'is-latest' : ''}">
-                                <div class="marker-dept uppercase tracking-tighter">${log.department}</div>
-                                <div class="dot"></div>
-                                <div class="marker-time uppercase">${timeStr}</div>
+                        // Check Mapping (Picture has checks for completed steps)
+                        let iconClass = 'fa-check';
+                        if (log.action === 'OUT' && !isFinished) iconClass = 'fa-arrow-right';
+                        if (log.action === 'IN' && !isFinished && !isLastStep) iconClass = 'fa-check';
+
+                        // Action Mapping
+                        const stateClass = isFinished && isLastStep ? 'state-finished' : isLastStep ? 'state-active' : 'state-complete';
+                        
+                        stepsHtml += `
+                            <div class="pipeline-step ${isLastStep ? 'is-latest' : ''} ${stateClass}">
+                                <div class="pulse-dot-container">
+                                    <div class="pulse-dot"></div>
+                                </div>
+                                
+                                <div class="step-dept text-[10px] font-black uppercase text-white tracking-tight">${log.department}</div>
+                                
+                                <div class="pipeline-circle ring-offset-4 ring-offset-zinc-950 ring-2 ring-zinc-800 transition-all hover:scale-110">
+                                    <i class="fa-solid ${iconClass} text-base transition-colors"></i>
+                                </div>
+                                
+                                <div class="step-time text-[9px] font-bold opacity-30 italic text-white/80">${time}</div>
                             </div>
                         `;
                     });
 
-                    timelineHtml += '</div>';
-                    panel.innerHTML = headerHtml + timelineHtml;
-                    container.appendChild(panel);
+                    stepsHtml += '</div></div>'; // End wrappers
+                    
+                    docPanel.innerHTML = headerHtml + stepsHtml;
+                    viewer.appendChild(docPanel);
                 });
 
             } catch (err) {
-                container.innerHTML = `<div class="p-10 bg-red-900/20 text-red-400 rounded-3xl text-center">Connection Error: ${err.message}</div>`;
+                viewer.innerHTML = `<div class="p-10 glass-panel rounded-3xl text-center text-red-300">INTELLIGENCE ERROR: ${err.message}</div>`;
             }
         }
 
-        window.onload = loadPipelines;
+        window.onload = loadIntelligence;
+        setInterval(loadIntelligence, 300000);
     </script>
 </body>
 </html>
