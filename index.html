@@ -11,11 +11,56 @@
             margin: 0; 
             background: radial-gradient(circle at center, #064e3b 0%, #022c22 100%); 
             overflow-x: hidden; 
+            font-family: 'Inter', sans-serif;
         }
         #bg-canvas { position: fixed; top: 0; left: 0; z-index: -1; pointer-events: none; }
         .glass { background: rgba(56, 102, 65, 0.2); backdrop-filter: blur(20px) saturate(150%); }
-        .nav-pill { width: 45px; transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
-        .nav-pill:hover { width: 380px; }
+        
+        /* UPDATED NAV PILL LOGIC */
+        .nav-pill { 
+            width: 45px; 
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); 
+            position: relative;
+        }
+        .nav-pill:hover { width: 140px; background: rgba(255, 255, 255, 0.15); }
+        
+        /* DROPDOWN LIST STYLING */
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            top: 55px;
+            left: 0;
+            width: 280px;
+            background: rgba(2, 44, 34, 0.95);
+            backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 10px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            z-index: 100;
+        }
+        
+        /* Show dropdown when hovering parent container */
+        .nav-wrapper:hover .dropdown-content { display: block; animation: slideDown 0.3s ease-out; }
+        .nav-wrapper:hover .nav-pill { width: 140px; }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            transition: all 0.2s;
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+        }
+        .dropdown-item:hover { background: rgba(167, 201, 87, 0.1); color: #a7c957; }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         .ceo-glow { background: radial-gradient(circle, rgba(167, 201, 87, 0.2) 0%, transparent 70%); filter: blur(60px); }
     </style>
 </head>
@@ -24,15 +69,39 @@
     <canvas id="bg-canvas"></canvas>
 
     <header class="fixed top-0 w-full z-50 p-4 px-12 flex justify-between items-center glass border-b border-white/10 h-[70px]">
-        <div class="nav-pill h-10 flex items-center rounded-full px-3 text-white bg-white/10 border border-white/20 overflow-hidden whitespace-nowrap cursor-pointer">
-            <i class="fa-solid fa-bars-staggered text-sm"></i>
-            <div class="ml-6 flex gap-6 text-[10px] font-bold tracking-widest uppercase">
-                <a href="#" class="hover:text-[#a7c957]">Dashboard</a>
-                <a href="#" class="hover:text-[#a7c957]">Insights</a>
-                <a href="#" class="hover:text-[#a7c957]">Strategy</a>
-                <a href="#" class="hover:text-[#a7c957]">Reports</a>
+        <div class="nav-wrapper relative h-10 flex items-center">
+            <div class="nav-pill h-10 flex items-center rounded-full px-3 text-white bg-white/10 border border-white/20 overflow-hidden whitespace-nowrap cursor-pointer">
+                <i class="fa-solid fa-bars-staggered text-sm"></i>
+                <span class="ml-4 text-[10px] font-bold tracking-widest uppercase opacity-0 transition-opacity duration-300 group-hover:opacity-100">Projects</span>
+            </div>
+
+            <div class="dropdown-content">
+                <div class="px-4 py-2 mb-2 border-b border-white/5">
+                    <p class="text-[9px] font-black uppercase tracking-[0.3em] text-emerald-500">Intelligence Systems</p>
+                </div>
+                
+                <a href="visual.html" class="dropdown-item">
+                    <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
+                        <i class="fa-solid fa-route text-xs"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-tight">Document Tracker</p>
+                        <p class="text-[9px] opacity-40 uppercase">Visual Flow Engine</p>
+                    </div>
+                </a>
+
+                <a href="#" class="dropdown-item opacity-40 cursor-not-allowed">
+                    <div class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/5">
+                        <i class="fa-solid fa-plus text-xs"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-tight italic">Coming Soon</p>
+                        <p class="text-[9px] uppercase">Future Intelligence</p>
+                    </div>
+                </a>
             </div>
         </div>
+
         <img src="https://i.imgur.com/VWEvNnK.png" alt="Logo" class="h-8 bg-white/90 p-1 rounded-lg">
     </header>
 
