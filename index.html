@@ -16,48 +16,41 @@
         #bg-canvas { position: fixed; top: 0; left: 0; z-index: -1; pointer-events: none; }
         .glass { background: rgba(56, 102, 65, 0.2); backdrop-filter: blur(20px) saturate(150%); }
         
-        /* UPDATED NAV PILL LOGIC */
-        .nav-pill { 
-            width: 45px; 
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); 
-            position: relative;
-        }
-        .nav-pill:hover { width: 140px; background: rgba(255, 255, 255, 0.15); }
-        
-        /* DROPDOWN LIST STYLING */
-        .dropdown-content {
+        /* NAVIGATION DROPDOWN LOGIC */
+        .nav-item { position: relative; padding: 10px 0; }
+        .dropdown-menu {
             display: none;
             position: absolute;
-            top: 55px;
-            left: 0;
-            width: 280px;
-            background: rgba(2, 44, 34, 0.95);
-            backdrop-filter: blur(25px);
+            top: 100%;
+            left: -10px;
+            width: 240px;
+            background: rgba(2, 44, 34, 0.98);
+            backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            padding: 10px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            border-radius: 16px;
+            padding: 8px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.5);
+            margin-top: 5px;
             z-index: 100;
         }
         
-        /* Show dropdown when hovering parent container */
-        .nav-wrapper:hover .dropdown-content { display: block; animation: slideDown 0.3s ease-out; }
-        .nav-wrapper:hover .nav-pill { width: 140px; }
-
-        .dropdown-item {
+        /* Show on Hover */
+        .nav-item:hover .dropdown-menu { display: block; animation: fadeInUp 0.2s ease-out; }
+        
+        .dropdown-link {
             display: flex;
             align-items: center;
             gap: 12px;
-            padding: 12px 16px;
-            border-radius: 12px;
-            transition: all 0.2s;
+            padding: 10px 14px;
+            border-radius: 10px;
             color: rgba(255,255,255,0.7);
             text-decoration: none;
+            transition: all 0.2s;
         }
-        .dropdown-item:hover { background: rgba(167, 201, 87, 0.1); color: #a7c957; }
+        .dropdown-link:hover { background: rgba(167, 201, 87, 0.15); color: #a7c957; }
 
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-10px); }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
@@ -68,44 +61,43 @@
 
     <canvas id="bg-canvas"></canvas>
 
-    <header class="fixed top-0 w-full z-50 p-4 px-12 flex justify-between items-center glass border-b border-white/10 h-[70px]">
-        <div class="nav-wrapper relative h-10 flex items-center">
-            <div class="nav-pill h-10 flex items-center rounded-full px-3 text-white bg-white/10 border border-white/20 overflow-hidden whitespace-nowrap cursor-pointer">
-                <i class="fa-solid fa-bars-staggered text-sm"></i>
-                <span class="ml-4 text-[10px] font-bold tracking-widest uppercase opacity-0 transition-opacity duration-300 group-hover:opacity-100">Projects</span>
-            </div>
+    <header class="fixed top-0 w-full z-50 p-4 px-12 flex justify-between items-center glass border-b border-white/10 h-[75px]">
+        <div class="flex items-center gap-10">
+            <img src="https://i.imgur.com/VWEvNnK.png" alt="Logo" class="h-8 bg-white/90 p-1 rounded-lg">
 
-            <div class="dropdown-content">
-                <div class="px-4 py-2 mb-2 border-b border-white/5">
-                    <p class="text-[9px] font-black uppercase tracking-[0.3em] text-emerald-500">Intelligence Systems</p>
-                </div>
+            <nav class="flex gap-8 text-[11px] font-bold tracking-widest uppercase text-white/80">
                 
-                <a href="visual.html" class="dropdown-item">
-                    <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
-                        <i class="fa-solid fa-route text-xs"></i>
+                <div class="nav-item">
+                    <a href="#" class="hover:text-[#a7c957] transition-colors flex items-center gap-2">
+                        Dashboard <i class="fa-solid fa-chevron-down text-[8px] opacity-50"></i>
+                    </a>
+                    <div class="dropdown-menu">
+                        <p class="px-4 py-2 text-[8px] text-emerald-500/60 font-black tracking-[0.3em] uppercase">Active Systems</p>
+                        <a href="visual.html" class="dropdown-link">
+                            <i class="fa-solid fa-folder-tree text-xs"></i>
+                            <span class="text-[10px] tracking-wide">Document Tracker</span>
+                        </a>
+                        <div class="border-t border-white/5 my-2"></div>
+                        <a href="#" class="dropdown-link opacity-30 cursor-not-allowed">
+                            <i class="fa-solid fa-plus text-xs"></i>
+                            <span class="text-[10px] tracking-wide italic">Future Project</span>
+                        </a>
                     </div>
-                    <div>
-                        <p class="text-xs font-bold uppercase tracking-tight">Document Tracker</p>
-                        <p class="text-[9px] opacity-40 uppercase">Visual Flow Engine</p>
-                    </div>
-                </a>
+                </div>
 
-                <a href="#" class="dropdown-item opacity-40 cursor-not-allowed">
-                    <div class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/5">
-                        <i class="fa-solid fa-plus text-xs"></i>
-                    </div>
-                    <div>
-                        <p class="text-xs font-bold uppercase tracking-tight italic">Coming Soon</p>
-                        <p class="text-[9px] uppercase">Future Intelligence</p>
-                    </div>
-                </a>
-            </div>
+                <a href="#" class="nav-item hover:text-[#a7c957] transition-colors py-2.5">About Us</a>
+                <a href="#" class="nav-item hover:text-[#a7c957] transition-colors py-2.5">Contact Us</a>
+            </nav>
         </div>
 
-        <img src="https://i.imgur.com/VWEvNnK.png" alt="Logo" class="h-8 bg-white/90 p-1 rounded-lg">
+        <div class="flex items-center gap-4">
+            <div class="w-8 h-8 rounded-full border border-white/20 bg-white/5 flex items-center justify-center text-white/40">
+                <i class="fa-solid fa-user text-xs"></i>
+            </div>
+        </div>
     </header>
 
-    <section class="flex flex-col justify-center items-center min-h-screen pt-[70px]">
+    <section class="flex flex-col justify-center items-center min-h-screen pt-[75px]">
         <div class="relative w-full h-[600px] bg-black/40 overflow-hidden shadow-2xl border-y border-white/10">
             <video class="absolute inset-0 w-full h-full object-cover opacity-60" autoplay muted loop playsinline>
                 <source src="https://i.imgur.com/f0hf38l.mp4" type="video/mp4">
