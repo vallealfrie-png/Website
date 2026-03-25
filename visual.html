@@ -3,90 +3,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Intelligence Pipeline | Executive View</title>
+    <title>Tracking Intelligence | Minimal View</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <style>
-        body { background: radial-gradient(circle at center, #064e3b 0%, #022c22 100%); color: white; font-family: sans-serif; min-height: 100vh; margin: 0; padding: 0; }
-        .glass-panel { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        body { background: #022c22; color: white; font-family: sans-serif; margin: 0; padding: 0; overflow-x: hidden; }
+        .glass-card { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); }
         
-        /* 1. PIPELINE CONTAINER */
-        .pipeline-container { display: flex; align-items: center; justify-content: center; width: 100%; position: relative; margin: 2rem 0; padding: 1rem 0; overflow-x: auto; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent; }
+        /* THE VISUAL TIMELINE CONTAINER */
+        .timeline-visual { position: relative; display: flex; align-items: center; width: 100%; margin: 2rem 0; overflow-x: auto; padding: 3rem 1rem 1rem 1rem; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent; }
         
-        /* 2. PIPELINE CONNECTING LINE */
-        .pipeline-line { height: 6px; background: linear-gradient(90deg, #dc2626 0%, #10b981 100%); position: absolute; top: calc(50% + 4px); left: 10%; right: 10%; z-index: 1; border-radius: 5px; opacity: 0.8; }
+        /* THE MAIN CONNECTING LINE (exactly like the picture) */
+        .timeline-main-line { height: 4px; background: #34d399; position: absolute; top: calc(50% + 1rem); left: 5%; right: 5%; z-index: 1; border-radius: 2px; }
         
-        /* 3. STEP STRUCTURE */
-        .pipeline-step { position: relative; display: flex; flex-direction: column; align-items: center; z-index: 20; min-width: 150px; text-align: center; }
-        .pipeline-step-top { height: 1.5rem; }
-        .pipeline-step-bottom { height: 2rem; margin-top: 0.5rem; }
-
-        /* 4. HEXAGON OUTER CONTAINER (matching attach picture circles) */
-        .hexagon-outer { position: relative; display: flex; items-center; justify-content: center; transition: transform 0.3s ease; }
-        .hexagon-outer::before { content: ""; position: absolute; top: -12px; left: -12px; width: calc(100% + 24px); height: calc(100% + 24px); border-radius: 50%; background: #022c22; z-index: -1; box-shadow: 0 10px 30px rgba(0,0,0,0.6); }
-
-        /* 5. HEXAGON SHAPE (using CSS clip-path to match picture) */
-        .hexagon-inner { position: relative; width: 90px; height: 104px; clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: inset 0 0 20px rgba(0,0,0,0.5); border: 4px solid rgba(255,255,255,0.1); }
-
-        /* 6. COLOR LOGIC (Matching attach picture gradients + website colors) */
-        .state-out .hexagon-inner { background: linear-gradient(180deg, #991b1b 0%, #dc2626 100%); }
-        .state-out::before { border: 6px solid #dc2626; box-shadow: 0 0 25px rgba(220, 38, 38, 0.4); }
+        /* THE PIPELINE MARKERS/STEPS */
+        .timeline-marker { position: relative; z-index: 10; display: flex; flex-direction: column; align-items: center; min-width: 130px; text-align: center; }
         
-        .state-in .hexagon-inner { background: linear-gradient(180deg, #065f46 0%, #10b981 100%); }
-        .state-in::before { border: 6px solid #10b981; box-shadow: 0 0 25px rgba(16, 185, 129, 0.4); }
+        /* THE DOT (matching the picture) */
+        .dot { width: 14px; height: 14px; background: #10b981; border-radius: 50%; z-index: 15; box-shadow: 0 0 10px rgba(16, 185, 129, 0.4); margin-top: calc(1rem - 5px); }
         
-        .state-finished .hexagon-inner { background: linear-gradient(180deg, #0a4d33 0%, #10b981 100%); }
-        .state-finished::before { border: 6px solid rgba(255,255,255,0.5); box-shadow: 0 0 30px rgba(255,255,255,0.2); }
+        /* ACTIVE MARKER (the picture has pulsing dots) */
+        .is-latest .dot { animation: pulse-dot 1.5s infinite; background: #34d399; transform: scale(1.1); }
+        @keyframes pulse-dot { 0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.8); } 70% { box-shadow: 0 0 0 8px rgba(52, 211, 153, 0); } 100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); } }
 
-        /* Icon styling matching attach picture format */
-        .step-icon { width: 30px; height: auto; opacity: 0.9; margin-bottom: 5px; }
+        /* THE TEXT POSITIONS (matching the picture) */
+        .marker-dept { position: absolute; top: -3.5rem; width: 120px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
+        .marker-time { position: absolute; bottom: -2.5rem; width: 120px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
 
-        tr:nth-child(even) { background: rgba(255, 255, 255, 0.01); }
+        /* FINISHED STATUS OVERRIDE */
+        .doc-finished .timeline-main-line { background: #f59e0b; }
+        .doc-finished .dot { background: #f59e0b; }
+        .doc-finished .is-latest .dot { background: white; animation: none; transform: scale(1); ring: 2px solid #f59e0b; }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
     <div class="max-w-7xl mx-auto">
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 border-b border-white/5 pb-8">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4 border-b border-white/10 pb-6">
             <div>
-                <img src="https://i.imgur.com/VbZKWAf.png" class="h-10 mb-2 opacity-90" />
-                <h1 class="text-3xl font-black tracking-tighter uppercase italic text-white">INTELLIGENCE FLOW</h1>
-                <p class="text-emerald-400 text-[10px] font-bold tracking-[0.4em]">Executive Pipeline View</p>
+                <img src="https://i.imgur.com/VbZKWAf.png" class="h-8 mb-2 opacity-80" />
+                <h1 class="text-3xl font-black tracking-tight text-white uppercase italic">Pipeline Intelligence</h1>
+                <p class="text-emerald-400 text-[11px] font-bold tracking-[0.4em]">EXECUTIVE FLOW VIEW</p>
             </div>
             <div class="flex gap-3">
-                <button onclick="loadIntelligence()" class="bg-white/5 px-5 py-3 rounded-xl text-xs font-bold hover:bg-white/10 transition">
-                    <i class="fa-solid fa-sync fa-spin fa-fw mr-2"></i> Sync Pipeline
+                <button onclick="loadPipelines()" class="bg-white/5 text-white/80 px-4 py-2 rounded-xl text-xs font-bold hover:bg-white/10 transition">
+                    <i class="fa-solid fa-sync mr-2"></i> Sync
                 </button>
-                <a href="status.html" class="bg-emerald-600 text-white px-5 py-3 rounded-xl text-xs font-bold hover:bg-emerald-500 transition shadow-lg">
-                    <i class="fa-solid fa-list-check mr-2"></i> Status Board
+                <a href="status.html" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-emerald-500 transition shadow-lg">
+                    <i class="fa-solid fa-arrow-left mr-2"></i> Back
                 </a>
             </div>
         </div>
 
-        <div id="pipeline-viewer" class="space-y-8">
-            <div class="glass-panel p-20 rounded-[3rem] text-center">
-                <i class="fa-solid fa-network-wired fa-spin text-4xl text-emerald-500 mb-6"></i>
-                <p class="uppercase tracking-widest text-[11px] font-black opacity-40">Connecting to Supabase...</p>
+        <div id="debug-box" class="hidden mb-6 p-4 bg-red-900/50 text-red-100 rounded-2xl text-xs font-mono"></div>
+
+        <div id="intelligence-container" class="space-y-8">
+            <div class="p-20 text-center text-xs opacity-50 font-bold uppercase tracking-widest glass-card rounded-3xl">
+                <i class="fa-solid fa-network-wired fa-spin text-2xl text-emerald-500 mb-4"></i><br> Connecting to Supabase...
             </div>
         </div>
     </div>
 
     <script>
         const S_URL = 'https://jvjxrwmarwzbzlagqhhh.supabase.co';
-        const S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2anhyd21hcnd6YnpsYWdxaGhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4OTYzNzYsImV4cCI6MjA4OTQ3MjM3Nn0.4cviind0KHFRMSM20UN5-dDEAYi-3vQbLB6wAebzlcQ';
+        const S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2anhyd21hcnd6YnpsYWdxaGhoIiwicm9sZSI6ImFub24}iat":1773896376,"exp":2089472376}.4cviind0KHFRMSM20UN5-dDEAYi-3vQbLB6wAebzlcQ';
         const dbClient = window.supabase.createClient(S_URL, S_KEY);
 
-        async function loadIntelligence() {
-            const viewer = document.getElementById('pipeline-viewer');
-            
+        async function loadPipelines() {
+            const container = document.getElementById('intelligence-container');
+            const debug = document.getElementById('debug-box');
+
             try {
-                // Fetch ALL history ordered by time
+                // Get ALL history ordered by timestamp
                 const { data, error } = await dbClient.from('document_logs').select('*').order('timestamp', { ascending: true });
 
-                if (error) throw error;
+                if (error) {
+                    debug.innerText = error.message; debug.classList.remove('hidden'); return;
+                }
+
                 if (!data || data.length === 0) {
-                    viewer.innerHTML = `<div class="p-16 text-center text-xs opacity-50 uppercase tracking-widest font-bold glass-panel rounded-3xl">No records in the tracking system.</div>`;
+                    container.innerHTML = `<div class="p-20 glass-card rounded-3xl text-center text-xs opacity-40 uppercase tracking-widest font-black">No documents logged in the tracking system.</div>`;
                     return;
                 }
 
@@ -97,82 +94,67 @@
                     groups[log.document_name].push(log);
                 });
 
-                viewer.innerHTML = ''; // Clear fetching state
+                container.innerHTML = ''; // Clear fetching state
 
-                // Iterate through each document and build its pipeline
                 Object.keys(groups).forEach(docName => {
                     const logs = groups[docName];
-                    const latest = logs[logs.length - 1]; // Last item is the newest in ascending order
+                    const latest = logs[logs.length - 1]; // descending true = logs.length-1 is newest
+                    const isFinished = latest.action === 'FINISHED';
 
-                    // Panel structure for the doc
-                    const docPanel = document.createElement('div');
-                    docPanel.className = 'glass-panel p-8 rounded-[3rem] shadow-xl overflow-hidden';
+                    // 1. Doc Panel Wrapper
+                    const panel = document.createElement('div');
+                    panel.className = `glass-card p-10 rounded-[3rem] shadow-xl overflow-hidden ${isFinished ? 'doc-finished' : ''}`;
                     
-                    // Executive Header for the doc
+                    // 2. Head info (Name/Category)
                     let headerHtml = `
-                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 mb-6 border-b border-white/5 pb-6">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 mb-10 border-b border-white/5 pb-8">
                             <div>
-                                <h2 class="text-xl font-bold tracking-tight text-white group-hover:text-emerald-400 transition-colors">${docName}</h2>
-                                <div class="text-[9px] text-emerald-500 uppercase font-black tracking-widest mt-1">${latest.category}</div>
+                                <h2 class="text-2xl font-black text-white italic tracking-tighter">${docName}</h2>
+                                <div class="text-[10px] text-emerald-500 uppercase font-black tracking-widest mt-1">${latest.category}</div>
                             </div>
-                            <div class="text-right flex flex-col items-end">
-                                <span class="text-[10px] opacity-40 uppercase">Total Movements</span>
-                                <span class="text-2xl font-black italic tracking-tight text-white">${logs.length}</span>
+                            <div class="text-right">
+                                ${isFinished ? 
+                                    '<span class="px-3 py-1 bg-amber-600/20 text-amber-400 rounded-full text-[10px] font-black uppercase">FINISHED ARCHIVE</span>' : 
+                                    `<span class="text-[10px] font-black uppercase opacity-60">Currently IN</span><br><span class="text-lg font-black text-white">${latest.department}</span>`}
                             </div>
                         </div>
                     `;
 
-                    // Generate the Pipeline Visuals (Horizontal View)
-                    let stepsHtml = `
-                        <div class="pipeline-container">
-                            <div class="pipeline-line"></div>
+                    // 3. Generating the Timeline Visual (matching picture)
+                    let timelineHtml = `
+                        <div class="timeline-visual">
+                            <div class="timeline-main-line"></div>
                     `;
 
                     // Building Steps
                     logs.forEach((log, index) => {
-                        const stepDate = new Date(log.timestamp);
-                        const time = stepDate.toLocaleString('en-PH', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-                        
-                        // Icon mapping
-                        let iconClass = log.action === 'IN' ? 'fa-arrow-left' : log.action === 'OUT' ? 'fa-arrow-right' : 'fa-check';
-                        let stateClass = log.action === 'IN' ? 'state-in' : log.action === 'OUT' ? 'state-out' : 'state-finished';
-                        
-                        stepsHtml += `
-                            <div class="pipeline-step group ${stateClass}">
-                                <div class="pipeline-step-top text-[9px] uppercase tracking-tighter opacity-70 font-bold px-2 truncate w-full text-center">
-                                    ${index === 0 ? 'ORIGIN' : index === logs.length - 1 ? 'CURRENT LOCATION' : 'MOVEMENT'}
-                                </div>
+                        const dateObj = new Date(log.timestamp);
+                        const timeStr = dateObj.toLocaleString('en-PH', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                        const isLastStep = (index === logs.length - 1);
+                        const isFinishedStep = log.action === 'FINISHED';
+
+                        timelineHtml += `
+                            <div class="timeline-marker ${isLastStep ? 'is-latest' : ''}">
+                                <div class="marker-dept text-[11px] font-bold text-white px-2">${log.department}</div>
                                 
-                                <div class="hexagon-outer group-hover:scale-105 transition-transform">
-                                    <div class="hexagon-inner">
-                                        <i class="fa-solid ${iconClass} step-icon text-xl text-white"></i>
-                                        <div class="text-[9px] uppercase font-black opacity-80 text-white">${log.action}</div>
-                                    </div>
-                                </div>
+                                <div class="dot ${isFinishedStep ? 'finished-dot' : ''}"></div>
                                 
-                                <div class="pipeline-step-bottom space-y-1">
-                                    <div class="text-[10px] font-semibold text-white truncate max-w-[130px] mx-auto">${log.department}</div>
-                                    <div class="text-[9px] opacity-40 text-white italic truncate">${time}</div>
-                                </div>
+                                <div class="marker-time text-[10px] opacity-40 italic text-white/80">${timeStr}</div>
                             </div>
                         `;
                     });
 
-                    stepsHtml += '</div>'; // End container
+                    timelineHtml += '</div>'; // End visual
                     
-                    // Final composition
-                    docPanel.innerHTML = headerHtml + stepsHtml;
-                    viewer.appendChild(docPanel);
+                    // Composing the panel
+                    panel.innerHTML = headerHtml + timelineHtml;
+                    container.appendChild(panel);
                 });
 
-            } catch (err) {
-                viewer.innerHTML = `<div class="p-10 glass-panel rounded-3xl text-center text-red-300">INTELLIGENCE ERROR: ${err.message}</div>`;
-            }
+            } catch (err) { console.error(err); }
         }
 
-        window.onload = loadIntelligence;
-        // Executive refresh every 5 minutes (slower than status page)
-        setInterval(loadIntelligence, 300000);
+        window.onload = loadPipelines;
     </script>
 </body>
 </html>
