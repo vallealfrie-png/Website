@@ -3,155 +3,142 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tracking Intelligence | Minimal View</title>
+    <title>Pipeline Intelligence | Minimal View</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <style>
-        body { background: #022c22; color: white; font-family: sans-serif; margin: 0; padding: 0; overflow-x: hidden; }
+        body { background: #022c22; color: white; font-family: sans-serif; margin: 0; padding: 0; }
         .glass-card { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); }
         
         /* THE VISUAL TIMELINE CONTAINER */
-        .timeline-visual { position: relative; display: flex; align-items: center; width: 100%; margin: 2rem 0; overflow-x: auto; padding: 3rem 1rem 1rem 1rem; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.2) transparent; }
+        .timeline-visual { position: relative; display: flex; align-items: center; width: 100%; margin: 3rem 0; overflow-x: auto; padding: 4rem 1rem 3rem 1rem; scrollbar-width: thin; }
         
-        /* THE MAIN CONNECTING LINE (exactly like the picture) */
-        .timeline-main-line { height: 4px; background: #34d399; position: absolute; top: calc(50% + 1rem); left: 5%; right: 5%; z-index: 1; border-radius: 2px; }
+        /* THE MAIN CONNECTING LINE */
+        .timeline-main-line { height: 4px; background: #34d399; position: absolute; top: 50%; left: 5%; right: 5%; z-index: 1; border-radius: 2px; }
         
-        /* THE PIPELINE MARKERS/STEPS */
-        .timeline-marker { position: relative; z-index: 10; display: flex; flex-direction: column; align-items: center; min-width: 130px; text-align: center; }
+        /* THE PIPELINE MARKERS */
+        .timeline-marker { position: relative; z-index: 10; display: flex; flex-direction: column; align-items: center; min-width: 140px; text-align: center; }
         
         /* THE DOT (matching the picture) */
-        .dot { width: 14px; height: 14px; background: #10b981; border-radius: 50%; z-index: 15; box-shadow: 0 0 10px rgba(16, 185, 129, 0.4); margin-top: calc(1rem - 5px); }
+        .dot { width: 14px; height: 14px; background: #10b981; border-radius: 50%; z-index: 15; box-shadow: 0 0 10px rgba(16, 185, 129, 0.4); }
         
-        /* ACTIVE MARKER (the picture has pulsing dots) */
-        .is-latest .dot { animation: pulse-dot 1.5s infinite; background: #34d399; transform: scale(1.1); }
-        @keyframes pulse-dot { 0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.8); } 70% { box-shadow: 0 0 0 8px rgba(52, 211, 153, 0); } 100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); } }
+        /* ACTIVE MARKER PULSE */
+        .is-latest .dot { animation: pulse-dot 1.5s infinite; background: #34d399; transform: scale(1.2); }
+        @keyframes pulse-dot { 
+            0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.8); } 
+            70% { box-shadow: 0 0 0 10px rgba(52, 211, 153, 0); } 
+            100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); } 
+        }
 
-        /* THE TEXT POSITIONS (matching the picture) */
-        .marker-dept { position: absolute; top: -3.5rem; width: 120px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
-        .marker-time { position: absolute; bottom: -2.5rem; width: 120px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
+        /* TEXT POSITIONS (Matching your reference image) */
+        .marker-dept { position: absolute; top: -3rem; font-size: 11px; font-weight: 800; color: white; width: 130px; }
+        .marker-time { position: absolute; bottom: -2.5rem; font-size: 10px; opacity: 0.4; width: 130px; font-weight: bold; }
 
         /* FINISHED STATUS OVERRIDE */
         .doc-finished .timeline-main-line { background: #f59e0b; }
-        .doc-finished .dot { background: #f59e0b; }
-        .doc-finished .is-latest .dot { background: white; animation: none; transform: scale(1); ring: 2px solid #f59e0b; }
+        .doc-finished .dot { background: #f59e0b; box-shadow: 0 0 10px rgba(245, 158, 11, 0.4); }
+        .doc-finished .is-latest .dot { background: white; animation: none; transform: scale(1); border: 3px solid #f59e0b; }
     </style>
 </head>
-<body class="p-4 md:p-8">
+<body class="p-4 md:p-10">
 
     <div class="max-w-7xl mx-auto">
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4 border-b border-white/10 pb-6">
+        <div class="flex flex-col md:flex-row justify-between items-end mb-12 gap-4 border-b border-white/10 pb-8">
             <div>
-                <img src="https://i.imgur.com/VbZKWAf.png" class="h-8 mb-2 opacity-80" />
-                <h1 class="text-3xl font-black tracking-tight text-white uppercase italic">Pipeline Intelligence</h1>
-                <p class="text-emerald-400 text-[11px] font-bold tracking-[0.4em]">EXECUTIVE FLOW VIEW</p>
+                <h1 class="text-4xl font-black tracking-tighter uppercase italic text-white">Pipeline Intelligence</h1>
+                <p class="text-emerald-400 text-[11px] font-bold tracking-[0.5em] mt-1">EXECUTIVE TRACKING VIEW</p>
             </div>
             <div class="flex gap-3">
-                <button onclick="loadPipelines()" class="bg-white/5 text-white/80 px-4 py-2 rounded-xl text-xs font-bold hover:bg-white/10 transition">
-                    <i class="fa-solid fa-sync mr-2"></i> Sync
+                <button onclick="loadPipelines()" class="bg-white/5 text-white/80 px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-white/10 transition">
+                    <i class="fa-solid fa-sync mr-2"></i> Sync Data
                 </button>
-                <a href="status.html" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-emerald-500 transition shadow-lg">
-                    <i class="fa-solid fa-arrow-left mr-2"></i> Back
+                <a href="status.html" class="bg-emerald-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:bg-emerald-500 transition shadow-lg">
+                    <i class="fa-solid fa-arrow-left mr-2"></i> Exit View
                 </a>
             </div>
         </div>
 
-        <div id="debug-box" class="hidden mb-6 p-4 bg-red-900/50 text-red-100 rounded-2xl text-xs font-mono"></div>
-
-        <div id="intelligence-container" class="space-y-8">
-            <div class="p-20 text-center text-xs opacity-50 font-bold uppercase tracking-widest glass-card rounded-3xl">
-                <i class="fa-solid fa-network-wired fa-spin text-2xl text-emerald-500 mb-4"></i><br> Connecting to Supabase...
+        <div id="intelligence-container" class="space-y-12">
+            <div class="p-20 text-center glass-card rounded-[3rem]">
+                <i class="fa-solid fa-circle-notch fa-spin text-2xl text-emerald-500 mb-4"></i>
+                <p class="uppercase tracking-widest text-[10px] font-black opacity-40">Loading Intelligence...</p>
             </div>
         </div>
     </div>
 
     <script>
+        // RESTORED WORKING API KEY
         const S_URL = 'https://jvjxrwmarwzbzlagqhhh.supabase.co';
-        const S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2anhyd21hcnd6YnpsYWdxaGhoIiwicm9sZSI6ImFub24}iat":1773896376,"exp":2089472376}.4cviind0KHFRMSM20UN5-dDEAYi-3vQbLB6wAebzlcQ';
+        const S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2anhyd21hcnd6YnpsYWdxaGhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4OTYzNzYsImV4cCI6MjA4OTQ3MjM3Nn0.4cviind0KHFRMSM20UN5-dDEAYi-3vQbLB6wAebzlcQ';
+        
         const dbClient = window.supabase.createClient(S_URL, S_KEY);
 
         async function loadPipelines() {
             const container = document.getElementById('intelligence-container');
-            const debug = document.getElementById('debug-box');
 
             try {
-                // Get ALL history ordered by timestamp
                 const { data, error } = await dbClient.from('document_logs').select('*').order('timestamp', { ascending: true });
 
-                if (error) {
-                    debug.innerText = error.message; debug.classList.remove('hidden'); return;
-                }
-
+                if (error) throw error;
                 if (!data || data.length === 0) {
-                    container.innerHTML = `<div class="p-20 glass-card rounded-3xl text-center text-xs opacity-40 uppercase tracking-widest font-black">No documents logged in the tracking system.</div>`;
+                    container.innerHTML = `<div class="p-20 glass-card rounded-[3rem] text-center opacity-40 text-xs font-black uppercase tracking-widest">No Active Pipelines Found</div>`;
                     return;
                 }
 
-                // Group by Document Name
                 const groups = {};
                 data.forEach(log => {
                     if (!groups[log.document_name]) groups[log.document_name] = [];
                     groups[log.document_name].push(log);
                 });
 
-                container.innerHTML = ''; // Clear fetching state
+                container.innerHTML = ''; 
 
                 Object.keys(groups).forEach(docName => {
                     const logs = groups[docName];
-                    const latest = logs[logs.length - 1]; // descending true = logs.length-1 is newest
+                    const latest = logs[logs.length - 1];
                     const isFinished = latest.action === 'FINISHED';
 
-                    // 1. Doc Panel Wrapper
                     const panel = document.createElement('div');
-                    panel.className = `glass-card p-10 rounded-[3rem] shadow-xl overflow-hidden ${isFinished ? 'doc-finished' : ''}`;
+                    panel.className = `glass-card p-10 rounded-[3.5rem] shadow-2xl overflow-hidden ${isFinished ? 'doc-finished' : ''}`;
                     
-                    // 2. Head info (Name/Category)
                     let headerHtml = `
-                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 mb-10 border-b border-white/5 pb-8">
+                        <div class="flex justify-between items-start mb-10 border-b border-white/5 pb-6">
                             <div>
-                                <h2 class="text-2xl font-black text-white italic tracking-tighter">${docName}</h2>
-                                <div class="text-[10px] text-emerald-500 uppercase font-black tracking-widest mt-1">${latest.category}</div>
+                                <h2 class="text-2xl font-black text-white italic tracking-tighter uppercase">${docName}</h2>
+                                <div class="text-[10px] text-emerald-500 uppercase font-black tracking-[0.2em] mt-1">${latest.category}</div>
                             </div>
                             <div class="text-right">
-                                ${isFinished ? 
-                                    '<span class="px-3 py-1 bg-amber-600/20 text-amber-400 rounded-full text-[10px] font-black uppercase">FINISHED ARCHIVE</span>' : 
-                                    `<span class="text-[10px] font-black uppercase opacity-60">Currently IN</span><br><span class="text-lg font-black text-white">${latest.department}</span>`}
+                                <span class="text-[9px] font-black opacity-30 uppercase tracking-widest">Current Location</span>
+                                <div class="text-lg font-black text-white italic">${isFinished ? 'ARCHIVED' : latest.department}</div>
                             </div>
                         </div>
                     `;
 
-                    // 3. Generating the Timeline Visual (matching picture)
-                    let timelineHtml = `
-                        <div class="timeline-visual">
-                            <div class="timeline-main-line"></div>
-                    `;
+                    let timelineHtml = `<div class="timeline-visual"><div class="timeline-main-line"></div>`;
 
-                    // Building Steps
                     logs.forEach((log, index) => {
                         const dateObj = new Date(log.timestamp);
                         const timeStr = dateObj.toLocaleString('en-PH', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
                         const isLastStep = (index === logs.length - 1);
-                        const isFinishedStep = log.action === 'FINISHED';
 
                         timelineHtml += `
                             <div class="timeline-marker ${isLastStep ? 'is-latest' : ''}">
-                                <div class="marker-dept text-[11px] font-bold text-white px-2">${log.department}</div>
-                                
-                                <div class="dot ${isFinishedStep ? 'finished-dot' : ''}"></div>
-                                
-                                <div class="marker-time text-[10px] opacity-40 italic text-white/80">${timeStr}</div>
+                                <div class="marker-dept uppercase tracking-tighter">${log.department}</div>
+                                <div class="dot"></div>
+                                <div class="marker-time uppercase">${timeStr}</div>
                             </div>
                         `;
                     });
 
-                    timelineHtml += '</div>'; // End visual
-                    
-                    // Composing the panel
+                    timelineHtml += '</div>';
                     panel.innerHTML = headerHtml + timelineHtml;
                     container.appendChild(panel);
                 });
 
-            } catch (err) { console.error(err); }
+            } catch (err) {
+                container.innerHTML = `<div class="p-10 bg-red-900/20 text-red-400 rounded-3xl text-center">Connection Error: ${err.message}</div>`;
+            }
         }
 
         window.onload = loadPipelines;
