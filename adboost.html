@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ad Boost Performance</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        /* Base page styling */
+        body { background-color: #000; color: #e5e5e5; overflow-x: hidden; margin: 0; }
+        
+        /* Background Container - Resized to fit whole image */
+        .dashboard-bg-container {
+            background: url('https://i.imgur.com/c1t4xZ1.jpeg'); 
+            background-size: 100% 100%; /* This ensures the whole image is visible in the viewport */
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            min-height: 100vh;
+            width: 100%;
+        }
+        
+        /* Premium Glassmorphism */
+        .glass-card { 
+            background: rgba(0, 0, 0, 0.82); 
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            border-radius: 20px; 
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
+        }
+
+        /* Collapsable Nav Logic */
+        .nav-container {
+            width: 50px;
+            height: 50px;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        .nav-container:hover {
+            width: 95%;
+            max-width: 1000px;
+            height: 60px;
+            border-radius: 9999px;
+        }
+
+        .glass-nav {
+            background: rgba(10, 10, 10, 0.7); 
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.15); 
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Nav Content Visibility */
+        .nav-content {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+        .nav-container:hover .nav-content {
+            opacity: 1;
+            pointer-events: auto;
+            transition-delay: 0.2s;
+        }
+
+        .nav-trigger {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            transition: opacity 0.3s ease;
+        }
+        .nav-container:hover .nav-trigger {
+            opacity: 0;
+        }
+
+        .glow-indigo { border: 1px solid rgba(99, 102, 241, 0.5); }
+        
+        select { 
+            background: rgba(15, 15, 15, 0.95) !important; 
+            color: white !important; 
+            border: 1px solid rgba(255, 255, 255, 0.2) !important; 
+            appearance: none;
+        }
+        
+        .nav-link { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.15em; transition: all 0.3s; color: #aaa; }
+        .nav-link:hover { color: #6366f1; }
+        .active-link { color: #6366f1; font-weight: 900; }
+
+        .slicer-pill {
+            background: rgba(0, 0, 0, 0.65);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Animations */
+        #dashboard-content { transition: transform 0.4s ease, opacity 0.4s ease; }
+        .slide-out { opacity: 0 !important; transform: translateY(20px) !important; }
+        .slide-in { animation: slideUpEffect 0.6s ease forwards; }
+        @keyframes slideUpEffect {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="font-sans antialiased">
+
+    <div id="loader" class="fixed inset-0 bg-black z-[100] flex flex-col items-center justify-center">
+        <div class="w-48 bg-neutral-900 h-1 mb-4 overflow-hidden rounded-full">
+            <div id="progressBar" class="bg-indigo-600 h-full w-0 transition-all duration-300"></div>
+        </div>
+        <p class="text-[10px] font-bold tracking-[0.3em] text-neutral-500 uppercase">Synchronizing Adboost</p>
+    </div>
+
+    <div class="fixed top-6 left-0 right-0 flex justify-center z-50 px-4">
+        <div class="nav-container glass-nav rounded-full relative group cursor-pointer shadow-2xl">
+            <div class="nav-trigger text-white">
+                <i data-lucide="menu" class="w-5 h-5"></i>
+            </div>
+            <div class="nav-content flex items-center justify-between gap-6 px-5 py-2 w-full h-full">
+                <div class="flex items-center gap-6 slicer-pill rounded-full px-5 py-2">
+                    <div class="flex items-center gap-3">
+                        <div class="h-4 w-1 bg-indigo-500 rounded-full shadow-[0_0_10px_#6366f1]"></div>
+                        <h1 class="text-[10px] font-black uppercase tracking-widest text-white">Ad Boost</h1>
+                    </div>
+                    <div class="w-px h-4 bg-neutral-800"></div>
+                    <div class="flex gap-4">
+                        <a href="index.html" class="nav-link">Dashboard</a>
+                        <a href="adboost.html" class="nav-link active-link">Adboost</a>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 slicer-pill rounded-full p-1.5">
+                    <div class="relative">
+                        <select id="monthSlicer" class="rounded-full pl-4 pr-7 py-1.5 text-[10px] font-bold outline-none cursor-pointer"></select>
+                        <i data-lucide="chevron-down" class="absolute right-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-neutral-500 pointer-events-none"></i>
+                    </div>
+                    <div class="relative">
+                        <select id="nameSlicer" class="rounded-full pl-4 pr-7 py-1.5 text-[10px] font-bold outline-none cursor-pointer"><option value="all">All Packages</option></select>
+                        <i data-lucide="chevron-down" class="absolute right-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-neutral-500 pointer-events-none"></i>
+                    </div>
+                    <button onclick="resetFilters()" class="bg-neutral-900/50 hover:bg-neutral-800 text-white p-2 rounded-full transition-all">
+                        <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-bg-container pt-24 pb-12"> 
+        <main id="dashboard-content" class="p-6 max-w-[1600px] mx-auto space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div class="glass-card p-6 glow-indigo">
+                    <p id="labelYear3" class="text-[9px] font-bold text-indigo-400 uppercase tracking-widest">Current Year</p>
+                    <h2 id="valYear3" class="text-3xl font-black mt-2">₱0</h2>
+                    <p id="cenYear3" class="text-neutral-300 text-[11px] font-bold mt-1">0 Census</p>
+                </div>
+                <div class="glass-card p-6">
+                    <p id="labelYear2" class="text-[9px] font-bold text-neutral-500 uppercase tracking-widest">Previous Year</p>
+                    <h2 id="valYear2" class="text-3xl font-black mt-2 text-neutral-300">₱0</h2>
+                    <p id="cenYear2" class="text-neutral-300 text-[11px] font-bold mt-1">0 Census</p>
+                </div>
+                <div class="glass-card p-6 border-l-4 border-indigo-600">
+                    <p class="text-[9px] font-bold text-neutral-500 uppercase tracking-widest">Growth Momentum</p>
+                    <div class="flex items-baseline gap-2 mt-2">
+                        <h2 id="varRevPct" class="text-3xl font-black">0%</h2>
+                        <span id="varRevFig" class="text-xs font-bold text-neutral-300 tracking-tighter">₱0</span>
+                    </div>
+                    <p id="varContext" class="text-[9px] font-bold text-neutral-400 uppercase mt-1">YoY Comparison</p>
+                </div>
+                <div class="glass-card p-6 flex flex-col justify-between">
+                    <p class="text-[9px] font-bold text-neutral-500 uppercase tracking-widest">3-Year Trend</p>
+                    <div class="h-[60px]"><canvas id="sparkLineChart"></canvas></div>
+                    <div id="sparkLabels" class="flex justify-between text-[9px] text-neutral-500 font-bold mt-1"></div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="glass-card p-6 h-[400px]"><canvas id="revChart"></canvas></div>
+                <div class="glass-card p-6 h-[400px]"><canvas id="cenChart"></canvas></div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://edlheufkxcyuxontunvm.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkbGhldWZreGN5dXhvbnR1bnZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4NjA2ODAsImV4cCI6MjA4MzQzNjY4MH0.BV77ylA7W3H7qd-Y2ty0bZW2KYE3A87uN1rPI1gCZQo';
+        const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const MONTH_MAP = { "Jan":0, "Feb":1, "Mar":2, "Apr":3, "May":4, "Jun":5, "Jul":6, "Aug":7, "Sep":8, "Oct":9, "Nov":10, "Dec":11 };
+        const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+        let masterData = [], charts = {}, maxYear, activeMonths = [];
+
+        async function init() {
+            lucide.createIcons();
+            const { data, error } = await sb.from('adboost').select('*');
+            if (error) return;
+
+            masterData = data.map(r => ({
+                ...r,
+                mIndex: MONTH_MAP[r.month],
+                amt: typeof r.revenue === 'string' ? parseFloat(r.revenue.replace(/[^0-9.-]+/g,"")) : r.revenue,
+                cen: parseInt(r.census) || 0
+            }));
+
+            maxYear = Math.max(...masterData.map(d => d.year));
+            activeMonths = [...new Set(masterData.filter(d => d.year === maxYear).map(d => d.mIndex))];
+
+            document.getElementById('monthSlicer').innerHTML = `<option value="all">Full Year</option>` + 
+                MONTH_NAMES.map((m,i)=>`<option value="${i}">${m}</option>`).join('');
+            
+            const nameEl = document.getElementById('nameSlicer');
+            [...new Set(masterData.map(d=>d.name))].sort().forEach(n => nameEl.innerHTML += `<option value="${n}">${n}</option>`);
+
+            document.getElementById('loader').classList.add('hidden');
+
+            ['monthSlicer', 'nameSlicer'].forEach(id => {
+                document.getElementById(id).addEventListener('change', runSequentialAnimation);
+            });
+
+            render(false);
+        }
+
+        async function runSequentialAnimation() {
+            const content = document.getElementById('dashboard-content');
+            content.classList.add('slide-out');
+            await new Promise(r => setTimeout(r, 400));
+            render(true);
+            content.classList.remove('slide-out');
+            content.classList.add('slide-in');
+            setTimeout(() => content.classList.remove('slide-in'), 600);
+        }
+
+        function render(animate) {
+            const mVal = document.getElementById('monthSlicer').value;
+            const nVal = document.getElementById('nameSlicer').value;
+            const filtered = masterData.filter(d => (nVal === 'all' || d.name === nVal));
+
+            updateMetrics(mVal, filtered, animate);
+            setTimeout(() => {
+                updateTrends(mVal, filtered);
+            }, animate ? 300 : 0);
+        }
+
+        function animateNumber(id, target, isCurrency = false, isPercent = false) {
+            const el = document.getElementById(id);
+            let start = 0;
+            const duration = 800;
+            const startTime = performance.now();
+
+            function update(now) {
+                const progress = Math.min((now - startTime) / duration, 1);
+                const current = start + progress * (target - start);
+                
+                if (isCurrency) {
+                    el.textContent = `₱${current.toLocaleString(undefined, {minimumFractionDigits: progress === 1 ? 2 : 0, maximumFractionDigits: 2})}`;
+                } else if (isPercent) {
+                    el.textContent = `${current > 0 ? '+' : ''}${current.toFixed(1)}%`;
+                } else {
+                    el.textContent = `${Math.floor(current).toLocaleString()} Census`;
+                }
+                if (progress < 1) requestAnimationFrame(update);
+            }
+            requestAnimationFrame(update);
+        }
+
+        function updateMetrics(mVal, data, animate) {
+            const years = [maxYear - 2, maxYear - 1, maxYear];
+            const stats = years.map(yr => {
+                const sub = mVal === "all" ? data.filter(d => d.year === yr && activeMonths.includes(d.mIndex)) : data.filter(d => d.year === yr && d.mIndex === parseInt(mVal));
+                return { yr, r: sub.reduce((s,d)=>s+d.amt,0), n: sub.reduce((s,d)=>s+d.cen,0) };
+            });
+
+            const curr = stats[2], prev = stats[1];
+            const diffR = curr.r - prev.r;
+            const diffPct = prev.r ? (diffR / prev.r * 100) : 0;
+
+            if (animate) {
+                animateNumber('valYear3', curr.r, true);
+                animateNumber('cenYear3', curr.n);
+                animateNumber('valYear2', prev.r, true);
+                animateNumber('cenYear2', prev.n);
+                animateNumber('varRevPct', diffPct, false, true);
+            } else {
+                document.getElementById('valYear3').textContent = `₱${curr.r.toLocaleString()}`;
+                document.getElementById('cenYear3').textContent = `${curr.n.toLocaleString()} Census`;
+                document.getElementById('valYear2').textContent = `₱${prev.r.toLocaleString()}`;
+                document.getElementById('cenYear2').textContent = `${prev.n.toLocaleString()} Census`;
+                document.getElementById('varRevPct').textContent = `${diffPct >= 0 ? '+' : ''}${diffPct.toFixed(1)}%`;
+            }
+
+            document.getElementById('labelYear3').textContent = `Year ${curr.yr}`;
+            document.getElementById('labelYear2').textContent = `Year ${prev.yr}`;
+            document.getElementById('varRevPct').className = `text-3xl font-black ${diffPct >= 0 ? 'text-emerald-500' : 'text-rose-500'}`;
+            document.getElementById('varRevFig').textContent = `${diffR >= 0 ? '+' : '-'} ₱${Math.abs(diffR).toLocaleString()}`;
+            
+            drawSpark('sparkLineChart', stats.map(s => s.r));
+            document.getElementById('sparkLabels').innerHTML = years.map(y => `<span>${y}</span>`).join('');
+        }
+
+        function updateTrends(mVal, data) {
+            let curSet = [], preSet = [];
+            MONTH_NAMES.forEach((_, i) => {
+                const c_amt = data.filter(d => d.year === maxYear && d.mIndex === i).reduce((s,d)=>s+d.amt,0);
+                const p_amt = data.filter(d => d.year === (maxYear-1) && d.mIndex === i).reduce((s,d)=>s+d.amt,0);
+                const c_cen = data.filter(d => d.year === maxYear && d.mIndex === i).reduce((s,d)=>s+d.cen,0);
+                const p_cen = data.filter(d => d.year === (maxYear-1) && d.mIndex === i).reduce((s,d)=>s+d.cen,0);
+                curSet.push({ r: c_amt, n: c_cen });
+                preSet.push({ r: p_amt, n: p_cen });
+            });
+
+            draw('revChart', 'line', MONTH_NAMES, [
+                { label: `${maxYear}`, data: curSet.map(v=>v.r), borderColor: '#6366f1', tension: 0.4 },
+                { label: `${maxYear-1}`, data: preSet.map(v=>v.r), borderColor: 'rgba(255,255,255,0.4)', borderDash:[5,5], tension: 0.4 }
+            ], 'Revenue Performance');
+
+            draw('cenChart', 'line', MONTH_NAMES, [
+                { label: `${maxYear}`, data: curSet.map(v=>v.n), borderColor: '#06b6d4', tension: 0.4 },
+                { label: `${maxYear-1}`, data: preSet.map(v=>v.n), borderColor: 'rgba(255,255,255,0.4)', borderDash:[5,5], tension: 0.4 }
+            ], 'Census Performance');
+        }
+
+        function drawSpark(id, data) {
+            if (charts[id]) charts[id].destroy();
+            charts[id] = new Chart(document.getElementById(id), {
+                type: 'line', data: { labels: ['','',''], datasets: [{ data, borderColor: '#6366f1', borderWidth: 2, pointRadius: 4, tension: 0.4 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false } } }
+            });
+        }
+
+        function draw(id, type, labels, datasets, title) {
+            if (charts[id]) charts[id].destroy();
+            charts[id] = new Chart(document.getElementById(id), {
+                type, data: { labels, datasets },
+                options: { 
+                    responsive: true, maintainAspectRatio: false,
+                    animation: { duration: 1000, easing: 'easeOutQuart' },
+                    plugins: { 
+                        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 }, color: '#eee' } },
+                        title: { display: true, text: title, color: '#fff', font: { size: 12, weight: 'bold' } }
+                    },
+                    scales: { 
+                        y: { grid: { color: 'rgba(255,255,255,0.15)' }, ticks: { font: { size: 9 }, color: '#eee' } },
+                        x: { grid: { display: false }, ticks: { font: { size: 9 }, color: '#eee' } }
+                    }
+                }
+            });
+        }
+
+        function resetFilters() { document.getElementById('monthSlicer').value = 'all'; document.getElementById('nameSlicer').value = 'all'; render(true); }
+        init();
+    </script>
+</body>
+</html>
