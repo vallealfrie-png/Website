@@ -23,7 +23,7 @@
             position: absolute;
             top: 100%;
             left: -10px;
-            width: 240px;
+            width: 260px;
             background: rgba(2, 44, 34, 0.98);
             backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -34,7 +34,6 @@
             z-index: 100;
         }
         
-        /* Show on Hover */
         .nav-item:hover .dropdown-menu { display: block; animation: fadeInUp 0.2s ease-out; }
         
         .dropdown-link {
@@ -72,15 +71,22 @@
                         Dashboard <i class="fa-solid fa-chevron-down text-[8px] opacity-50"></i>
                     </a>
                     <div class="dropdown-menu">
-                        <p class="px-4 py-2 text-[8px] text-emerald-500/60 font-black tracking-[0.3em] uppercase">Active Systems</p>
+                        <p class="px-4 py-2 text-[8px] text-emerald-500/60 font-black tracking-[0.3em] uppercase">Intelligence Hub</p>
+                        
                         <a href="visual.html" class="dropdown-link">
                             <i class="fa-solid fa-folder-tree text-xs"></i>
                             <span class="text-[10px] tracking-wide">Document Tracker</span>
                         </a>
+
+                        <a href="package.html" class="dropdown-link">
+                            <i class="fa-solid fa-chart-line text-xs"></i>
+                            <span class="text-[10px] tracking-wide">Package Availment</span>
+                        </a>
+
                         <div class="border-t border-white/5 my-2"></div>
                         <a href="#" class="dropdown-link opacity-30 cursor-not-allowed">
                             <i class="fa-solid fa-plus text-xs"></i>
-                            <span class="text-[10px] tracking-wide italic">Future Project</span>
+                            <span class="text-[10px] tracking-wide italic">Future System</span>
                         </a>
                     </div>
                 </div>
