@@ -1,29 +1,411 @@
-<div class="dropdown-menu">
-    <p class="px-4 py-2 text-[8px] text-emerald-500/60 font-black tracking-[0.3em] uppercase">Intelligence Hub</p>
-    
-    <a href="reports.html" class="dropdown-link">
-        <i class="fa-solid fa-square-poll-vertical text-xs"></i>
-        <span class="text-[10px] tracking-wide">Survey Result</span>
-    </a>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PHMC | Advanced Analytics (Public)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    boxShadow: { '3xl': '0 20px 50px rgba(0, 0, 0, 0.05)' }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .chart-container { position: relative; height: 260px; width: 100%; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
 
-    <a href="centers.html" class="dropdown-link">
-        <i class="fa-solid fa-brain text-xs"></i>
-        <span class="text-[10px] tracking-wide">Marketing Intelligence</span>
-    </a>
+        .feedback-canvas {
+            position: relative;
+            height: 500px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 2.5rem;
+            border: 1px solid #f1f5f9;
+            overflow: hidden;
+        }
+        .feedback-item {
+            position: absolute;
+            font-weight: 900;
+            text-transform: uppercase;
+            white-space: nowrap;
+            line-height: 1;
+            padding: 10px 14px;
+            border-radius: 14px;
+            pointer-events: auto;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+        .feedback-item:hover { transform: scale(1.1); z-index: 100 !important; cursor: default; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        
+        .center-hub {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 50;
+            background: white;
+            width: 150px; height: 150px;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            border-radius: 999px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+            border: 8px solid #f8fafc;
+            text-align: center;
+        }
 
-    <a href="visual.html" class="dropdown-link">
-        <i class="fa-solid fa-folder-tree text-xs"></i>
-        <span class="text-[10px] tracking-wide">Document Tracker</span>
-    </a>
+        @media print {
+            nav, .no-print, button { display: none !important; }
+            .tab-content { display: block !important; page-break-after: always; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 font-sans text-slate-900 min-h-screen">
 
-    <a href="package.html" class="dropdown-link">
-        <i class="fa-solid fa-chart-line text-xs"></i>
-        <span class="text-[10px] tracking-wide">Package Availment</span>
-    </a>
+    <nav class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-200 p-4 shadow-sm">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-8">
+                <h1 class="font-black text-indigo-600 tracking-tighter text-xl uppercase italic">PHMC</h1>
+                <div class="flex gap-6">
+                    <a href="index.html" class="text-sm font-bold text-slate-400 hover:text-indigo-600 transition uppercase tracking-widest flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                        </svg>
+                        Home
+                    </a>
+                    <a href="reports.html" class="text-sm font-bold text-indigo-600 border-b-2 border-indigo-600 uppercase tracking-widest">Reports</a>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <span id="userDisplay" class="text-[10px] font-black text-slate-400 uppercase tracking-widest">...</span>
+                <button id="logoutBtn" onclick="supabaseClient.auth.signOut().then(() => window.location.href='index.html')" class="hidden bg-slate-100 text-[10px] font-black px-4 py-2 rounded-full hover:bg-red-50 hover:text-red-600 transition uppercase tracking-widest">Logout</button>
+            </div>
+        </div>
+    </nav>
 
-    <div class="border-t border-white/5 my-2"></div>
-    <a href="#" class="dropdown-link opacity-30 cursor-not-allowed">
-        <i class="fa-solid fa-plus text-xs"></i>
-        <span class="text-[10px] tracking-wide italic">Future System</span>
-    </a>
-</div>
+    <main class="max-w-7xl mx-auto p-6 md:p-8 space-y-10">
+        
+        <div class="flex flex-col md:flex-row justify-between items-center gap-4 no-print">
+            <div class="bg-slate-200 p-1.5 rounded-2xl flex gap-1 shadow-inner">
+                <button onclick="switchDashboard('internal')" id="btn-internal" class="px-10 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all bg-white shadow-sm text-indigo-600">Internal Data</button>
+                <button onclick="switchDashboard('external')" id="btn-external" class="px-10 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all text-slate-500 hover:text-slate-800">External Market</button>
+            </div>
+            <button onclick="window.print()" class="bg-indigo-600 text-white px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-indigo-700 transition">Print Full Report</button>
+        </div>
+
+        <div id="section-internal" class="tab-content active space-y-10">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="bg-white shadow-3xl rounded-[2.5rem] p-8 border-l-8 border-indigo-600">
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Submissions</p>
+                    <h3 id="totalCount" class="text-4xl font-black italic">--</h3>
+                </div>
+                <div class="bg-white shadow-3xl rounded-[2.5rem] p-8 border-l-8 border-emerald-500">
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Satisfaction Rate</p>
+                    <h3 id="posRate" class="text-4xl font-black italic text-emerald-500">--</h3>
+                </div>
+                <div class="bg-white shadow-3xl rounded-[2.5rem] p-8 border-l-8 border-indigo-400">
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Repeat Rate</p>
+                    <h3 id="repeatCount" class="text-4xl font-black italic text-indigo-400">--</h3>
+                </div>
+                <div class="bg-white shadow-3xl rounded-[2.5rem] p-8 border-l-8 border-slate-900">
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">New Patients</p>
+                    <h3 id="newCount" class="text-4xl font-black italic text-slate-900">--</h3>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-white shadow-xl rounded-[2.5rem] p-8 border border-slate-100">
+                    <h4 class="text-xs font-black text-slate-400 uppercase tracking-[0.4em] mb-8">Demographics (Age & Gender)</h4>
+                    <div class="chart-container"><canvas id="demoChart"></canvas></div>
+                </div>
+                <div class="bg-white shadow-xl rounded-[2.5rem] p-8 border border-slate-100">
+                    <h4 class="text-xs font-black text-slate-400 uppercase tracking-[0.4em] mb-8 text-center">Occupational Mix</h4>
+                    <div class="chart-container"><canvas id="occChart"></canvas></div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-white shadow-xl rounded-[2.5rem] p-8 border border-slate-100">
+                    <h4 class="text-xs font-black text-slate-400 uppercase tracking-[0.4em] mb-8">Patient Locations</h4>
+                    <div class="chart-container"><canvas id="locChart"></canvas></div>
+                </div>
+                <div class="bg-white shadow-xl rounded-[2.5rem] p-8 border border-slate-100">
+                    <h4 class="text-xs font-black text-slate-400 uppercase tracking-[0.4em] mb-8 text-center">Sentiment Balance</h4>
+                    <div class="chart-container"><canvas id="sentimentChart"></canvas></div>
+                </div>
+            </div>
+
+            <div class="space-y-6">
+                <h4 class="text-xs font-black text-slate-400 uppercase tracking-[0.4em]">Internal Voice of Patient</h4>
+                <div class="feedback-canvas shadow-3xl" id="canvas-internal">
+                    <div class="center-hub">
+                        <p class="text-[10px] font-black uppercase tracking-widest text-slate-300 italic">PHMC</p>
+                        <h2 class="text-xl font-black uppercase italic text-indigo-600 leading-none">Internal<br>Insights</h2>
+                    </div>
+                    <div id="wrapper-internal" class="w-full h-full relative"></div>
+                </div>
+            </div>
+
+            <div class="bg-white shadow-xl rounded-[2.5rem] overflow-hidden border border-slate-100 p-8">
+                <h4 class="text-xs font-black text-indigo-400 uppercase tracking-[0.4em] mb-6">Internal Feedback Comparison</h4>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="text-[10px] font-black uppercase border-b border-slate-100">
+                                <th class="pb-4 px-2 text-emerald-600 bg-emerald-50/50">Positive: Details</th>
+                                <th class="pb-4 px-2 text-emerald-600 bg-emerald-50/50 border-r-2 border-slate-200">Positive: Improvements</th>
+                                <th class="pb-4 px-2 text-rose-600 bg-rose-50/50">Critical: Details</th>
+                                <th class="pb-4 px-2 text-rose-600 bg-rose-50/50">Critical: Improvements</th>
+                            </tr>
+                        </thead>
+                        <tbody id="intFeedbackTableBody" class="text-xs divide-y divide-slate-50"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="section-external" class="tab-content space-y-10">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white shadow-3xl rounded-[2.5rem] p-8 border-l-8 border-rose-500">
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Market Reach</p>
+                    <h3 id="extTotalCount" class="text-4xl font-black italic">--</h3>
+                </div>
+                <div class="bg-white shadow-3xl rounded-[2.5rem] p-8 border-l-8 border-rose-600">
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Recent Visitors</p>
+                    <h3 id="extYesCount" class="text-4xl font-black italic text-rose-600">--</h3>
+                </div>
+                <div class="bg-white shadow-3xl rounded-[2.5rem] p-8 border-l-8 border-slate-300">
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Untapped Market</p>
+                    <h3 id="extNoCount" class="text-4xl font-black italic text-slate-400">--</h3>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-white shadow-xl rounded-[2.5rem] p-8 border border-rose-100">
+                    <h4 class="text-xs font-black text-rose-400 uppercase tracking-[0.4em] mb-8">Market Demographics</h4>
+                    <div class="chart-container"><canvas id="extDemoChart"></canvas></div>
+                </div>
+                <div class="bg-white shadow-xl rounded-[2.5rem] p-8 border border-rose-100">
+                    <h4 class="text-xs font-black text-rose-400 uppercase tracking-[0.4em] mb-8 text-center">Market Occupation</h4>
+                    <div class="chart-container"><canvas id="extOccChart"></canvas></div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-white shadow-xl rounded-[2.5rem] p-8 border border-rose-100">
+                    <h4 class="text-xs font-black text-rose-400 uppercase tracking-[0.4em] mb-8">Market Locations</h4>
+                    <div class="chart-container"><canvas id="extLocChart"></canvas></div>
+                </div>
+                <div class="bg-white shadow-xl rounded-[2.5rem] p-8 border border-rose-100">
+                    <h4 class="text-xs font-black text-rose-400 uppercase tracking-[0.4em] mb-8 text-center">Market Balance</h4>
+                    <div class="chart-container"><canvas id="extBalanceChart"></canvas></div>
+                </div>
+            </div>
+
+            <div class="bg-white shadow-xl rounded-[2.5rem] overflow-hidden border border-slate-100 p-8">
+                <h4 class="text-xs font-black text-rose-400 uppercase tracking-[0.4em] mb-6">Market Feedback Comparison</h4>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="text-[10px] font-black uppercase border-b border-slate-100">
+                                <th class="pb-4 px-2 text-emerald-600 bg-emerald-50/50">Yes: Service Details</th>
+                                <th class="pb-4 px-2 text-emerald-600 bg-emerald-50/50 border-r-2 border-slate-200">Yes: Services</th>
+                                <th class="pb-4 px-2 text-rose-600 bg-rose-50/50">No: Service Details</th>
+                                <th class="pb-4 px-2 text-rose-600 bg-rose-50/50">No: Services</th>
+                            </tr>
+                        </thead>
+                        <tbody id="extFeedbackTableBody" class="text-xs divide-y divide-slate-50"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // ... (All original script logic remains exactly as provided)
+        const SB_URL = 'https://osfwbhcqibhtobaoojrv.supabase.co';
+        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9zZndiaGNxaWJodG9iYW9vanJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxMDU3MzksImV4cCI6MjA4NTY4MTczOX0.2NNaOhHfXMsYVWrBkJ1gudU4l0in35WU4bT4UgzkvlA';
+        const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
+        
+        window.onload = async () => {
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            
+            if (user) {
+                document.getElementById('userDisplay').innerText = user.email;
+                document.getElementById('logoutBtn').classList.remove('hidden');
+            } else {
+                document.getElementById('userDisplay').innerText = "GUEST VIEW";
+                document.getElementById('logoutBtn').classList.add('hidden');
+            }
+
+            fetchInternal();
+            fetchExternal();
+        };
+
+        function switchDashboard(type) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.getElementById(`section-${type}`).classList.add('active');
+            const btnInt = document.getElementById('btn-internal'), btnExt = document.getElementById('btn-external');
+            if(type === 'internal') {
+                btnInt.className = "px-10 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all bg-white shadow-sm text-indigo-600";
+                btnExt.className = "px-10 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all text-slate-500 hover:text-slate-800";
+            } else {
+                btnExt.className = "px-10 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all bg-white shadow-sm text-rose-600";
+                btnInt.className = "px-10 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all text-slate-500 hover:text-slate-800";
+            }
+        }
+
+        async function fetchInternal() {
+            const { data } = await supabaseClient.from('survey_submissions').select('*');
+            if (!data) return;
+            const posList = data.filter(s => s.experience_rating === 'Positive');
+            const critList = data.filter(s => s.experience_rating !== 'Positive');
+            document.getElementById('totalCount').innerText = data.length;
+            document.getElementById('posRate').innerText = data.length > 0 ? Math.round((posList.length/data.length)*100) + '%' : '0%';
+            document.getElementById('repeatCount').innerText = data.filter(s => s.patient_type === 'Repeat').length;
+            document.getElementById('newCount').innerText = data.length - data.filter(s => s.patient_type === 'Repeat').length;
+            renderInternalCharts(data, posList.length);
+            renderNoOverlapFeedback(data, 'wrapper-internal', 'canvas-internal', 'feedback_details', 'experience_rating');
+            populateComparisonTable('intFeedbackTableBody', posList, critList, 'feedback_details', 'improvements');
+        }
+
+        async function fetchExternal() {
+            const { data } = await supabaseClient.from('external_surveys').select('*');
+            if (!data) return;
+            const yesList = data.filter(s => s.has_availed_recently);
+            const noList = data.filter(s => !s.has_availed_recently);
+            document.getElementById('extTotalCount').innerText = data.length;
+            document.getElementById('extYesCount').innerText = yesList.length;
+            document.getElementById('extNoCount').innerText = noList.length;
+            renderExternalCharts(data, yesList.length, noList.length);
+            populateComparisonTable('extFeedbackTableBody', yesList, noList, 'service_details', 'services');
+        }
+
+        function populateComparisonTable(tableId, posList, negList, col1, col2) {
+            const tbody = document.getElementById(tableId);
+            tbody.innerHTML = '';
+            const maxLen = Math.max(posList.length, negList.length);
+            for (let i = 0; i < maxLen; i++) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="py-3 px-2 italic text-slate-600">${posList[i]?.[col1] || '-'}</td>
+                    <td class="py-3 px-2 font-bold text-emerald-600 border-r-2 border-slate-200">${posList[i]?.[col2] || '-'}</td>
+                    <td class="py-3 px-2 italic text-slate-600 bg-slate-50/50">${negList[i]?.[col1] || '-'}</td>
+                    <td class="py-3 px-2 font-bold text-rose-500 bg-slate-50/50">${negList[i]?.[col2] || '-'}</td>
+                `;
+                tbody.appendChild(tr);
+            }
+        }
+
+        const calculateAgeDist = (data, gender) => {
+            const dist = [0,0,0,0,0];
+            data.filter(s => s.gender === gender).forEach(s => {
+                let i = s.age <= 19 ? 0 : s.age <= 39 ? 1 : s.age <= 59 ? 2 : s.age <= 79 ? 3 : 4;
+                dist[i]++;
+            });
+            return dist;
+        };
+
+        function renderInternalCharts(data, pos) {
+            const colors = ['#6366f1', '#2dd4bf', '#0ea5e9', '#8b5cf6', '#10b981'];
+            new Chart(document.getElementById('demoChart'), { 
+                type: 'bar', data: { labels: ['0-19', '20-39', '40-59', '60-79', '80+'], datasets: [
+                    { label: 'MALE', data: calculateAgeDist(data, 'Male'), backgroundColor: '#2dd4bf' }, 
+                    { label: 'FEMALE', data: calculateAgeDist(data, 'Female'), backgroundColor: '#0ea5e9' }
+                ]}, options: { responsive: true, maintainAspectRatio: false }
+            });
+            const occ = data.reduce((acc, cur) => { acc[cur.occupation] = (acc[cur.occupation] || 0) + 1; return acc; }, {});
+            new Chart(document.getElementById('occChart'), { 
+                type: 'pie', data: { labels: Object.keys(occ), datasets: [{ data: Object.values(occ), backgroundColor: colors }]}, 
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+            const loc = data.reduce((acc, cur) => { acc[cur.location] = (acc[cur.location] || 0) + 1; return acc; }, {});
+            new Chart(document.getElementById('locChart'), { 
+                type: 'bar', data: { labels: Object.keys(loc), datasets: [{ label: 'Patients', data: Object.values(loc), backgroundColor: '#6366f1', borderRadius: 8 }]}, 
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false }
+            });
+            new Chart(document.getElementById('sentimentChart'), { 
+                type: 'doughnut', data: { labels: ['Positive', 'Critical'], datasets: [{ data: [pos, data.length - pos], backgroundColor: ['#10b981', '#f43f5e'] }]}, 
+                options: { responsive: true, maintainAspectRatio: false, cutout: '75%' }
+            });
+        }
+
+        function renderExternalCharts(data, yes, no) {
+            const colors = ['#e11d48', '#fb7185', '#fda4af', '#9f1239', '#f43f5e'];
+            new Chart(document.getElementById('extDemoChart'), { 
+                type: 'bar', data: { labels: ['0-19', '20-39', '40-59', '60-79', '80+'], datasets: [
+                    { label: 'MALE', data: calculateAgeDist(data, 'Male'), backgroundColor: '#e11d48' }, 
+                    { label: 'FEMALE', data: calculateAgeDist(data, 'Female'), backgroundColor: '#fb7185' }
+                ]}, options: { responsive: true, maintainAspectRatio: false }
+            });
+            const occ = data.reduce((acc, cur) => { acc[cur.occupation] = (acc[cur.occupation] || 0) + 1; return acc; }, {});
+            new Chart(document.getElementById('extOccChart'), { 
+                type: 'pie', data: { labels: Object.keys(occ), datasets: [{ data: Object.values(occ), backgroundColor: colors }]}, 
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+            const loc = data.reduce((acc, cur) => { acc[cur.location] = (acc[cur.location] || 0) + 1; return acc; }, {});
+            new Chart(document.getElementById('extLocChart'), { 
+                type: 'bar', data: { labels: Object.keys(loc), datasets: [{ label: 'Respondents', data: Object.values(loc), backgroundColor: '#e11d48', borderRadius: 8 }]}, 
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false }
+            });
+            new Chart(document.getElementById('extBalanceChart'), { 
+                type: 'doughnut', data: { labels: ['Recent Visitor', 'Non-Visitor'], datasets: [{ data: [yes, no], backgroundColor: ['#e11d48', '#cbd5e1'] }]}, 
+                options: { responsive: true, maintainAspectRatio: false, cutout: '75%' }
+            });
+        }
+
+        function renderNoOverlapFeedback(data, wrapperId, canvasId, textKey, statusKey) {
+            const wrapper = document.getElementById(wrapperId);
+            const canvas = document.getElementById(canvasId);
+            if(!wrapper || !canvas) return;
+            wrapper.innerHTML = ""; 
+            const items = data.filter(d => d[textKey] && d[textKey].toLowerCase() !== 'none').slice(0, 30);
+            const placedRects = [];
+            const hubSize = 180;
+            const canvasW = canvas.offsetWidth, canvasH = canvas.offsetHeight;
+            items.forEach((item, i) => {
+                const span = document.createElement('span');
+                span.className = 'feedback-item';
+                span.innerText = item[textKey];
+                if(statusKey === 'experience_rating') {
+                    span.style.color = item[statusKey] === 'Positive' ? '#10b981' : '#f43f5e';
+                    span.style.background = item[statusKey] === 'Positive' ? '#f0fdf4' : '#fef2f2';
+                } else {
+                    span.style.color = item[statusKey] ? '#e11d48' : '#64748b';
+                    span.style.background = item[statusKey] ? '#fff1f2' : '#f8fafc';
+                }
+                span.style.fontSize = (10 + (i % 4) * 2) + 'px';
+                wrapper.appendChild(span);
+                const rect = { w: span.offsetWidth + 20, h: span.offsetHeight + 20 };
+                let placed = false, attempts = 0;
+                while (!placed && attempts < 150) {
+                    const x = Math.random() * (canvasW - rect.w);
+                    const y = Math.random() * (canvasH - rect.h);
+                    const distToCenter = Math.sqrt(Math.pow((x + rect.w/2) - canvasW/2, 2) + Math.pow((y + rect.h/2) - canvasH/2, 2));
+                    if (distToCenter > hubSize/2 + 10) {
+                        const overlap = placedRects.some(r => (x < r.x + r.w && x + rect.w > r.x && y < r.y + r.h && y + rect.h > r.y));
+                        if (!overlap) {
+                            span.style.left = x + 'px'; span.style.top = y + 'px';
+                            placedRects.push({ x, y, w: rect.w, h: rect.h });
+                            placed = true;
+                        }
+                    }
+                    attempts++;
+                }
+                if(!placed) span.remove();
+            });
+        }
+    </script>
+</body>
+</html>
