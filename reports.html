@@ -23,8 +23,7 @@
         ::-webkit-scrollbar-track { background: #f1f5f9; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         .chart-container { position: relative; height: 260px; width: 100%; }
-        /* taller container for the horizontal bar chart to avoid crowding */
-        .chart-container-tall { position: relative; height: 400px; width: 100%; }
+        .chart-container-tall { position: relative; height: 350px; width: 100%; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
@@ -214,9 +213,15 @@
                 </div>
             </div>
 
-            <div class="bg-white shadow-xl rounded-[2.5rem] p-8 border border-rose-100">
-                <h4 class="text-xs font-black text-rose-400 uppercase tracking-[0.4em] mb-8">Competitor Analysis / Service Details</h4>
-                <div class="chart-container-tall"><canvas id="extServiceDetailsChart"></canvas></div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-white shadow-xl rounded-[2.5rem] p-8 border border-rose-100">
+                    <h4 class="text-xs font-black text-emerald-500 uppercase tracking-[0.4em] mb-8">Recent Visitors: Service Details</h4>
+                    <div class="chart-container-tall"><canvas id="extServiceDetailsYesChart"></canvas></div>
+                </div>
+                <div class="bg-white shadow-xl rounded-[2.5rem] p-8 border border-rose-100">
+                    <h4 class="text-xs font-black text-slate-400 uppercase tracking-[0.4em] mb-8">Non-Visitors: Service Details</h4>
+                    <div class="chart-container-tall"><canvas id="extServiceDetailsNoChart"></canvas></div>
+                </div>
             </div>
 
             <div class="bg-white shadow-xl rounded-[2.5rem] overflow-hidden border border-slate-100 p-8">
@@ -246,7 +251,6 @@
         
         window.onload = async () => {
             const { data: { user } } = await supabaseClient.auth.getUser();
-            
             if (user) {
                 document.getElementById('userDisplay').innerText = user.email;
                 document.getElementById('logoutBtn').classList.remove('hidden');
@@ -254,7 +258,6 @@
                 document.getElementById('userDisplay').innerText = "GUEST VIEW";
                 document.getElementById('logoutBtn').classList.add('hidden');
             }
-
             fetchInternal();
             fetchExternal();
         };
@@ -294,7 +297,7 @@
             document.getElementById('extTotalCount').innerText = data.length;
             document.getElementById('extYesCount').innerText = yesList.length;
             document.getElementById('extNoCount').innerText = noList.length;
-            renderExternalCharts(data, yesList.length, noList.length);
+            renderExternalCharts(data, yesList, noList);
             populateComparisonTable('extFeedbackTableBody', yesList, noList, 'service_details', 'services');
         }
 
@@ -347,10 +350,9 @@
             });
         }
 
-        function renderExternalCharts(data, yes, no) {
+        function renderExternalCharts(data, yesList, noList) {
             const colors = ['#e11d48', '#fb7185', '#fda4af', '#9f1239', '#f43f5e'];
             
-            // Demographics
             new Chart(document.getElementById('extDemoChart'), { 
                 type: 'bar', data: { labels: ['0-19', '20-39', '40-59', '60-79', '80+'], datasets: [
                     { label: 'MALE', data: calculateAgeDist(data, 'Male'), backgroundColor: '#e11d48' }, 
@@ -358,61 +360,50 @@
                 ]}, options: { responsive: true, maintainAspectRatio: false }
             });
 
-            // Occupation
             const occ = data.reduce((acc, cur) => { acc[cur.occupation] = (acc[cur.occupation] || 0) + 1; return acc; }, {});
             new Chart(document.getElementById('extOccChart'), { 
                 type: 'pie', data: { labels: Object.keys(occ), datasets: [{ data: Object.values(occ), backgroundColor: colors }]}, 
                 options: { responsive: true, maintainAspectRatio: false }
             });
 
-            // Locations
             const loc = data.reduce((acc, cur) => { acc[cur.location] = (acc[cur.location] || 0) + 1; return acc; }, {});
             new Chart(document.getElementById('extLocChart'), { 
                 type: 'bar', data: { labels: Object.keys(loc), datasets: [{ label: 'Respondents', data: Object.values(loc), backgroundColor: '#e11d48', borderRadius: 8 }]}, 
                 options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false }
             });
 
-            // Balance
             new Chart(document.getElementById('extBalanceChart'), { 
-                type: 'doughnut', data: { labels: ['Recent Visitor', 'Non-Visitor'], datasets: [{ data: [yes, no], backgroundColor: ['#e11d48', '#cbd5e1'] }]}, 
+                type: 'doughnut', data: { labels: ['Recent Visitor', 'Non-Visitor'], datasets: [{ data: [yesList.length, noList.length], backgroundColor: ['#e11d48', '#cbd5e1'] }]}, 
                 options: { responsive: true, maintainAspectRatio: false, cutout: '75%' }
             });
 
-            // --- NEW: SERVICE DETAILS CHART ---
-            const serviceDetailsMap = data.reduce((acc, cur) => {
-                if (cur.service_details && cur.service_details.toLowerCase() !== 'none') {
-                    acc[cur.service_details] = (acc[cur.service_details] || 0) + 1;
-                }
-                return acc;
-            }, {});
-            
-            // Sort to show highest frequency first
-            const sortedLabels = Object.keys(serviceDetailsMap).sort((a,b) => serviceDetailsMap[b] - serviceDetailsMap[a]);
-            const sortedValues = sortedLabels.map(l => serviceDetailsMap[l]);
-
-            new Chart(document.getElementById('extServiceDetailsChart'), { 
-                type: 'bar', 
-                data: { 
-                    labels: sortedLabels, 
-                    datasets: [{ 
-                        label: 'Mentions', 
-                        data: sortedValues, 
-                        backgroundColor: '#fb7185', 
-                        borderRadius: 6 
-                    }]
-                }, 
-                options: { 
-                    indexAxis: 'y', 
-                    responsive: true, 
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false }
-                    },
-                    scales: {
-                        x: { beginAtZero: true, grid: { display: false } },
-                        y: { grid: { display: false } }
+            // Helper to get frequency map for service_details
+            const getServiceFreq = (list) => {
+                const map = list.reduce((acc, cur) => {
+                    if (cur.service_details && cur.service_details.toLowerCase() !== 'none') {
+                        acc[cur.service_details] = (acc[cur.service_details] || 0) + 1;
                     }
-                }
+                    return acc;
+                }, {});
+                const labels = Object.keys(map).sort((a,b) => map[b] - map[a]);
+                return { labels, values: labels.map(l => map[l]) };
+            };
+
+            const yesFreq = getServiceFreq(yesList);
+            const noFreq = getServiceFreq(noList);
+
+            // Chart for Recent Visitors (YES)
+            new Chart(document.getElementById('extServiceDetailsYesChart'), { 
+                type: 'bar', 
+                data: { labels: yesFreq.labels, datasets: [{ label: 'Frequency', data: yesFreq.values, backgroundColor: '#10b981', borderRadius: 4 }]}, 
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }} }
+            });
+
+            // Chart for Non-Visitors (NO)
+            new Chart(document.getElementById('extServiceDetailsNoChart'), { 
+                type: 'bar', 
+                data: { labels: noFreq.labels, datasets: [{ label: 'Frequency', data: noFreq.values, backgroundColor: '#94a3b8', borderRadius: 4 }]}, 
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }} }
             });
         }
 
