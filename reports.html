@@ -23,6 +23,8 @@
         ::-webkit-scrollbar-track { background: #f1f5f9; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         .chart-container { position: relative; height: 260px; width: 100%; }
+        /* taller container for the horizontal bar chart to avoid crowding */
+        .chart-container-tall { position: relative; height: 400px; width: 100%; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
@@ -212,6 +214,11 @@
                 </div>
             </div>
 
+            <div class="bg-white shadow-xl rounded-[2.5rem] p-8 border border-rose-100">
+                <h4 class="text-xs font-black text-rose-400 uppercase tracking-[0.4em] mb-8">Competitor Analysis / Service Details</h4>
+                <div class="chart-container-tall"><canvas id="extServiceDetailsChart"></canvas></div>
+            </div>
+
             <div class="bg-white shadow-xl rounded-[2.5rem] overflow-hidden border border-slate-100 p-8">
                 <h4 class="text-xs font-black text-rose-400 uppercase tracking-[0.4em] mb-6">Market Feedback Comparison</h4>
                 <div class="overflow-x-auto">
@@ -233,7 +240,6 @@
     </main>
 
     <script>
-        // ... (All original script logic remains exactly as provided)
         const SB_URL = 'https://osfwbhcqibhtobaoojrv.supabase.co';
         const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9zZndiaGNxaWJodG9iYW9vanJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxMDU3MzksImV4cCI6MjA4NTY4MTczOX0.2NNaOhHfXMsYVWrBkJ1gudU4l0in35WU4bT4UgzkvlA';
         const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
@@ -343,25 +349,70 @@
 
         function renderExternalCharts(data, yes, no) {
             const colors = ['#e11d48', '#fb7185', '#fda4af', '#9f1239', '#f43f5e'];
+            
+            // Demographics
             new Chart(document.getElementById('extDemoChart'), { 
                 type: 'bar', data: { labels: ['0-19', '20-39', '40-59', '60-79', '80+'], datasets: [
                     { label: 'MALE', data: calculateAgeDist(data, 'Male'), backgroundColor: '#e11d48' }, 
                     { label: 'FEMALE', data: calculateAgeDist(data, 'Female'), backgroundColor: '#fb7185' }
                 ]}, options: { responsive: true, maintainAspectRatio: false }
             });
+
+            // Occupation
             const occ = data.reduce((acc, cur) => { acc[cur.occupation] = (acc[cur.occupation] || 0) + 1; return acc; }, {});
             new Chart(document.getElementById('extOccChart'), { 
                 type: 'pie', data: { labels: Object.keys(occ), datasets: [{ data: Object.values(occ), backgroundColor: colors }]}, 
                 options: { responsive: true, maintainAspectRatio: false }
             });
+
+            // Locations
             const loc = data.reduce((acc, cur) => { acc[cur.location] = (acc[cur.location] || 0) + 1; return acc; }, {});
             new Chart(document.getElementById('extLocChart'), { 
                 type: 'bar', data: { labels: Object.keys(loc), datasets: [{ label: 'Respondents', data: Object.values(loc), backgroundColor: '#e11d48', borderRadius: 8 }]}, 
                 options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false }
             });
+
+            // Balance
             new Chart(document.getElementById('extBalanceChart'), { 
                 type: 'doughnut', data: { labels: ['Recent Visitor', 'Non-Visitor'], datasets: [{ data: [yes, no], backgroundColor: ['#e11d48', '#cbd5e1'] }]}, 
                 options: { responsive: true, maintainAspectRatio: false, cutout: '75%' }
+            });
+
+            // --- NEW: SERVICE DETAILS CHART ---
+            const serviceDetailsMap = data.reduce((acc, cur) => {
+                if (cur.service_details && cur.service_details.toLowerCase() !== 'none') {
+                    acc[cur.service_details] = (acc[cur.service_details] || 0) + 1;
+                }
+                return acc;
+            }, {});
+            
+            // Sort to show highest frequency first
+            const sortedLabels = Object.keys(serviceDetailsMap).sort((a,b) => serviceDetailsMap[b] - serviceDetailsMap[a]);
+            const sortedValues = sortedLabels.map(l => serviceDetailsMap[l]);
+
+            new Chart(document.getElementById('extServiceDetailsChart'), { 
+                type: 'bar', 
+                data: { 
+                    labels: sortedLabels, 
+                    datasets: [{ 
+                        label: 'Mentions', 
+                        data: sortedValues, 
+                        backgroundColor: '#fb7185', 
+                        borderRadius: 6 
+                    }]
+                }, 
+                options: { 
+                    indexAxis: 'y', 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: { beginAtZero: true, grid: { display: false } },
+                        y: { grid: { display: false } }
+                    }
+                }
             });
         }
 
