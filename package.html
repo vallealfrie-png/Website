@@ -23,7 +23,6 @@
             transition: all 0.3s ease;
         }
         
-        /* Border Color Variants */
         .card-indigo { background: linear-gradient(#0f0f0f, #0f0f0f) padding-box, conic-gradient(from var(--bg-angle), #6366f1, #1e1b4b, #6366f1) border-box; }
         .card-emerald { background: linear-gradient(#0f0f0f, #0f0f0f) padding-box, conic-gradient(from var(--bg-angle), #10b981, #064e3b, #10b981) border-box; }
         .card-rose { background: linear-gradient(#0f0f0f, #0f0f0f) padding-box, conic-gradient(from var(--bg-angle), #f43f5e, #4c0519, #f43f5e) border-box; }
@@ -33,7 +32,6 @@
         select { background: #111 !important; color: white !important; border: 1px solid #333 !important; }
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
-        
         .glow-text-white { color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
     </style>
 </head>
@@ -65,7 +63,6 @@
     </nav>
 
     <main class="p-6 max-w-[1600px] mx-auto space-y-6">
-        
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div class="neon-card card-indigo p-6">
                 <p class="text-[9px] font-bold text-indigo-400 uppercase tracking-widest">Current Period</p>
@@ -130,21 +127,16 @@
                 document.getElementById('progressBar').style.width = `${Math.min((rows.length / 61400) * 100, 100)}%`;
                 if (data.length < 1000) break;
             }
-
             masterData = rows.map(r => {
                 const d = new Date(r.date);
                 return { ...r, y: d.getUTCFullYear(), m: d.getUTCMonth(), day: d.getUTCDate(), amt: parseFloat(String(r.amount).replace(/[^0-9.-]+/g,"")) || 0 };
             });
-
             maxYear = Math.max(...masterData.map(d => d.y));
             activeMonths = [...new Set(masterData.filter(d => d.y === maxYear).map(d => d.m))];
-
             const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
             document.getElementById('monthSlicer').innerHTML = `<option value="all">Cumulative Comparison</option>` + months.map((m,i)=>`<option value="${i}">${m}</option>`).join('');
-            
             const catEl = document.getElementById('catSlicer');
             [...new Set(masterData.map(d=>d.category))].filter(Boolean).sort().forEach(c => catEl.innerHTML += `<option value="${c}">${c}</option>`);
-
             document.getElementById('loader').classList.add('hidden');
             ['monthSlicer', 'catSlicer'].forEach(id => document.getElementById(id).addEventListener('change', render));
             render();
@@ -166,17 +158,14 @@
                 const sub = mVal === "all" ? data.filter(d => d.y === yr && activeMonths.includes(d.m)) : data.filter(d => d.y === yr && d.m === parseInt(mVal));
                 return { yr, r: sub.reduce((s,d)=>s+d.amt,0), n: sub.length };
             });
-
             document.getElementById('valYear3').textContent = `₱${stats[2].r.toLocaleString()}`;
             document.getElementById('cenYear3').textContent = `${stats[2].n.toLocaleString()} Patients`;
             document.getElementById('valYear2').textContent = `₱${stats[1].r.toLocaleString()}`;
             document.getElementById('cenYear2').textContent = `${stats[1].n.toLocaleString()} Patients`;
-
             const diff = stats[1].r ? ((stats[2].r - stats[1].r) / stats[1].r * 100) : 0;
             const vEl = document.getElementById('varRev');
             vEl.textContent = `${diff >= 0 ? '+' : ''}${diff.toFixed(1)}%`;
             vEl.className = `text-4xl font-black mt-1 ${diff >= 0 ? 'text-emerald-400 glow-text-white' : 'text-rose-400'}`;
-            
             drawSpark('sparkLineChart', stats.map(s => s.r));
             document.getElementById('sparkLabels').innerHTML = years.map(y => `<span>${y}</span>`).join('');
         }
@@ -202,8 +191,14 @@
                     preSet.push({ r: p.reduce((s,d)=>s+d.amt,0), n: p.length });
                 }
             }
-            draw('revChart', 'line', labels, [{ label: `${maxYear}`, data: curSet.map(v=>v.r), borderColor: '#6366f1', tension: 0.4 }, { label: `${maxYear-1}`, data: preSet.map(v=>v.r), borderColor: '#444', borderDash:[5,5], tension: 0.4 }], 'Revenue Matrix');
-            draw('cenChart', 'line', labels, [{ label: `${maxYear}`, data: curSet.map(v=>v.n), borderColor: '#10b981', tension: 0.4 }, { label: `${maxYear-1}`, data: preSet.map(v=>v.n), borderColor: '#444', borderDash:[5,5], tension: 0.4 }], 'Census Matrix');
+            draw('revChart', 'line', labels, [
+                { label: `${maxYear}`, data: curSet.map(v=>v.r), borderColor: '#6366f1', tension: 0.4 }, 
+                { label: `${maxYear-1}`, data: preSet.map(v=>v.r), borderColor: '#ffffff', borderDash:[5,5], borderWidth: 1, tension: 0.4 }
+            ], 'Revenue Matrix');
+            draw('cenChart', 'line', labels, [
+                { label: `${maxYear}`, data: curSet.map(v=>v.n), borderColor: '#10b981', tension: 0.4 }, 
+                { label: `${maxYear-1}`, data: preSet.map(v=>v.n), borderColor: '#ffffff', borderDash:[5,5], borderWidth: 1, tension: 0.4 }
+            ], 'Census Matrix');
         }
 
         function updateLists(mVal, data) {
