@@ -3,123 +3,134 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro Revenue Dashboard</title>
+    <title>Executive Revenue Intelligence</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://code.highcharts.com/highcharts.js"></script>
     <script src="https://code.highcharts.com/highcharts-more.js"></script>
-    <script src="https://code.highcharts.com/modules/drilldown.js"></script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
         
-        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #020617; }
         
-        .glass {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        /* THE STYLISH BORDER EFFECT */
+        .pro-container {
+            position: relative;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(16px);
+            border-radius: 24px;
+            /* Base border */
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            /* Outer glow */
+            box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.2), 
+                        inset 0 0 12px 0 rgba(255, 255, 255, 0.02);
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        .pro-container:hover {
+            border-color: rgba(99, 102, 241, 0.4);
+            transform: translateY(-2px);
+        }
+
+        /* Gradient stroke mask (The "Stylish" part) */
+        .pro-container::before {
+            content: "";
+            position: absolute;
+            inset: -1px;
+            border-radius: 24px;
+            padding: 1px; /* Border thickness */
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.5), transparent 40%, transparent 60%, rgba(168, 85, 247, 0.5));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
         }
 
         /* Smooth gauge transitions */
-        .highcharts-container { transition: all 0.5s ease-in-out; }
-        
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #0f172a; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        .highcharts-container { transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
     </style>
 </head>
-<body class="bg-[#020617] text-slate-200 min-h-screen pb-12">
+<body class="text-slate-200 min-h-screen pb-12">
 
-    <nav class="border-b border-white/10 px-8 py-5 mb-10 bg-slate-900/50 backdrop-blur-md sticky top-0 z-50">
+    <nav class="border-b border-white/5 px-8 py-5 mb-10 bg-slate-900/40 backdrop-blur-xl sticky top-0 z-50">
         <div class="max-w-7xl mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-4">
-                <div class="w-10 h-10 bg-gradient-to-tr from-indigo-600 to-violet-400 rounded-xl shadow-lg shadow-indigo-500/20 flex items-center justify-center">
+                <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-fuchsia-500 rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.3)] flex items-center justify-center">
                     <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
                 </div>
                 <div>
                     <h1 class="text-lg font-extrabold tracking-tight text-white leading-none">REVENUE INTEL</h1>
-                    <p class="text-[10px] text-indigo-400 font-bold tracking-[0.2em] uppercase">Executive Dashboard</p>
+                    <p class="text-[10px] text-indigo-400 font-bold tracking-[0.2em] uppercase mt-1">Hospitality Analytics</p>
                 </div>
             </div>
-            <div class="flex space-x-10 text-xs font-bold uppercase tracking-widest">
-                <a href="index.html" class="text-slate-400 hover:text-white transition-colors">Home</a>
-                <a href="revenuevstarget.html" class="text-indigo-400 border-b-2 border-indigo-400 pb-1">Analytics</a>
+            <div class="flex space-x-10 text-[11px] font-black uppercase tracking-widest">
+                <a href="#" class="text-indigo-400 border-b-2 border-indigo-400 pb-1">Insights</a>
+                <a href="#" class="text-slate-500 hover:text-white transition-colors">Settings</a>
             </div>
         </div>
     </nav>
 
     <div class="max-w-7xl mx-auto px-6 space-y-8">
         
-        <div class="glass p-2 rounded-2xl flex flex-wrap gap-2 items-center">
-            <div class="flex-1 min-w-[200px] relative">
-                <select id="monthSelect" class="w-full bg-transparent border-none text-sm rounded-xl p-4 font-bold text-white outline-none appearance-none hover:bg-white/5 transition-all cursor-pointer">
-                    <option class="bg-slate-900" value="ALL">Year-to-Date (All Months)</option>
-                    <option class="bg-slate-900" value="Jan">January Period</option>
-                    <option class="bg-slate-900" value="Feb">February Period</option>
-                    <option class="bg-slate-900" value="Mar">March Period</option>
-                </select>
-            </div>
+        <div class="pro-container p-2 flex flex-wrap gap-2 items-center">
+            <select id="monthSelect" class="flex-1 bg-transparent border-none text-sm p-4 font-bold text-white outline-none cursor-pointer hover:bg-white/5 rounded-xl transition-all">
+                <option class="bg-slate-900" value="ALL">Year-to-Date (All Months)</option>
+                <option class="bg-slate-900" value="Jan">January</option>
+                <option class="bg-slate-900" value="Feb">February</option>
+                <option class="bg-slate-900" value="Mar">March</option>
+            </select>
             <div class="w-px h-8 bg-white/10 hidden md:block"></div>
-            <div class="flex-1 min-w-[200px]">
-                <select id="deptSelect" class="w-full bg-transparent border-none text-sm rounded-xl p-4 font-bold text-white outline-none appearance-none hover:bg-white/5 transition-all cursor-pointer">
-                    <option class="bg-slate-900" value="ALL">Consolidated Hospital Data</option>
-                </select>
-            </div>
+            <select id="deptSelect" class="flex-1 bg-transparent border-none text-sm p-4 font-bold text-white outline-none cursor-pointer hover:bg-white/5 rounded-xl transition-all">
+                <option class="bg-slate-900" value="ALL">Consolidated Hospital</option>
+            </select>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="glass p-7 rounded-[2rem] relative overflow-hidden group">
-                <div class="absolute -right-4 -top-4 w-24 h-24 bg-indigo-500/10 rounded-full blur-2xl group-hover:bg-indigo-500/20 transition-all"></div>
-                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">2026 Actuals</p>
+            <div class="pro-container p-7">
+                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">2026 Revenue</p>
                 <h3 id="score2026" class="text-4xl font-black text-white tracking-tighter">₱0</h3>
             </div>
-            <div class="glass p-7 rounded-[2rem]">
-                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">2025 Benchmarks</p>
+            <div class="pro-container p-7">
+                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">2025 Revenue</p>
                 <h3 id="score2025" class="text-4xl font-black text-slate-400 tracking-tighter">₱0</h3>
             </div>
-            <div class="glass p-7 rounded-[2rem] border-l-4 border-indigo-500">
-                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">YoY Performance</p>
+            <div class="pro-container p-7">
+                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Efficiency Variance</p>
                 <div class="flex items-center space-x-3">
                     <h3 id="growthValue" class="text-4xl font-black tracking-tighter">0%</h3>
-                    <div id="growthBadge" class="px-2 py-1 rounded-lg text-[10px] font-bold"></div>
+                    <div id="growthBadge" class="px-2 py-1 rounded-lg text-[9px] font-black tracking-tighter"></div>
                 </div>
             </div>
         </div>
 
-        <div class="glass rounded-[3rem] p-10 relative border border-white/5 shadow-2xl">
+        <div class="pro-container p-10">
             <div class="text-center mb-10">
-                <span class="bg-indigo-500/10 text-indigo-400 text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest border border-indigo-500/20">Achivement Performance</span>
+                <span class="bg-white/5 text-slate-300 text-[10px] font-black px-5 py-2 rounded-full uppercase tracking-widest border border-white/10">Target Achievement Analysis</span>
             </div>
             
             <div class="flex flex-col lg:flex-row items-center justify-between gap-12">
                 <div class="flex-1 text-center lg:text-left">
-                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Generated Revenue</p>
+                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Actual Performance</p>
                     <p id="revText" class="text-3xl font-black text-indigo-400 tracking-tighter">₱0</p>
                 </div>
 
                 <div class="flex-[2] w-full max-w-[500px]">
-                    <div id="gaugeContainer"></div>
+                    <div id="gaugeContainer" class="h-[250px]"></div>
                 </div>
 
                 <div class="flex-1 text-center lg:text-right">
-                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Target Threshold</p>
+                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Quota Target</p>
                     <p id="targetText" class="text-3xl font-black text-white tracking-tighter">₱0</p>
                 </div>
             </div>
         </div>
 
-        <div class="glass rounded-[3rem] p-8">
-            <div class="flex items-center justify-between mb-8">
-                <div>
-                    <h3 class="text-xl font-extrabold text-white">Market Comparison</h3>
-                    <p class="text-xs text-slate-500 font-bold uppercase tracking-widest">Revenue Flow 2025 vs 2026</p>
-                </div>
-            </div>
-            <div id="comparisonContainer"></div>
+        <div class="pro-container p-10">
+            <h3 class="text-xl font-extrabold text-white mb-8">Revenue Momentum</h3>
+            <div id="comparisonContainer" class="h-[400px]"></div>
         </div>
-
     </div>
 
     <script>
@@ -129,7 +140,6 @@
 
         let gaugeChart, comparisonChart;
 
-        // COUNTDOWN / ANIMATION EFFECT
         function animateValue(id, start, end, duration, isCurrency = true) {
             const obj = document.getElementById(id);
             if (!obj) return;
@@ -160,23 +170,23 @@
             gaugeChart = Highcharts.chart('gaugeContainer', {
                 chart: { type: 'gauge', backgroundColor: 'transparent' },
                 title: null,
-                pane: { startAngle: -120, endAngle: 120, background: null, center: ['50%', '70%'], size: '100%' },
+                pane: { startAngle: -120, endAngle: 120, background: null, center: ['50%', '80%'], size: '110%' },
                 yAxis: {
                     min: 0, max: 100, lineWidth: 0, tickWidth: 0, minorTickWidth: 0, labels: { enabled: false },
                     plotBands: [
-                        { from: 0, to: 25, color: '#f43f5e', thickness: 35 },
-                        { from: 25, to: 75, color: '#f59e0b', thickness: 35 },
-                        { from: 75, to: 100, color: '#10b981', thickness: 35 }
+                        { from: 0, to: 30, color: 'rgba(244, 63, 94, 0.3)', thickness: 40 },
+                        { from: 30, to: 70, color: 'rgba(245, 158, 11, 0.3)', thickness: 40 },
+                        { from: 70, to: 100, color: 'rgba(16, 185, 129, 0.3)', thickness: 40 }
                     ]
                 },
                 series: [{
-                    name: 'Achievement', data: [50], // Initial middle position
+                    name: 'Achievement', data: [50], 
                     dataLabels: {
-                        enabled: true, useHTML: true, y: -40,
-                        format: '<div style="background:#4f46e5; color:white; padding: 6px 14px; border-radius: 12px; font-weight:800; font-size:22px; border: 3px solid #0f172a; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">{y}%</div>'
+                        enabled: true, useHTML: true, y: -45,
+                        format: '<div style="background:#6366f1; color:white; padding: 8px 18px; border-radius: 14px; font-weight:800; font-size:24px; box-shadow: 0 10px 30px rgba(99,102,241,0.5); border: 2px solid white;">{y}%</div>'
                     },
-                    dial: { radius: '100%', backgroundColor: '#fff', baseWidth: 6, topWidth: 1, rearLength: '10%' },
-                    pivot: { backgroundColor: '#fff', radius: 6 }
+                    dial: { radius: '100%', backgroundColor: '#6366f1', baseWidth: 8, topWidth: 1, rearLength: '10%' },
+                    pivot: { backgroundColor: '#fff', radius: 8 }
                 }],
                 credits: { enabled: false }
             });
@@ -184,13 +194,12 @@
             comparisonChart = Highcharts.chart('comparisonContainer', {
                 chart: { type: 'column', backgroundColor: 'transparent' },
                 title: null,
-                xAxis: { categories: ['Jan', 'Feb', 'Mar'], labels: { style: { color: '#64748b', fontWeight: 'bold' } }, lineWidth: 0 },
+                xAxis: { categories: ['Jan', 'Feb', 'Mar'], labels: { style: { color: '#94a3b8' } }, lineWidth: 0 },
                 yAxis: { title: { text: null }, gridLineColor: 'rgba(255,255,255,0.05)', labels: { style: { color: '#475569' } } },
-                tooltip: { backgroundColor: '#1e293b', style: { color: '#fff' }, borderRadius: 12, shared: true },
-                plotOptions: { column: { borderRadius: 6, borderWidth: 0, dataLabels: { enabled: false } } },
+                plotOptions: { column: { borderRadius: 10, borderWidth: 0 } },
                 series: [
-                    { name: '2025', color: '#1e293b', data: [0, 0, 0] },
-                    { name: '2026', color: '#6366f1', data: [0, 0, 0] }
+                    { name: '2025 History', color: '#1e293b', data: [0, 0, 0] },
+                    { name: '2026 Forecast', color: '#6366f1', data: [0, 0, 0] }
                 ],
                 credits: { enabled: false }
             });
@@ -200,7 +209,7 @@
             const month = document.getElementById('monthSelect').value;
             const dept = document.getElementById('deptSelect').value;
 
-            // Gauge Calibration Effect: Reset to Middle (50%) before moving
+            // RESET TO MIDDLE (50%) - Visual calibration feedback
             gaugeChart.series[0].points[0].update(50, true, { duration: 400 });
 
             let query = supabaseClient.from('revenue_targets').select('revenue, target, year, month');
@@ -209,7 +218,6 @@
 
             const { data } = await query;
 
-            // Values
             const curRev = data.filter(d => d.year == 2026).reduce((s, r) => s + (r.revenue || 0), 0);
             const curTarget = data.filter(d => d.year == 2026).reduce((s, r) => s + (r.target || 0), 0);
             const oldRev = data.filter(d => d.year == 2025).reduce((s, r) => s + (r.revenue || 0), 0);
@@ -217,33 +225,26 @@
             const achieve = curTarget > 0 ? Math.round((curRev / curTarget) * 100) : 0;
             const growth = oldRev > 0 ? Math.round(((curRev - oldRev) / oldRev) * 100) : 0;
 
-            // Animate All Numbers
-            animateValue('score2026', 0, curRev, 1000);
-            animateValue('score2025', 0, oldRev, 1000);
-            animateValue('growthValue', 0, growth, 1000, false);
-            animateValue('revText', 0, curRev, 1000);
-            animateValue('targetText', 0, curTarget, 1000);
+            // Countdown Effect
+            animateValue('score2026', 0, curRev, 1200);
+            animateValue('score2025', 0, oldRev, 1200);
+            animateValue('growthValue', 0, growth, 1200, false);
+            animateValue('revText', 0, curRev, 1200);
+            animateValue('targetText', 0, curTarget, 1200);
 
-            // Update Badge Color
             const badge = document.getElementById('growthBadge');
-            badge.innerText = growth >= 0 ? 'GROWTH' : 'DECLINE';
-            badge.className = `px-2 py-1 rounded-lg text-[10px] font-black tracking-widest ${growth >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`;
+            badge.innerText = growth >= 0 ? 'PERFORMING' : 'DECLINING';
+            badge.className = `px-2 py-1 rounded-lg text-[9px] font-black tracking-widest ${growth >= 0 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`;
             document.getElementById('growthValue').className = `text-4xl font-black tracking-tighter ${growth >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
 
-            // Update Gauge (with a slight delay for the calibration effect)
+            // Swing to actual achievement after calibration
             setTimeout(() => {
-                gaugeChart.series[0].points[0].update({
-                    y: achieve > 100 ? 100 : achieve,
-                    dataLabels: { format: `<div style="background:#4f46e5; color:white; padding: 6px 14px; border-radius: 12px; font-weight:800; font-size:22px; border: 3px solid #0f172a; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">${achieve}%</div>` }
-                });
+                gaugeChart.series[0].points[0].update(achieve > 100 ? 100 : achieve);
             }, 500);
 
-            // Column Data
             const months = ['Jan', 'Feb', 'Mar'];
-            const m25 = months.map(m => data.filter(d => d.year == 2025 && d.month == m).reduce((s, r) => s + (r.revenue || 0), 0));
-            const m26 = months.map(m => data.filter(d => d.year == 2026 && d.month == m).reduce((s, r) => s + (r.revenue || 0), 0));
-            comparisonChart.series[0].setData(m25);
-            comparisonChart.series[1].setData(m26);
+            comparisonChart.series[0].setData(months.map(m => data.filter(d => d.year == 2025 && d.month == m).reduce((s, r) => s + (r.revenue || 0), 0)));
+            comparisonChart.series[1].setData(months.map(m => data.filter(d => d.year == 2026 && d.month == m).reduce((s, r) => s + (r.revenue || 0), 0)));
         }
 
         document.getElementById('monthSelect').addEventListener('change', refreshData);
