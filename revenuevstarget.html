@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Revenue Dashboard</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/highcharts-more.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/modules/accessibility.js"></script>
+
+    <style>
+        .highcharts-figure { min-width: 310px; max-width: 800px; margin: 0 auto; }
+        #container { height: 400px; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen p-4 md:p-8">
+
+    <div class="max-w-4xl mx-auto">
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-6 border border-slate-200">
+            <h1 class="text-2xl font-bold text-slate-800 mb-4">Hospital Revenue vs Target</h1>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 mb-1">Select Month (2026)</label>
+                    <select id="monthSelect" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5">
+                        <option value="Jan">January</option>
+                        <option value="Feb">February</option>
+                        <option value="Mar">March</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 mb-1">Filter by Department</label>
+                    <select id="deptSelect" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5">
+                        <option value="ALL">All Departments</option>
+                        <option value="PHARMACY">Pharmacy</option>
+                        <option value="OPERATING ROOM">Operating Room</option>
+                        <option value="EMERGENCY ROOM">Emergency Room</option>
+                        <option value="LABORATORY">Laboratory</option>
+                        <option value="HEMODIALYSIS">Hemodialysis</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-md p-6 border border-slate-200">
+            <div id="loading" class="hidden text-center py-20 text-slate-500 animate-pulse">Loading Data...</div>
+            <figure class="highcharts-figure">
+                <div id="container"></div>
+            </figure>
+            
+            <div class="grid grid-cols-2 gap-4 mt-6 border-t pt-6">
+                <div class="text-center">
+                    <p class="text-sm text-slate-500 uppercase tracking-wide font-semibold">Total Revenue</p>
+                    <p id="revText" class="text-xl font-bold text-blue-600">₱0</p>
+                </div>
+                <div class="text-center border-l">
+                    <p class="text-sm text-slate-500 uppercase tracking-wide font-semibold">Target</p>
+                    <p id="targetText" class="text-xl font-bold text-slate-700">₱0</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 1. Supabase Setup
+        const SUPABASE_URL = 'https://jhldmarwkulkcjnrjvfk.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpobGRtYXJ3a3Vsa2NqbnJqdmZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODAzMjQsImV4cCI6MjA5MTg1NjMyNH0.AhjpHXlZSgWNlEshgc0giSSUvHV249f34424i-5g8do';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let gaugeChart;
+
+        // 2. Initialize Gauge
+        function initChart() {
+            gaugeChart = Highcharts.chart('container', {
+                chart: { type: 'gauge', plotBackgroundColor: null, plotBackgroundImage: null, plotBorderWidth: 0, plotShadow: false, height: '80%' },
+                title: { text: 'Monthly Achievement %', style: { fontWeight: 'bold' } },
+                pane: { startAngle: -90, endAngle: 89.9, background: null, center: ['50%', '75%'], size: '110%' },
+                yAxis: {
+                    min: 0, max: 150,
+                    tickPixelInterval: 72,
+                    tickPosition: 'inside',
+                    tickColor: '#FFFFFF',
+                    tickLength: 20,
+                    tickWidth: 2,
+                    minorTickInterval: null,
+                    labels: { distance: 20, style: { fontSize: '14px' } },
+                    lineWidth: 0,
+                    plotBands: [
+                        { from: 0, to: 80, color: '#f87171', thickness: 30 },   // Red
+                        { from: 80, to: 100, color: '#fbbf24', thickness: 30 },  // Yellow
+                        { from: 100, to: 150, color: '#4ade80', thickness: 30 }  // Green
+                    ]
+                },
+                series: [{
+                    name: 'Achievement',
+                    data: [0],
+                    tooltip: { valueSuffix: ' %' },
+                    dataLabels: {
+                        format: '<span style="font-size:25px">{y}%</span><br/><span style="font-size:12px;opacity:0.6">of target</span>',
+                        borderWidth: 0, color: '#334155', style: { fontSize: '16px', textAlign: 'center' }, y: 30
+                    },
+                    dial: { radius: '80%', backgroundColor: '#64748b', baseWidth: 12, baseLength: '0%', rearLength: '0%' },
+                    pivot: { backgroundColor: '#64748b', radius: 6 }
+                }],
+                credits: { enabled: false }
+            });
+        }
+
+        // 3. Fetch and Update Data
+        async function refreshData() {
+            const month = document.getElementById('monthSelect').value;
+            const dept = document.getElementById('deptSelect').value;
+            const loading = document.getElementById('loading');
+            
+            loading.classList.remove('hidden');
+
+            let query = supabaseClient.from('revenue_targets').select('revenue, target').eq('month', month);
+            
+            if (dept !== 'ALL') {
+                query = query.eq('department', dept);
+            }
+
+            const { data, error } = await query;
+
+            if (error) {
+                console.error(error);
+                return;
+            }
+
+            const totalRevenue = data.reduce((sum, row) => sum + (row.revenue || 0), 0);
+            const totalTarget = data.reduce((sum, row) => sum + (row.target || 0), 0);
+            
+            let percentage = 0;
+            if (totalTarget > 0) {
+                percentage = parseFloat(((totalRevenue / totalTarget) * 100).toFixed(1));
+            }
+
+            // Update UI
+            document.getElementById('revText').innerText = '₱' + totalRevenue.toLocaleString();
+            document.getElementById('targetText').innerText = '₱' + totalTarget.toLocaleString();
+            
+            gaugeChart.series[0].points[0].update(percentage);
+            loading.classList.add('hidden');
+        }
+
+        // 4. Listeners
+        document.getElementById('monthSelect').addEventListener('change', refreshData);
+        document.getElementById('deptSelect').addEventListener('change', refreshData);
+
+        // Run on start
+        window.onload = () => {
+            initChart();
+            refreshData();
+        };
+    </script>
+</body>
+</html>
