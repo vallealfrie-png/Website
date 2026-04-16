@@ -3,166 +3,239 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visual Intelligence | Projectvibe</title>
+    <title>Executive Revenue Intelligence</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/highcharts-more.js"></script>
+
     <style>
-        body { background: #022c22; color: white; font-family: 'Inter', sans-serif; margin: 0; padding: 0; }
-        .glass-card { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
         
-        /* TABS */
-        .tab-btn { position: relative; padding: 0.75rem 1.5rem; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; transition: all 0.3s; opacity: 0.4; }
-        .tab-btn.active { opacity: 1; color: #10b981; }
-        .tab-btn.active::after { content: ''; position: absolute; bottom: 0; left: 25%; right: 25%; height: 2px; background: #10b981; box-shadow: 0 0 10px #10b981; }
-
-        /* THE PIPELINE TRACK */
-        .pipeline-track { position: relative; width: 100%; margin: 3.5rem 0; padding: 1.5rem 0; display: flex; align-items: center; }
-        .pipeline-line { position: absolute; top: 50%; left: 0; right: 0; height: 2px; background: rgba(16, 185, 129, 0.2); z-index: 1; transform: translateY(-50%); }
-
-        /* THE STEPS */
-        .pipeline-items { display: flex; justify-content: flex-start; width: 100%; position: relative; z-index: 10; padding: 0 20px; gap: 45px; }
-        .step-node { display: flex; flex-direction: column; align-items: center; position: relative; min-width: 90px; }
-
-        /* THE MINIMALIST DOT */
-        .dot { width: 10px; height: 10px; border-radius: 50%; background: #10b981; border: 2px solid #022c22; z-index: 20; box-shadow: 0 0 8px rgba(16, 185, 129, 0.4); }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #020617; color: #f8fafc; }
         
-        .is-latest .dot { background: #34d399; transform: scale(1.3); animation: pulse-dot 1.5s infinite; }
-        @keyframes pulse-dot { 0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(52, 211, 153, 0); } 100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); } }
+        .glowing-border {
+            position: relative;
+            background: rgba(15, 23, 42, 0.9);
+            border-radius: 28px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
 
-        .dept-label { position: absolute; bottom: 18px; font-size: 9px; font-weight: 900; text-transform: uppercase; white-space: nowrap; color: #34d399; }
-        .time-label { position: absolute; top: 18px; font-size: 8px; opacity: 0.4; font-weight: bold; white-space: nowrap; }
+        .glowing-border::before {
+            content: "";
+            position: absolute;
+            inset: -1px;
+            border-radius: 28px;
+            padding: 1.5px; 
+            background: linear-gradient(135deg, #6366f1, transparent 40%, transparent 60%, #a855f7);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+        }
 
-        /* FINISHED THEME (ORANGE/GOLD) */
-        .doc-archived .pipeline-line { background: rgba(245, 158, 11, 0.2); }
-        .doc-archived .dot { background: #f59e0b; box-shadow: 0 0 8px rgba(245, 158, 11, 0.4); }
-        .doc-archived .dept-label { color: #f59e0b; }
+        .highcharts-container { transition: all 0.8s cubic-bezier(0.25, 1, 0.5, 1); }
     </style>
 </head>
-<body class="p-6 md:p-12">
+<body class="min-h-screen pb-12">
 
-    <div class="max-w-6xl mx-auto">
-        <nav class="flex justify-between items-center mb-6 border-b border-white/10 pb-8">
-            <div class="flex items-center gap-4">
-                <div class="h-10 w-10 bg-emerald-500/10 rounded-xl flex items-center justify-center border border-emerald-500/20">
-                    <i class="fa-solid fa-layer-group text-emerald-500"></i>
-                </div>
-                <div>
-                    <h1 class="text-2xl font-black tracking-tighter uppercase italic">Visual Intelligence</h1>
-                    <p class="text-emerald-500 text-[9px] font-bold tracking-[0.4em] uppercase opacity-70">Document Live Flow</p>
-                </div>
-            </div>
-            
-            <div class="flex items-center gap-3">
-                <button onclick="syncData()" class="bg-white/5 hover:bg-white/10 text-white px-5 py-2.5 rounded-xl text-[10px] font-bold transition flex items-center gap-2">
-                    <i class="fa-solid fa-rotate"></i> SYNC
-                </button>
-                <a href="index.html" class="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl text-[10px] font-bold transition flex items-center gap-2 shadow-lg shadow-emerald-900/20">
-                    <i class="fa-solid fa-house"></i> Home
+    <nav class="border-b border-white/5 px-8 py-5 mb-10 bg-slate-900/40 backdrop-blur-xl sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-6">
+                <a href="index.html" class="flex items-center space-x-2 group">
+                    <div class="w-8 h-8 bg-slate-800 border border-white/10 rounded-lg flex items-center justify-center group-hover:bg-indigo-600 group-hover:border-indigo-400 transition-all duration-300">
+                        <svg class="w-4 h-4 text-slate-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                        </svg>
+                    </div>
+                    <span class="text-[11px] font-black uppercase tracking-widest text-slate-400 group-hover:text-white transition-colors">Home</span>
                 </a>
-            </div>
-        </nav>
 
-        <div class="flex gap-4 mb-8">
-            <button onclick="switchTab('active')" id="btn-active" class="tab-btn active">Active Projects</button>
-            <button onclick="switchTab('finished')" id="btn-finished" class="tab-btn">Finished Documents</button>
+                <div class="h-6 w-[1px] bg-white/10"></div>
+
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-indigo-600 rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.4)] flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                    </div>
+                    <h1 class="text-lg font-extrabold tracking-tight text-white leading-none uppercase">Revenue Intel</h1>
+                </div>
+            </div>
+            <div class="text-[11px] font-black uppercase tracking-widest text-indigo-400 hidden sm:block">Executive Performance</div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-6 space-y-8">
+        
+        <div class="glowing-border p-2 flex flex-wrap gap-2 items-center">
+            <select id="monthSelect" class="flex-1 bg-transparent text-sm p-4 font-bold text-white outline-none cursor-pointer rounded-xl">
+                <option class="bg-slate-900" value="ALL">Year-to-Date (All Months)</option>
+                <option class="bg-slate-900" value="Jan">January</option>
+                <option class="bg-slate-900" value="Feb">February</option>
+                <option class="bg-slate-900" value="Mar">March</option>
+            </select>
+            <select id="deptSelect" class="flex-1 bg-transparent text-sm p-4 font-bold text-white outline-none cursor-pointer rounded-xl border-l border-white/10">
+                <option class="bg-slate-900" value="ALL">Consolidated Hospital</option>
+            </select>
         </div>
 
-        <div id="pipeline-feed" class="space-y-6">
-            <div class="p-20 text-center glass-card rounded-3xl opacity-30 text-[10px] font-black uppercase tracking-widest">
-                <i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Initializing Stream...
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="glowing-border p-8">
+                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">2026 Actual</p>
+                <h3 id="score2026" class="text-4xl font-black text-white tracking-tighter">₱0</h3>
             </div>
+            <div class="glowing-border p-8">
+                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">2025 Benchmark</p>
+                <h3 id="score2025" class="text-4xl font-black text-slate-400 tracking-tighter">₱0</h3>
+            </div>
+            <div class="glowing-border p-8">
+                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">YoY Performance</p>
+                <h3 id="growthValue" class="text-4xl font-black tracking-tighter">0%</h3>
+            </div>
+        </div>
+
+        <div class="glowing-border p-12">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-sm font-black text-white uppercase tracking-widest">Live Target Achievement</h2>
+            </div>
+            
+            <div class="flex flex-col lg:flex-row items-center justify-between gap-10">
+                <div class="flex-1 text-center lg:text-left">
+                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Revenue</p>
+                    <p id="revText" class="text-4xl font-black text-indigo-400 tracking-tighter">₱0</p>
+                </div>
+
+                <div class="flex-[3] w-full h-[400px]">
+                    <div id="gaugeContainer" class="w-full h-full"></div>
+                </div>
+
+                <div class="flex-1 text-center lg:text-right">
+                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Yearly Target</p>
+                    <p id="targetText" class="text-4xl font-black text-white tracking-tighter">₱0</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="glowing-border p-10">
+            <div id="comparisonContainer" class="h-[350px]"></div>
         </div>
     </div>
 
     <script>
-        const S_URL = 'https://jvjxrwmarwzbzlagqhhh.supabase.co';
-        const S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2anhyd21hcnd6YnpsYWdxaGhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4OTYzNzYsImV4cCI6MjA4OTQ3MjM3Nn0.4cviind0KHFRMSM20UN5-dDEAYi-3vQbLB6wAebzlcQ';
-        const dbClient = window.supabase.createClient(S_URL, S_KEY);
+        const SUPABASE_URL = 'https://jhldmarwkulkcjnrjvfk.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpobGRtYXJ3a3Vsa2NqbnJqdmZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODAzMjQsImV4cCI6MjA5MTg1NjMyNH0.AhjpHXlZSgWNlEshgc0giSSUvHV249f34424i-5g8do';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        let allGroups = {};
-        let currentTab = 'active';
+        let gaugeChart, comparisonChart;
 
-        async function syncData() {
-            const feed = document.getElementById('pipeline-feed');
-            try {
-                const { data, error } = await dbClient.from('document_logs').select('*').order('timestamp', { ascending: true });
-                if (error) throw error;
-
-                // Group data by document name
-                allGroups = data.reduce((acc, log) => {
-                    if (!acc[log.document_name]) acc[log.document_name] = [];
-                    acc[log.document_name].push(log);
-                    return acc;
-                }, {});
-
-                renderFeed();
-            } catch (e) {
-                feed.innerHTML = `<div class="p-10 text-red-400 text-center font-bold text-xs uppercase tracking-widest">Connection Error: ${e.message}</div>`;
-            }
+        function animateValue(id, start, end, duration, isCurrency = true) {
+            const obj = document.getElementById(id);
+            if (!obj) return;
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                const value = Math.floor(progress * (end - start) + start);
+                obj.innerHTML = isCurrency ? '₱' + value.toLocaleString() : (end >= 0 ? '+' : '') + value + '%';
+                if (progress < 1) window.requestAnimationFrame(step);
+            };
+            window.requestAnimationFrame(step);
         }
 
-        function switchTab(tab) {
-            currentTab = tab;
-            document.getElementById('btn-active').classList.toggle('active', tab === 'active');
-            document.getElementById('btn-finished').classList.toggle('active', tab === 'finished');
-            renderFeed();
-        }
-
-        function renderFeed() {
-            const feed = document.getElementById('pipeline-feed');
-            feed.innerHTML = '';
-            
-            let filteredCount = 0;
-
-            Object.keys(allGroups).forEach(docName => {
-                const logs = allGroups[docName];
-                const isFinished = logs[logs.length - 1].action === 'FINISHED';
-                
-                // Filtering logic
-                if (currentTab === 'finished' && !isFinished) return;
-                if (currentTab === 'active' && isFinished) return;
-
-                filteredCount++;
-                const card = document.createElement('div');
-                card.className = `glass-card p-8 rounded-[2.5rem] shadow-xl ${isFinished ? 'doc-archived' : ''}`;
-                
-                card.innerHTML = `
-                    <div class="flex justify-between items-start mb-2 px-2">
-                        <div>
-                            <h2 class="text-xl font-black italic uppercase tracking-tighter text-white/90">${docName}</h2>
-                            <span class="text-[9px] font-black ${isFinished ? 'text-amber-500' : 'text-emerald-500'} opacity-60 uppercase tracking-widest">${logs[0].category}</span>
-                        </div>
-                        <div class="text-right">
-                             <span class="text-[8px] font-black opacity-30 uppercase">${isFinished ? 'STATUS: ARCHIVED' : 'Total Moves: ' + logs.length}</span>
-                        </div>
-                    </div>
-                    <div class="pipeline-track">
-                        <div class="pipeline-line"></div>
-                        <div class="pipeline-items">
-                            ${logs.map((log, index) => {
-                                const isLatest = index === logs.length - 1;
-                                const date = new Date(log.timestamp).toLocaleString('en-PH', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-                                return `
-                                    <div class="step-node ${isLatest && !isFinished ? 'is-latest' : ''}">
-                                        <div class="time-label uppercase">${date}</div>
-                                        <div class="dot"></div>
-                                        <div class="dept-label">${log.department}</div>
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
-                    </div>
-                `;
-                feed.appendChild(card);
+        function initCharts() {
+            gaugeChart = Highcharts.chart('gaugeContainer', {
+                chart: { type: 'gauge', backgroundColor: 'transparent', margin: [0, 0, 40, 0] },
+                title: null,
+                pane: { 
+                    startAngle: -120, endAngle: 120, background: null, 
+                    center: ['50%', '80%'], size: '115%' 
+                },
+                yAxis: {
+                    min: 0, max: 100,
+                    lineWidth: 0, tickWidth: 0, minorTickWidth: 0, labels: { enabled: false },
+                    plotBands: [
+                        { from: 0, to: 30, color: '#ff1e56', thickness: 55 },
+                        { from: 30, to: 70, color: '#ffac41', thickness: 55 },
+                        { from: 70, to: 100, color: '#32ff7e', thickness: 55 }
+                    ]
+                },
+                series: [{
+                    name: 'Achievement', data: [50],
+                    clip: false,
+                    dataLabels: {
+                        enabled: true, useHTML: true, y: -40,
+                        format: '<div id="gaugeLabel" style="background:#6366f1; color:white; padding: 10px 22px; border-radius: 14px; font-weight:900; font-size:32px; box-shadow: 0 15px 35px rgba(99,102,241,0.6); border: 3px solid #fff;">{y}%</div>'
+                    },
+                    dial: { radius: '95%', backgroundColor: '#fff', baseWidth: 10, topWidth: 1, rearLength: '12%' },
+                    pivot: { backgroundColor: '#fff', radius: 10 }
+                }],
+                credits: { enabled: false }
             });
 
-            if (filteredCount === 0) {
-                feed.innerHTML = `<div class="p-20 text-center glass-card rounded-3xl opacity-30 text-[10px] font-black uppercase tracking-widest">No ${currentTab} documents found</div>`;
-            }
+            comparisonChart = Highcharts.chart('comparisonContainer', {
+                chart: { type: 'column', backgroundColor: 'transparent' },
+                title: { text: 'Monthly Performance Flow', style: { color: '#fff', fontSize: '14px', fontWeight: '800' } },
+                xAxis: { categories: ['Jan', 'Feb', 'Mar'], labels: { style: { color: '#94a3b8' } }, lineWidth: 0 },
+                yAxis: { title: { text: null }, gridLineColor: 'rgba(255,255,255,0.05)', labels: { style: { color: '#475569' } } },
+                series: [{ name: '2025', color: '#1e293b', data: [0,0,0] }, { name: '2026', color: '#6366f1', data: [0,0,0] }],
+                credits: { enabled: false }
+            });
         }
 
-        window.onload = syncData;
+        async function refreshData() {
+            const month = document.getElementById('monthSelect').value;
+            const dept = document.getElementById('deptSelect').value;
+
+            gaugeChart.series[0].points[0].update(50, true, { duration: 400 });
+
+            let { data } = await supabaseClient.from('revenue_targets').select('*');
+            if (month !== 'ALL') data = data.filter(d => d.month === month);
+            if (dept !== 'ALL') data = data.filter(d => d.department === dept);
+
+            const curRev = data.filter(d => d.year == 2026).reduce((s, r) => s + (r.revenue || 0), 0);
+            const curTarget = data.filter(d => d.year == 2026).reduce((s, r) => s + (r.target || 0), 0);
+            const oldRev = data.filter(d => d.year == 2025).reduce((s, r) => s + (r.revenue || 0), 0);
+            
+            const achieve = curTarget > 0 ? Math.round((curRev / curTarget) * 100) : 0;
+            const growth = oldRev > 0 ? Math.round(((curRev - oldRev) / oldRev) * 100) : 0;
+
+            animateValue('score2026', 0, curRev, 1200);
+            animateValue('score2025', 0, oldRev, 1200);
+            animateValue('growthValue', 0, growth, 1200, false);
+            animateValue('revText', 0, curRev, 1200);
+            animateValue('targetText', 0, curTarget, 1200);
+
+            document.getElementById('growthValue').className = `text-4xl font-black tracking-tighter ${growth >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+
+            setTimeout(() => {
+                gaugeChart.series[0].points[0].update({
+                    y: achieve > 100 ? 100 : achieve,
+                    dataLabels: {
+                        format: `<div style="background:#6366f1; color:white; padding: 10px 22px; border-radius: 14px; font-weight:900; font-size:32px; box-shadow: 0 15px 35px rgba(99,102,241,0.6); border: 3px solid #fff;">${achieve}%</div>`
+                    }
+                });
+            }, 500);
+
+            const months = ['Jan', 'Feb', 'Mar'];
+            comparisonChart.series[0].setData(months.map(m => data.filter(d => d.year == 2025 && d.month == m).reduce((s, r) => s + (r.revenue || 0), 0)));
+            comparisonChart.series[1].setData(months.map(m => data.filter(d => d.year == 2026 && d.month == m).reduce((s, r) => s + (r.revenue || 0), 0)));
+        }
+
+        window.onload = async () => {
+            initCharts();
+            const { data } = await supabaseClient.from('revenue_targets').select('department');
+            const uniqueDepts = [...new Set(data.map(item => item.department))].sort();
+            const select = document.getElementById('deptSelect');
+            uniqueDepts.forEach(dept => {
+                const opt = document.createElement('option');
+                opt.value = dept; opt.innerHTML = dept;
+                opt.className = "bg-slate-900";
+                select.appendChild(opt);
+            });
+            document.getElementById('monthSelect').addEventListener('change', refreshData);
+            document.getElementById('deptSelect').addEventListener('change', refreshData);
+            refreshData();
+        };
     </script>
 </body>
 </html>
