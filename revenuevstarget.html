@@ -14,7 +14,6 @@
         
         body { font-family: 'Plus Jakarta Sans', sans-serif; background: #020617; color: #f8fafc; }
         
-        /* THE GLOWING BORDER EFFECT */
         .glowing-border {
             position: relative;
             background: rgba(15, 23, 42, 0.9);
@@ -43,13 +42,26 @@
 
     <nav class="border-b border-white/5 px-8 py-5 mb-10 bg-slate-900/40 backdrop-blur-xl sticky top-0 z-50">
         <div class="max-w-7xl mx-auto flex justify-between items-center">
-            <div class="flex items-center space-x-4">
-                <div class="w-10 h-10 bg-indigo-600 rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.4)] flex items-center justify-center">
-                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+            <div class="flex items-center space-x-6">
+                <a href="index.html" class="flex items-center space-x-2 group">
+                    <div class="w-8 h-8 bg-slate-800 border border-white/10 rounded-lg flex items-center justify-center group-hover:bg-indigo-600 group-hover:border-indigo-400 transition-all duration-300">
+                        <svg class="w-4 h-4 text-slate-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                        </svg>
+                    </div>
+                    <span class="text-[11px] font-black uppercase tracking-widest text-slate-400 group-hover:text-white transition-colors">Home</span>
+                </a>
+
+                <div class="h-6 w-[1px] bg-white/10"></div>
+
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-indigo-600 rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.4)] flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                    </div>
+                    <h1 class="text-lg font-extrabold tracking-tight text-white leading-none uppercase">Revenue Intel</h1>
                 </div>
-                <h1 class="text-lg font-extrabold tracking-tight text-white leading-none uppercase">Revenue Intel</h1>
             </div>
-            <div class="text-[11px] font-black uppercase tracking-widest text-indigo-400">Executive Performance</div>
+            <div class="text-[11px] font-black uppercase tracking-widest text-indigo-400 hidden sm:block">Executive Performance</div>
         </div>
     </nav>
 
@@ -110,6 +122,7 @@
     </div>
 
     <script>
+        // Supabase & Highcharts logic remains exactly as per previous version
         const SUPABASE_URL = 'https://jhldmarwkulkcjnrjvfk.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpobGRtYXJ3a3Vsa2NqbnJqdmZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODAzMjQsImV4cCI6MjA5MTg1NjMyNH0.AhjpHXlZSgWNlEshgc0giSSUvHV249f34424i-5g8do';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -139,7 +152,7 @@
                     center: ['50%', '80%'], size: '115%' 
                 },
                 yAxis: {
-                    min: 0, max: 100, // Pointer capped at 100
+                    min: 0, max: 100,
                     lineWidth: 0, tickWidth: 0, minorTickWidth: 0, labels: { enabled: false },
                     plotBands: [
                         { from: 0, to: 30, color: '#ff1e56', thickness: 55 },
@@ -149,15 +162,12 @@
                 },
                 series: [{
                     name: 'Achievement', data: [50],
-                    clip: false, // CRITICAL: Prevents pointer clipping
+                    clip: false,
                     dataLabels: {
                         enabled: true, useHTML: true, y: -40,
                         format: '<div id="gaugeLabel" style="background:#6366f1; color:white; padding: 10px 22px; border-radius: 14px; font-weight:900; font-size:32px; box-shadow: 0 15px 35px rgba(99,102,241,0.6); border: 3px solid #fff;">{y}%</div>'
                     },
-                    dial: { 
-                        radius: '95%', // Slight safety gap from edge
-                        backgroundColor: '#fff', baseWidth: 10, topWidth: 1, rearLength: '12%' 
-                    },
+                    dial: { radius: '95%', backgroundColor: '#fff', baseWidth: 10, topWidth: 1, rearLength: '12%' },
                     pivot: { backgroundColor: '#fff', radius: 10 }
                 }],
                 credits: { enabled: false }
@@ -198,7 +208,6 @@
 
             document.getElementById('growthValue').className = `text-4xl font-black tracking-tighter ${growth >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
 
-            // LOGIC: Pointer stops at 100, but Label shows actual (e.g. 115%)
             setTimeout(() => {
                 gaugeChart.series[0].points[0].update({
                     y: achieve > 100 ? 100 : achieve,
