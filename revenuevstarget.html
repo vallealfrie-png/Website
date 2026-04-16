@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Revenue Dashboard</title>
+    <title>Executive Revenue Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://code.highcharts.com/highcharts.js"></script>
@@ -11,15 +11,15 @@
 
     <style>
         .chart-wrapper { max-width: 450px; margin: 0 auto; }
-        #container { height: 350px; }
+        #container { height: 320px; }
     </style>
 </head>
-<body class="bg-slate-100 min-h-screen">
+<body class="bg-slate-50 min-h-screen pb-12">
 
     <nav class="bg-white border-b border-slate-200 px-6 py-3 shadow-sm mb-6">
-        <div class="max-w-5xl mx-auto flex justify-between items-center">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-2">
-                <div class="w-7 h-7 bg-indigo-600 rounded flex items-center justify-center">
+                <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-200">
                     <span class="text-white font-bold text-sm">R</span>
                 </div>
                 <span class="text-lg font-bold text-slate-800">RevenueTracker</span>
@@ -31,43 +31,75 @@
         </div>
     </nav>
 
-    <div class="max-w-2xl mx-auto px-4">
-        <div class="bg-white rounded-xl shadow-sm p-5 mb-6 border border-slate-200 grid grid-cols-2 gap-4">
-            <div>
-                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Select Month</label>
-                <select id="monthSelect" class="w-full bg-slate-50 border border-slate-200 text-sm rounded-lg p-2 outline-none focus:ring-2 focus:ring-indigo-500/20">
-                    <option value="Jan">January</option>
-                    <option value="Feb">February</option>
-                    <option value="Mar">March</option>
-                </select>
+    <div class="max-w-5xl mx-auto px-4">
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Current Year (2026)</p>
+                <h3 id="score2026" class="text-2xl font-black text-slate-800">₱0</h3>
+                <p class="text-xs text-slate-500 mt-1" id="monthLabel1">Selected Month</p>
             </div>
-            <div>
-                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Department</label>
-                <select id="deptSelect" class="w-full bg-slate-50 border border-slate-200 text-sm rounded-lg p-2 outline-none focus:ring-2 focus:ring-indigo-500/20">
-                    <option value="ALL">All Departments</option>
-                </select>
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Previous Year (2025)</p>
+                <h3 id="score2025" class="text-2xl font-black text-slate-500">₱0</h3>
+                <p class="text-xs text-slate-500 mt-1" id="monthLabel2">Same Month Prior Year</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">YoY Growth</p>
+                <div class="flex items-baseline space-x-2">
+                    <h3 id="growthValue" class="text-2xl font-black text-slate-800">0%</h3>
+                    <span id="growthIcon" class="text-sm font-bold"></span>
+                </div>
+                <p class="text-xs text-slate-500 mt-1">Vs. previous year</p>
             </div>
         </div>
 
-        <div class="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 relative">
-            <div id="loading" class="absolute inset-0 bg-white/80 z-10 flex items-center justify-center hidden rounded-2xl">
-                <span class="text-sm font-medium text-slate-500 animate-pulse">Syncing Data...</span>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <div class="lg:col-span-1 space-y-4">
+                <div class="bg-white rounded-2xl shadow-sm p-6 border border-slate-200">
+                    <h4 class="font-bold text-slate-800 mb-4 border-b pb-2 text-sm uppercase tracking-wide">Filters</h4>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Data Period</label>
+                            <select id="monthSelect" class="w-full bg-slate-50 border border-slate-200 text-sm rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-indigo-500/20">
+                                <option value="Jan">January</option>
+                                <option value="Feb">February</option>
+                                <option value="Mar">March</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Department</label>
+                            <select id="deptSelect" class="w-full bg-slate-50 border border-slate-200 text-sm rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-indigo-500/20">
+                                <option value="ALL">All Departments</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div class="chart-wrapper">
-                <div id="container"></div>
-            </div>
-            
-            <div class="flex justify-between items-center px-6 py-4 bg-slate-50 rounded-2xl">
-                <div>
-                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Actual Revenue</p>
-                    <p id="revText" class="text-xl font-bold text-slate-800">₱0</p>
+            <div class="lg:col-span-2 bg-white rounded-2xl shadow-xl border border-slate-200 p-6 relative min-h-[400px]">
+                <div id="loading" class="absolute inset-0 bg-white/80 z-20 flex items-center justify-center hidden rounded-2xl">
+                    <div class="flex flex-col items-center">
+                        <div class="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+                        <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">Calculating Growth...</span>
+                    </div>
                 </div>
-                <div class="text-right">
-                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Target Goal</p>
-                    <p id="targetText" class="text-xl font-bold text-slate-600">₱0</p>
+
+                <div class="chart-wrapper">
+                    <div id="container"></div>
+                </div>
+
+                <div class="text-center mt-2">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Target Achievement (2026)</p>
+                    <div class="inline-flex items-center space-x-4 bg-slate-50 px-6 py-2 rounded-full border border-slate-100">
+                        <span id="revText" class="text-sm font-bold text-indigo-600">₱0</span>
+                        <span class="text-slate-300">/</span>
+                        <span id="targetText" class="text-sm font-bold text-slate-500">₱0</span>
+                    </div>
                 </div>
             </div>
+
         </div>
     </div>
 
@@ -92,46 +124,31 @@
         function initChart() {
             gaugeChart = Highcharts.chart('container', {
                 chart: { type: 'gauge', backgroundColor: 'transparent' },
-                title: { text: 'Performance Achievement', style: { fontSize: '14px', fontWeight: '700', color: '#64748b' } },
+                title: null,
                 pane: {
                     startAngle: -100, endAngle: 100,
-                    background: null, center: ['50%', '75%'], size: '100%'
+                    background: null, center: ['50%', '80%'], size: '100%'
                 },
                 yAxis: {
                     min: 0, max: 100,
-                    lineWidth: 0, tickWidth: 0, minorTickWidth: 0,
-                    labels: { enabled: false },
+                    lineWidth: 0, tickWidth: 0, minorTickWidth: 0, labels: { enabled: false },
                     plotBands: [
-                        { from: 0, to: 25, color: '#f87171', thickness: 45 },    // Red
-                        { from: 25, to: 75, color: '#fbbf24', thickness: 45 },   // Orange
-                        { from: 75, to: 100, color: '#4ade80', thickness: 45 }   // Green
+                        { from: 0, to: 25, color: '#f87171', thickness: 50 },
+                        { from: 25, to: 75, color: '#fbbf24', thickness: 50 },
+                        { from: 75, to: 100, color: '#4ade80', thickness: 50 }
                     ]
                 },
                 series: [{
                     name: 'Achievement',
                     data: [0],
                     dataLabels: {
-                        enabled: true,
-                        useHTML: true,
-                        overflow: 'none',
-                        crop: false,
-                        // This positions the label at the tip of the needle
-                        format: '<div style="background:#1e293b; color:white; padding: 4px 10px; border-radius: 8px; font-weight:800; font-size:16px; border: 2px solid white; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">{y}%</div>',
-                        y: -35, // Distance from the pointer tip
-                        borderWidth: 0
+                        enabled: true, useHTML: true, overflow: 'none', crop: false,
+                        y: -35, borderWidth: 0
                     },
-                    dial: {
-                        radius: '100%', 
-                        backgroundColor: '#1e293b', 
-                        baseWidth: 10, 
-                        topWidth: 1, 
-                        baseLength: '0%', 
-                        rearLength: '15%' 
-                    },
+                    dial: { radius: '100%', backgroundColor: '#1e293b', baseWidth: 10, topWidth: 1, baseLength: '0%', rearLength: '15%' },
                     pivot: { backgroundColor: '#1e293b', radius: 10 }
                 }],
-                credits: { enabled: false },
-                tooltip: { enabled: false }
+                credits: { enabled: false }
             });
         }
 
@@ -140,30 +157,53 @@
             const month = document.getElementById('monthSelect').value;
             const dept = document.getElementById('deptSelect').value;
 
-            let query = supabaseClient.from('revenue_targets').select('revenue, target').eq('month', month);
+            // Update Labels
+            document.getElementById('monthLabel1').innerText = `${month} 2026 Total`;
+            document.getElementById('monthLabel2').innerText = `${month} 2025 Total`;
+
+            // Fetch data for both years
+            let query = supabaseClient.from('revenue_targets').select('revenue, target, year').eq('month', month);
             if (dept !== 'ALL') query = query.eq('department', dept);
 
             const { data } = await query;
-            const totalRevenue = data.reduce((sum, row) => sum + (row.revenue || 0), 0);
-            const totalTarget = data.reduce((sum, row) => sum + (row.target || 0), 0);
+
+            // Segregate by Year
+            const data2026 = data.filter(d => d.year == 2026);
+            const data2025 = data.filter(d => d.year == 2025);
+
+            const rev2026 = data2026.reduce((s, r) => s + (r.revenue || 0), 0);
+            const target2026 = data2026.reduce((s, r) => s + (r.target || 0), 0);
+            const rev2025 = data2025.reduce((s, r) => s + (r.revenue || 0), 0);
             
-            // Calculate whole number percentage
-            let actualPercentage = 0;
-            if (totalTarget > 0) {
-                actualPercentage = Math.round((totalRevenue / totalTarget) * 100);
+            // Calculations
+            const achievementPercent = target2026 > 0 ? Math.round((rev2026 / target2026) * 100) : 0;
+            
+            let growth = 0;
+            if (rev2025 > 0) {
+                growth = Math.round(((rev2026 - rev2025) / rev2025) * 100);
             }
 
-            document.getElementById('revText').innerText = '₱' + totalRevenue.toLocaleString();
-            document.getElementById('targetText').innerText = '₱' + totalTarget.toLocaleString();
+            // Update Scorecards
+            document.getElementById('score2026').innerText = '₱' + rev2026.toLocaleString();
+            document.getElementById('score2025').innerText = '₱' + rev2025.toLocaleString();
             
-            // Pointer stays inside the arc (max 100), but label shows real math
-            let needleValue = actualPercentage > 100 ? 100 : actualPercentage;
+            const growthEl = document.getElementById('growthValue');
+            const growthIcon = document.getElementById('growthIcon');
+            growthEl.innerText = (growth >= 0 ? '+' : '') + growth + '%';
+            growthEl.className = growth >= 0 ? 'text-2xl font-black text-emerald-600' : 'text-2xl font-black text-rose-600';
+            growthIcon.innerText = growth >= 0 ? '▲' : '▼';
+            growthIcon.className = growth >= 0 ? 'text-emerald-500' : 'text-rose-500';
+
+            // Update Chart Texts
+            document.getElementById('revText').innerText = '₱' + rev2026.toLocaleString();
+            document.getElementById('targetText').innerText = '₱' + target2026.toLocaleString();
+            
+            let needleValue = achievementPercent > 100 ? 100 : achievementPercent;
             
             gaugeChart.series[0].points[0].update({
                 y: needleValue,
                 dataLabels: {
-                    // Update label content dynamically to show the real (potentially >100) value
-                    format: '<div style="background:#1e293b; color:white; padding: 4px 12px; border-radius: 8px; font-weight:900; font-size:18px; border: 2px solid white; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);">' + actualPercentage + '%</div>'
+                    format: '<div style="background:#1e293b; color:white; padding: 4px 12px; border-radius: 8px; font-weight:900; font-size:18px; border: 2px solid white; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);">' + achievementPercent + '%</div>'
                 }
             });
             
