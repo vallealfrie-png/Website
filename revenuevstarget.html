@@ -11,23 +11,37 @@
     
     <script src="https://code.highcharts.com/highcharts.js"></script>
     <script src="https://code.highcharts.com/highcharts-more.js"></script>
-    <script src="https://code.highcharts.com/modules/exporting.js"></script>
     <script src="https://code.highcharts.com/modules/accessibility.js"></script>
 
     <style>
         .highcharts-figure { min-width: 310px; max-width: 800px; margin: 0 auto; }
-        #container { height: 400px; }
+        #container { height: 420px; }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen p-4 md:p-8">
+<body class="bg-slate-50 min-h-screen">
 
-    <div class="max-w-4xl mx-auto">
+    <nav class="bg-white border-b border-slate-200 px-6 py-4 mb-8 shadow-sm">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                    <span class="text-white font-bold text-xl">R</span>
+                </div>
+                <span class="text-xl font-bold text-slate-800 tracking-tight">RevenueTracker</span>
+            </div>
+            <div class="flex space-x-6 font-medium text-slate-600">
+                <a href="index.html" class="hover:text-blue-600 transition-colors">Home</a>
+                <a href="revenuevstarget.html" class="text-blue-600 border-b-2 border-blue-600">Dashboard</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-4xl mx-auto px-4">
         <div class="bg-white rounded-xl shadow-sm p-6 mb-6 border border-slate-200">
-            <h1 class="text-2xl font-bold text-slate-800 mb-4">Hospital Revenue vs Target</h1>
+            <h1 class="text-2xl font-bold text-slate-800 mb-4">Department Performance</h1>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-slate-600 mb-1">Select Month (2026)</label>
+                    <label class="block text-sm font-medium text-slate-600 mb-1">Select Month</label>
                     <select id="monthSelect" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5">
                         <option value="Jan">January</option>
                         <option value="Feb">February</option>
@@ -36,33 +50,28 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-slate-600 mb-1">Filter by Department</label>
+                    <label class="block text-sm font-medium text-slate-600 mb-1">Select Department</label>
                     <select id="deptSelect" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5">
                         <option value="ALL">All Departments</option>
-                        <option value="PHARMACY">Pharmacy</option>
-                        <option value="OPERATING ROOM">Operating Room</option>
-                        <option value="EMERGENCY ROOM">Emergency Room</option>
-                        <option value="LABORATORY">Laboratory</option>
-                        <option value="HEMODIALYSIS">Hemodialysis</option>
-                    </select>
+                        </select>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-xl shadow-md p-6 border border-slate-200">
-            <div id="loading" class="hidden text-center py-20 text-slate-500 animate-pulse">Loading Data...</div>
+        <div class="bg-white rounded-xl shadow-md p-8 border border-slate-200">
+            <div id="loading" class="hidden text-center py-20 text-slate-400 animate-pulse font-medium text-lg">Fetching Latest Data...</div>
             <figure class="highcharts-figure">
                 <div id="container"></div>
             </figure>
             
-            <div class="grid grid-cols-2 gap-4 mt-6 border-t pt-6">
+            <div class="grid grid-cols-2 gap-4 mt-4 border-t border-slate-100 pt-8">
                 <div class="text-center">
-                    <p class="text-sm text-slate-500 uppercase tracking-wide font-semibold">Total Revenue</p>
-                    <p id="revText" class="text-xl font-bold text-blue-600">₱0</p>
+                    <p class="text-xs text-slate-400 uppercase tracking-widest font-bold mb-1">Total Revenue</p>
+                    <p id="revText" class="text-2xl font-black text-blue-600">₱0</p>
                 </div>
-                <div class="text-center border-l">
-                    <p class="text-sm text-slate-500 uppercase tracking-wide font-semibold">Target</p>
-                    <p id="targetText" class="text-xl font-bold text-slate-700">₱0</p>
+                <div class="text-center border-l border-slate-100">
+                    <p class="text-xs text-slate-400 uppercase tracking-widest font-bold mb-1">Assigned Target</p>
+                    <p id="targetText" class="text-2xl font-black text-slate-700">₱0</p>
                 </div>
             </div>
         </div>
@@ -76,44 +85,65 @@
 
         let gaugeChart;
 
-        // 2. Initialize Gauge
+        // 2. Fetch Unique Departments for Dropdown
+        async function loadDepartments() {
+            const { data, error } = await supabaseClient
+                .from('revenue_targets')
+                .select('department');
+            
+            if (error) return console.error(error);
+
+            // Get unique names and sort them
+            const uniqueDepts = [...new Set(data.map(item => item.department))].sort();
+            const select = document.getElementById('deptSelect');
+            
+            uniqueDepts.forEach(dept => {
+                const opt = document.createElement('option');
+                opt.value = dept;
+                opt.innerHTML = dept;
+                select.appendChild(opt);
+            });
+        }
+
+        // 3. Initialize Gauge with Achievement Label
         function initChart() {
             gaugeChart = Highcharts.chart('container', {
-                chart: { type: 'gauge', plotBackgroundColor: null, plotBackgroundImage: null, plotBorderWidth: 0, plotShadow: false, height: '80%' },
-                title: { text: 'Monthly Achievement %', style: { fontWeight: 'bold' } },
+                chart: { type: 'gauge', height: '100%' },
+                title: { text: 'Monthly Achievement Status', style: { fontWeight: '800', color: '#1e293b' } },
                 pane: { startAngle: -90, endAngle: 89.9, background: null, center: ['50%', '75%'], size: '110%' },
                 yAxis: {
                     min: 0, max: 150,
-                    tickPixelInterval: 72,
                     tickPosition: 'inside',
-                    tickColor: '#FFFFFF',
+                    tickColor: '#ffffff',
                     tickLength: 20,
                     tickWidth: 2,
                     minorTickInterval: null,
-                    labels: { distance: 20, style: { fontSize: '14px' } },
+                    labels: { distance: 25, style: { fontSize: '12px', color: '#64748b' } },
                     lineWidth: 0,
                     plotBands: [
-                        { from: 0, to: 80, color: '#f87171', thickness: 30 },   // Red
-                        { from: 80, to: 100, color: '#fbbf24', thickness: 30 },  // Yellow
-                        { from: 100, to: 150, color: '#4ade80', thickness: 30 }  // Green
+                        { from: 0, to: 80, color: '#ef4444', thickness: 35 },   // Red
+                        { from: 80, to: 100, color: '#f59e0b', thickness: 35 },  // Yellow
+                        { from: 100, to: 150, color: '#22c55e', thickness: 35 }  // Green
                     ]
                 },
                 series: [{
                     name: 'Achievement',
                     data: [0],
-                    tooltip: { valueSuffix: ' %' },
                     dataLabels: {
-                        format: '<span style="font-size:25px">{y}%</span><br/><span style="font-size:12px;opacity:0.6">of target</span>',
-                        borderWidth: 0, color: '#334155', style: { fontSize: '16px', textAlign: 'center' }, y: 30
+                        useHTML: true,
+                        format: '<div style="text-align:center"><span style="font-size:32px; color:#0f172a; font-weight:bold">{y}%</span><br/>' +
+                                '<span style="font-size:14px; color:#64748b; font-weight:600">Achieved</span></div>',
+                        borderWidth: 0,
+                        y: 40
                     },
-                    dial: { radius: '80%', backgroundColor: '#64748b', baseWidth: 12, baseLength: '0%', rearLength: '0%' },
-                    pivot: { backgroundColor: '#64748b', radius: 6 }
+                    dial: { radius: '80%', backgroundColor: '#475569', baseWidth: 12, baseLength: '0%', rearLength: '0%' },
+                    pivot: { backgroundColor: '#475569', radius: 8 }
                 }],
                 credits: { enabled: false }
             });
         }
 
-        // 3. Fetch and Update Data
+        // 4. Fetch and Update Data
         async function refreshData() {
             const month = document.getElementById('monthSelect').value;
             const dept = document.getElementById('deptSelect').value;
@@ -122,17 +152,10 @@
             loading.classList.remove('hidden');
 
             let query = supabaseClient.from('revenue_targets').select('revenue, target').eq('month', month);
-            
-            if (dept !== 'ALL') {
-                query = query.eq('department', dept);
-            }
+            if (dept !== 'ALL') query = query.eq('department', dept);
 
             const { data, error } = await query;
-
-            if (error) {
-                console.error(error);
-                return;
-            }
+            if (error) return console.error(error);
 
             const totalRevenue = data.reduce((sum, row) => sum + (row.revenue || 0), 0);
             const totalTarget = data.reduce((sum, row) => sum + (row.target || 0), 0);
@@ -142,21 +165,22 @@
                 percentage = parseFloat(((totalRevenue / totalTarget) * 100).toFixed(1));
             }
 
-            // Update UI
+            // Update Statistics
             document.getElementById('revText').innerText = '₱' + totalRevenue.toLocaleString();
             document.getElementById('targetText').innerText = '₱' + totalTarget.toLocaleString();
             
+            // Update Chart
             gaugeChart.series[0].points[0].update(percentage);
             loading.classList.add('hidden');
         }
 
-        // 4. Listeners
+        // 5. Setup Listeners
         document.getElementById('monthSelect').addEventListener('change', refreshData);
         document.getElementById('deptSelect').addEventListener('change', refreshData);
 
-        // Run on start
-        window.onload = () => {
+        window.onload = async () => {
             initChart();
+            await loadDepartments(); // Dynamic department load
             refreshData();
         };
     </script>
