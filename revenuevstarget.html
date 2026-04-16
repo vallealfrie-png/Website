@@ -14,7 +14,7 @@
         
         body { font-family: 'Plus Jakarta Sans', sans-serif; background: #020617; color: #f8fafc; }
         
-        /* THE GLOWING BORDER EFFECT ONLY */
+        /* THE GLOWING BORDER EFFECT */
         .glowing-border {
             position: relative;
             background: rgba(15, 23, 42, 0.8);
@@ -47,12 +47,9 @@
                 <div class="w-10 h-10 bg-indigo-600 rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.4)] flex items-center justify-center">
                     <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
                 </div>
-                <h1 class="text-lg font-extrabold tracking-tight text-white leading-none">REVENUE INTEL</h1>
+                <h1 class="text-lg font-extrabold tracking-tight text-white leading-none uppercase">Revenue Intel</h1>
             </div>
-            <div class="flex space-x-8 text-[11px] font-black uppercase tracking-widest text-slate-400">
-                <a href="#" class="text-indigo-400">Dashboard</a>
-                <a href="#" class="hover:text-white transition-colors">Reports</a>
-            </div>
+            <div class="text-[11px] font-black uppercase tracking-widest text-indigo-400">Executive Dashboard v2.0</div>
         </div>
     </nav>
 
@@ -85,25 +82,33 @@
             </div>
         </div>
 
-        <div class="glowing-border p-12">
-            <div class="flex flex-col lg:flex-row items-center justify-between gap-12">
+        <div class="glowing-border p-10 pt-6">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h2 class="text-sm font-black text-white uppercase tracking-widest">Live Target Achievement</h2>
+                    <p class="text-[10px] text-slate-500 font-bold">Real-time performance vs quota</p>
+                </div>
+            </div>
+            
+            <div class="flex flex-col lg:flex-row items-center justify-between gap-8">
                 <div class="flex-1 text-center lg:text-left">
                     <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Revenue</p>
-                    <p id="revText" class="text-4xl font-black text-indigo-400 tracking-tighter">₱0</p>
+                    <p id="revText" class="text-3xl font-black text-indigo-400 tracking-tighter">₱0</p>
                 </div>
 
-                <div class="flex-[3] w-full h-[400px]">
+                <div class="flex-[3] w-full h-[380px] relative">
                     <div id="gaugeContainer" class="w-full h-full"></div>
                 </div>
 
                 <div class="flex-1 text-center lg:text-right">
                     <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Yearly Target</p>
-                    <p id="targetText" class="text-4xl font-black text-white tracking-tighter">₱0</p>
+                    <p id="targetText" class="text-3xl font-black text-white tracking-tighter">₱0</p>
                 </div>
             </div>
         </div>
 
         <div class="glowing-border p-10">
+            <h3 class="text-sm font-black text-white uppercase tracking-widest mb-6">Market Flow (2025 vs 2026)</h3>
             <div id="comparisonContainer" class="h-[350px]"></div>
         </div>
     </div>
@@ -134,40 +139,39 @@
                 chart: { type: 'gauge', backgroundColor: 'transparent', margin: [0, 0, 0, 0] },
                 title: null,
                 pane: { 
-                    startAngle: -120, 
-                    endAngle: 120, 
-                    background: null, 
-                    center: ['50%', '75%'], 
-                    size: '140%' // MADE GAUGE LARGER
+                    startAngle: -120, endAngle: 120, background: null, 
+                    center: ['50%', '70%'], size: '125%' 
                 },
                 yAxis: {
-                    min: 0, max: 100, lineWidth: 0, tickWidth: 0, minorTickWidth: 0, labels: { enabled: false },
+                    min: 0, max: 150, // Higher max to prevent pointer clipping
+                    lineWidth: 0, tickWidth: 0, minorTickWidth: 0, labels: { enabled: false },
                     plotBands: [
-                        { from: 0, to: 30, color: '#ff1e56', thickness: 50 }, // BOLDER COLORS
+                        { from: 0, to: 30, color: '#ff1e56', thickness: 50 },
                         { from: 30, to: 70, color: '#ffac41', thickness: 50 },
-                        { from: 70, to: 100, color: '#32ff7e', thickness: 50 }
+                        { from: 70, to: 100, color: '#32ff7e', thickness: 50 },
+                        { from: 100, to: 150, color: '#05c46b', thickness: 50 } // Darker green for overachievers
                     ]
                 },
                 series: [{
                     name: 'Achievement', data: [50], 
                     dataLabels: {
-                        enabled: true, useHTML: true, y: -50,
-                        format: '<div style="background:#6366f1; color:white; padding: 12px 24px; border-radius: 16px; font-weight:900; font-size:32px; box-shadow: 0 15px 35px rgba(99,102,241,0.6); border: 3px solid #fff;">{y}%</div>'
+                        enabled: true, useHTML: true, y: -40,
+                        format: '<div id="gaugeLabel" style="background:#6366f1; color:white; padding: 10px 20px; border-radius: 14px; font-weight:900; font-size:28px; box-shadow: 0 15px 35px rgba(99,102,241,0.6); border: 2px solid #fff;">{y}%</div>'
                     },
-                    dial: { radius: '100%', backgroundColor: '#fff', baseWidth: 10, topWidth: 1, rearLength: '15%' },
-                    pivot: { backgroundColor: '#fff', radius: 10 }
+                    dial: { radius: '100%', backgroundColor: '#fff', baseWidth: 8, topWidth: 1, rearLength: '12%' },
+                    pivot: { backgroundColor: '#fff', radius: 8 }
                 }],
                 credits: { enabled: false }
             });
 
             comparisonChart = Highcharts.chart('comparisonContainer', {
                 chart: { type: 'column', backgroundColor: 'transparent' },
-                title: { text: 'Monthly Performance Flow', style: { color: '#fff', fontWeight: 'bold' } },
+                title: null,
                 xAxis: { categories: ['Jan', 'Feb', 'Mar'], labels: { style: { color: '#94a3b8' } }, lineWidth: 0 },
                 yAxis: { title: { text: null }, gridLineColor: 'rgba(255,255,255,0.05)', labels: { style: { color: '#475569' } } },
                 series: [
-                    { name: '2025', color: '#1e293b', data: [0, 0, 0] },
-                    { name: '2026', color: '#6366f1', data: [0, 0, 0] }
+                    { name: '2025 History', color: '#1e293b', data: [0, 0, 0] },
+                    { name: '2026 Current', color: '#6366f1', data: [0, 0, 0] }
                 ],
                 credits: { enabled: false }
             });
@@ -177,7 +181,7 @@
             const month = document.getElementById('monthSelect').value;
             const dept = document.getElementById('deptSelect').value;
 
-            // CALIBRATION: Gauge starts at middle
+            // START AT MIDDLE (50%)
             gaugeChart.series[0].points[0].update(50, true, { duration: 400 });
 
             let { data } = await supabaseClient.from('revenue_targets').select('*');
@@ -191,7 +195,7 @@
             const achieve = curTarget > 0 ? Math.round((curRev / curTarget) * 100) : 0;
             const growth = oldRev > 0 ? Math.round(((curRev - oldRev) / oldRev) * 100) : 0;
 
-            // ANIMATE NUMBERS
+            // ANIMATE
             animateValue('score2026', 0, curRev, 1200);
             animateValue('score2025', 0, oldRev, 1200);
             animateValue('growthValue', 0, growth, 1200, false);
@@ -200,9 +204,9 @@
 
             document.getElementById('growthValue').className = `text-4xl font-black tracking-tighter ${growth >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
 
-            // MOVE GAUGE TO ACTUAL POSITION
+            // UPDATE GAUGE TO ACTUAL PERCENTAGE (UNCAPPED)
             setTimeout(() => {
-                gaugeChart.series[0].points[0].update(achieve > 100 ? 100 : achieve);
+                gaugeChart.series[0].points[0].update(achieve);
             }, 500);
 
             const months = ['Jan', 'Feb', 'Mar'];
