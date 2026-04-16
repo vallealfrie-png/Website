@@ -8,99 +8,104 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://code.highcharts.com/highcharts.js"></script>
     <script src="https://code.highcharts.com/highcharts-more.js"></script>
+    <script src="https://code.highcharts.com/modules/drilldown.js"></script>
+    <script src="https://code.highcharts.com/modules/accessibility.js"></script>
 
     <style>
-        .chart-wrapper { max-width: 450px; margin: 0 auto; }
-        #container { height: 320px; }
+        .highcharts-container { border-radius: 1rem !important; }
+        #gaugeContainer { height: 280px; width: 100%; }
+        #comparisonContainer { height: 400px; width: 100%; }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen pb-12">
+<body class="bg-slate-50 min-h-screen pb-12 font-sans">
 
-    <nav class="bg-white border-b border-slate-200 px-6 py-3 shadow-sm mb-6">
-        <div class="max-w-6xl mx-auto flex justify-between items-center">
-            <div class="flex items-center space-x-2">
-                <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-200">
-                    <span class="text-white font-bold text-sm">R</span>
+    <nav class="bg-indigo-900 px-6 py-4 shadow-xl mb-8">
+        <div class="max-w-7xl mx-auto flex justify-between items-center text-white">
+            <div class="flex items-center space-x-3">
+                <div class="bg-white p-1.5 rounded-lg shadow-inner">
+                    <svg class="w-6 h-6 text-indigo-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-3 0a2 2 0 002 2h2a2 2 0 002-2M9 19h5m4 0l-3-3m0 0l-3 3m3-3V3"></path></svg>
                 </div>
-                <span class="text-lg font-bold text-slate-800">RevenueTracker</span>
+                <span class="text-xl font-black tracking-tight uppercase">Revenue Portal</span>
             </div>
-            <div class="flex space-x-6 text-sm font-semibold text-slate-500">
-                <a href="index.html" class="hover:text-indigo-600 transition-colors">Home</a>
-                <a href="revenuevstarget.html" class="text-indigo-600">Dashboard</a>
+            <div class="flex space-x-8 text-sm font-bold uppercase tracking-widest">
+                <a href="index.html" class="opacity-70 hover:opacity-100 transition-opacity">Home</a>
+                <a href="revenuevstarget.html" class="border-b-2 border-white pb-1">Dashboard</a>
             </div>
         </div>
     </nav>
 
-    <div class="max-w-5xl mx-auto px-4">
+    <div class="max-w-7xl mx-auto px-4 space-y-6">
         
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Current Year (2026)</p>
-                <h3 id="score2026" class="text-2xl font-black text-slate-800">₱0</h3>
-                <p class="text-xs text-slate-500 mt-1" id="monthLabel1">Selected Month</p>
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap gap-4 items-end">
+            <div class="flex-1 min-w-[200px]">
+                <label class="text-[10px] font-bold text-slate-400 uppercase ml-1 mb-1 block">Month Period</label>
+                <select id="monthSelect" class="w-full bg-slate-50 border border-slate-200 text-sm rounded-xl p-3 font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all">
+                    <option value="ALL">All Months (Year-to-Date)</option>
+                    <option value="Jan">January</option>
+                    <option value="Feb">February</option>
+                    <option value="Mar">March</option>
+                </select>
             </div>
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Previous Year (2025)</p>
-                <h3 id="score2025" class="text-2xl font-black text-slate-500">₱0</h3>
-                <p class="text-xs text-slate-500 mt-1" id="monthLabel2">Same Month Prior Year</p>
-            </div>
-            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">YoY Growth</p>
-                <div class="flex items-baseline space-x-2">
-                    <h3 id="growthValue" class="text-2xl font-black text-slate-800">0%</h3>
-                    <span id="growthIcon" class="text-sm font-bold"></span>
-                </div>
-                <p class="text-xs text-slate-500 mt-1">Vs. previous year</p>
+            <div class="flex-1 min-w-[200px]">
+                <label class="text-[10px] font-bold text-slate-400 uppercase ml-1 mb-1 block">Department Unit</label>
+                <select id="deptSelect" class="w-full bg-slate-50 border border-slate-200 text-sm rounded-xl p-3 font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all">
+                    <option value="ALL">Consolidated (Whole Hospital)</option>
+                </select>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 hover:border-indigo-200 transition-colors group">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">2026 Actual Revenue</p>
+                <h3 id="score2026" class="text-3xl font-black text-slate-900 group-hover:text-indigo-600 transition-colors">₱0</h3>
+            </div>
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">2025 Comparable</p>
+                <h3 id="score2025" class="text-3xl font-black text-slate-500">₱0</h3>
+            </div>
+            <div class="bg-white p-6 rounded-3xl shadow-sm border-2 border-indigo-50 relative overflow-hidden group">
+                <div class="absolute right-[-10px] bottom-[-10px] opacity-5 group-hover:scale-110 transition-transform">
+                    <svg class="w-24 h-24" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L10 10.586 13.586 7H12z" clip-rule="evenodd"></path></svg>
+                </div>
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Growth Variance</p>
+                <div class="flex items-center space-x-3">
+                    <h3 id="growthValue" class="text-3xl font-black">0%</h3>
+                    <span id="growthIcon" class="text-xl"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-[2rem] shadow-xl border border-slate-200 p-8">
+            <div class="text-center mb-4">
+                <h2 class="text-sm font-black text-slate-400 uppercase tracking-[0.3em]">Target Achievement Status</h2>
+                <p class="text-xs text-slate-400 font-medium">Measurement against set quota for the selected period</p>
+            </div>
             
-            <div class="lg:col-span-1 space-y-4">
-                <div class="bg-white rounded-2xl shadow-sm p-6 border border-slate-200">
-                    <h4 class="font-bold text-slate-800 mb-4 border-b pb-2 text-sm uppercase tracking-wide">Filters</h4>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Data Period</label>
-                            <select id="monthSelect" class="w-full bg-slate-50 border border-slate-200 text-sm rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-indigo-500/20">
-                                <option value="Jan">January</option>
-                                <option value="Feb">February</option>
-                                <option value="Mar">March</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Department</label>
-                            <select id="deptSelect" class="w-full bg-slate-50 border border-slate-200 text-sm rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-indigo-500/20">
-                                <option value="ALL">All Departments</option>
-                            </select>
-                        </div>
-                    </div>
+            <div class="flex flex-col md:flex-row items-center justify-between gap-8">
+                <div class="flex-1 text-center md:text-left order-2 md:order-1">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase">Current Performance</p>
+                    <p id="revText" class="text-2xl font-black text-indigo-600">₱0</p>
+                </div>
+
+                <div class="flex-[2] relative order-1 md:order-2">
+                    <div id="gaugeContainer"></div>
+                </div>
+
+                <div class="flex-1 text-center md:text-right order-3">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase">Budgeted Target</p>
+                    <p id="targetText" class="text-2xl font-black text-slate-700">₱0</p>
                 </div>
             </div>
-
-            <div class="lg:col-span-2 bg-white rounded-2xl shadow-xl border border-slate-200 p-6 relative min-h-[400px]">
-                <div id="loading" class="absolute inset-0 bg-white/80 z-20 flex items-center justify-center hidden rounded-2xl">
-                    <div class="flex flex-col items-center">
-                        <div class="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-2"></div>
-                        <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">Calculating Growth...</span>
-                    </div>
-                </div>
-
-                <div class="chart-wrapper">
-                    <div id="container"></div>
-                </div>
-
-                <div class="text-center mt-2">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Target Achievement (2026)</p>
-                    <div class="inline-flex items-center space-x-4 bg-slate-50 px-6 py-2 rounded-full border border-slate-100">
-                        <span id="revText" class="text-sm font-bold text-indigo-600">₱0</span>
-                        <span class="text-slate-300">/</span>
-                        <span id="targetText" class="text-sm font-bold text-slate-500">₱0</span>
-                    </div>
-                </div>
-            </div>
-
         </div>
+
+        <div class="bg-white rounded-[2rem] shadow-sm border border-slate-200 p-8">
+            <div class="mb-6">
+                <h3 class="text-lg font-black text-slate-800">Year-over-Year Trend</h3>
+                <p class="text-sm text-slate-500 font-medium">Revenue comparison of 2026 vs 2025 by Month</p>
+            </div>
+            <div id="comparisonContainer"></div>
+        </div>
+
     </div>
 
     <script>
@@ -108,7 +113,7 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpobGRtYXJ3a3Vsa2NqbnJqdmZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODAzMjQsImV4cCI6MjA5MTg1NjMyNH0.AhjpHXlZSgWNlEshgc0giSSUvHV249f34424i-5g8do';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        let gaugeChart;
+        let gaugeChart, comparisonChart;
 
         async function loadDepartments() {
             const { data } = await supabaseClient.from('revenue_targets').select('department');
@@ -121,13 +126,14 @@
             });
         }
 
-        function initChart() {
-            gaugeChart = Highcharts.chart('container', {
+        function initCharts() {
+            // Gauge Chart
+            gaugeChart = Highcharts.chart('gaugeContainer', {
                 chart: { type: 'gauge', backgroundColor: 'transparent' },
                 title: null,
                 pane: {
                     startAngle: -100, endAngle: 100,
-                    background: null, center: ['50%', '80%'], size: '100%'
+                    background: null, center: ['50%', '85%'], size: '100%'
                 },
                 yAxis: {
                     min: 0, max: 100,
@@ -150,71 +156,87 @@
                 }],
                 credits: { enabled: false }
             });
+
+            // Column Comparison Chart
+            comparisonChart = Highcharts.chart('comparisonContainer', {
+                chart: { type: 'column', backgroundColor: 'transparent' },
+                title: null,
+                xAxis: { categories: ['Jan', 'Feb', 'Mar'], crosshair: true, labels: { style: { fontWeight: '700', color: '#64748b' } } },
+                yAxis: { title: { text: 'Revenue (₱)', style: { color: '#94a3b8', fontWeight: 'bold' } }, gridLineColor: '#f1f5f9' },
+                tooltip: { shared: true, valuePrefix: '₱' },
+                plotOptions: {
+                    column: {
+                        borderRadius: 8,
+                        dataLabels: { enabled: true, format: '₱{y:,.0f}', style: { fontSize: '10px' } }
+                    }
+                },
+                series: [
+                    { name: '2025 Revenue', color: '#cbd5e1', data: [0, 0, 0] },
+                    { name: '2026 Revenue', color: '#6366f1', data: [0, 0, 0] }
+                ],
+                credits: { enabled: false }
+            });
         }
 
         async function refreshData() {
-            document.getElementById('loading').classList.remove('hidden');
             const month = document.getElementById('monthSelect').value;
             const dept = document.getElementById('deptSelect').value;
 
-            // Update Labels
-            document.getElementById('monthLabel1').innerText = `${month} 2026 Total`;
-            document.getElementById('monthLabel2').innerText = `${month} 2025 Total`;
-
-            // Fetch data for both years
-            let query = supabaseClient.from('revenue_targets').select('revenue, target, year').eq('month', month);
-            if (dept !== 'ALL') query = query.eq('department', dept);
+            let query = supabaseClient.from('revenue_targets').select('revenue, target, year, month');
+            
+            // Handle ALL Months vs Specific Month
+            if (month !== 'ALL') {
+                query = query.eq('month', month);
+            }
+            if (dept !== 'ALL') {
+                query = query.eq('department', dept);
+            }
 
             const { data } = await query;
 
-            // Segregate by Year
-            const data2026 = data.filter(d => d.year == 2026);
-            const data2025 = data.filter(d => d.year == 2025);
-
-            const rev2026 = data2026.reduce((s, r) => s + (r.revenue || 0), 0);
-            const target2026 = data2026.reduce((s, r) => s + (r.target || 0), 0);
-            const rev2025 = data2025.reduce((s, r) => s + (r.revenue || 0), 0);
+            // Calculations for Scorecards (Filter by month choice)
+            const rev2026 = data.filter(d => d.year == 2026).reduce((s, r) => s + (r.revenue || 0), 0);
+            const target2026 = data.filter(d => d.year == 2026).reduce((s, r) => s + (r.target || 0), 0);
+            const rev2025 = data.filter(d => d.year == 2025).reduce((s, r) => s + (r.revenue || 0), 0);
             
-            // Calculations
             const achievementPercent = target2026 > 0 ? Math.round((rev2026 / target2026) * 100) : 0;
-            
-            let growth = 0;
-            if (rev2025 > 0) {
-                growth = Math.round(((rev2026 - rev2025) / rev2025) * 100);
-            }
+            let growth = rev2025 > 0 ? Math.round(((rev2026 - rev2025) / rev2025) * 100) : 0;
 
-            // Update Scorecards
+            // UI Update: Scorecards
             document.getElementById('score2026').innerText = '₱' + rev2026.toLocaleString();
             document.getElementById('score2025').innerText = '₱' + rev2025.toLocaleString();
-            
-            const growthEl = document.getElementById('growthValue');
-            const growthIcon = document.getElementById('growthIcon');
-            growthEl.innerText = (growth >= 0 ? '+' : '') + growth + '%';
-            growthEl.className = growth >= 0 ? 'text-2xl font-black text-emerald-600' : 'text-2xl font-black text-rose-600';
-            growthIcon.innerText = growth >= 0 ? '▲' : '▼';
-            growthIcon.className = growth >= 0 ? 'text-emerald-500' : 'text-rose-500';
+            document.getElementById('growthValue').innerText = (growth >= 0 ? '+' : '') + growth + '%';
+            document.getElementById('growthValue').className = `text-3xl font-black ${growth >= 0 ? 'text-emerald-600' : 'text-rose-600'}`;
+            document.getElementById('growthIcon').innerText = growth >= 0 ? '▲' : '▼';
+            document.getElementById('growthIcon').className = growth >= 0 ? 'text-emerald-500' : 'text-rose-500';
 
-            // Update Chart Texts
+            // UI Update: Side Figures
             document.getElementById('revText').innerText = '₱' + rev2026.toLocaleString();
             document.getElementById('targetText').innerText = '₱' + target2026.toLocaleString();
             
+            // UI Update: Gauge
             let needleValue = achievementPercent > 100 ? 100 : achievementPercent;
-            
             gaugeChart.series[0].points[0].update({
                 y: needleValue,
                 dataLabels: {
                     format: '<div style="background:#1e293b; color:white; padding: 4px 12px; border-radius: 8px; font-weight:900; font-size:18px; border: 2px solid white; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);">' + achievementPercent + '%</div>'
                 }
             });
+
+            // UI Update: Column Chart Data (Monthly breakdown)
+            const months = ['Jan', 'Feb', 'Mar'];
+            const monthly2025 = months.map(m => data.filter(d => d.year == 2025 && d.month == m).reduce((s, r) => s + (r.revenue || 0), 0));
+            const monthly2026 = months.map(m => data.filter(d => d.year == 2026 && d.month == m).reduce((s, r) => s + (r.revenue || 0), 0));
             
-            document.getElementById('loading').classList.add('hidden');
+            comparisonChart.series[0].setData(monthly2025);
+            comparisonChart.series[1].setData(monthly2026);
         }
 
         document.getElementById('monthSelect').addEventListener('change', refreshData);
         document.getElementById('deptSelect').addEventListener('change', refreshData);
 
         window.onload = async () => {
-            initChart();
+            initCharts();
             await loadDepartments();
             refreshData();
         };
