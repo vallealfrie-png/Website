@@ -202,7 +202,7 @@
 
         } else {
             // FINISHED VIEW
-            headRow.innerHTML = `<th>Date Approved</th><th>Document Name</th><th>Approved By</th><th>Final Location</th><th>Status</th>`;
+            headRow.innerHTML = `<th>Date Approved</th><th>Document Name</th><th>Logged By</th><th>Final Location</th><th>Status</th>`;
             const { data: finished } = await _supabase.from('finished_documents').select('*').order('completed_at', { ascending: false });
             
             scanBody.innerHTML = '';
