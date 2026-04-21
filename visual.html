@@ -11,14 +11,9 @@
         
         /* Navigation & Header */
         .header-flex { 
-            display: flex; 
-            align-items: center; 
-            justify-content: space-between; 
-            margin-bottom: 25px; 
-            background: white; 
-            padding: 15px 25px; 
-            border-radius: 12px; 
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: flex; align-items: center; justify-content: space-between; 
+            margin-bottom: 25px; background: white; padding: 15px 25px; 
+            border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
         
         .nav-links { display: flex; gap: 10px; }
@@ -26,8 +21,10 @@
             display: flex; align-items: center; gap: 8px; text-decoration: none;
             color: #666; font-size: 0.85rem; font-weight: 600; padding: 8px 16px;
             border-radius: 8px; border: 1px solid #eee; transition: all 0.3s ease;
+            cursor: pointer;
         }
         .nav-btn:hover, .nav-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+        
         .btn-finish { 
             background: var(--success); color: white; border: none; padding: 8px 15px; 
             border-radius: 5px; cursor: pointer; font-weight: bold; float: right; 
@@ -80,8 +77,8 @@
         </div>
         
         <div class="nav-links">
-            <a href="#" class="nav-btn active" id="nav-live" onclick="showView('live')">LIVE TRACKS</a>
-            <a href="#" class="nav-btn" id="nav-finished" onclick="showView('finished')">ARCHIVED / FINISHED</a>
+            <div class="nav-btn active" id="nav-live" onclick="showView('live')">LIVE TRACKS</div>
+            <div class="nav-btn" id="nav-finished" onclick="showView('finished')">ARCHIVED / FINISHED</div>
             <a href="index.html" class="nav-btn">HOME</a>
         </div>
     </div>
@@ -101,13 +98,8 @@
         </div>
         <table>
             <thead>
-                <tr>
-                    <th>Last Update</th>
-                    <th>Document Name</th>
-                    <th>Location</th>
-                    <th>Handled By</th>
-                    <th>Status</th>
-                </tr>
+                <tr id="table-head-row">
+                    </tr>
             </thead>
             <tbody id="scan-body">
                 <tr><td colspan="5" style="text-align:center; padding:40px; color:#999;">Loading document stream...</td></tr>
@@ -123,7 +115,7 @@
 <script>
     const _supabase = supabase.createClient('https://tywhjkofayqhmwbpzvlg.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR5d2hqa29mYXlxaG13YnB6dmxnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2MzA2ODYsImV4cCI6MjA5MTIwNjY4Nn0.F-mFKAhn5kRtAU1XOM5jMiT4-zL3P6YJ7Rtj9VGatH4');
     
-    let currentView = 'live'; // 'live' or 'finished'
+    let currentView = 'live'; 
     let audioEnabled = false;
 
     function enableAudio() {
@@ -142,98 +134,124 @@
     }
 
     async function loadDashboard() {
+        const scanBody = document.getElementById('scan-body');
+        const headRow = document.getElementById('table-head-row');
+        scanBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Fetching...</td></tr>';
+
+        // 1. Get Master Project Names
         const { data: masterDocs } = await _supabase.from('combined_routing_logs').select('qr_code, project_name');
         const nameMap = Object.fromEntries(masterDocs?.map(d => [d.qr_code, d.project_name]) || []);
 
-        const { data: scans } = await _supabase.from('document_tracking_events').select('*').order('created_at', { ascending: false });
-        
-        const grouped = {};
-        scans?.forEach(s => {
-            if (!grouped[s.parent_qr_code]) grouped[s.parent_qr_code] = [];
-            grouped[s.parent_qr_code].push(s);
-        });
+        // 2. Load Stats
+        const { count: finishedCount } = await _supabase.from('finished_documents').select('*', { count: 'exact', head: true });
+        document.getElementById('count-finished').innerText = finishedCount || 0;
 
-        const scanBody = document.getElementById('scan-body');
-        scanBody.innerHTML = '';
-
-        let activeCount = 0;
-        let finishedCount = 0;
-
-        Object.keys(grouped).forEach(qr => {
-            const history = grouped[qr];
-            const latest = history[0];
-            const isFinished = latest.status === 'Approved/Finished';
-
-            if (isFinished) finishedCount++; else activeCount++;
-
-            // Filter based on toggle
-            if (currentView === 'live' && isFinished) return;
-            if (currentView === 'finished' && !isFinished) return;
-
-            const pName = nameMap[qr] || "Unknown Project";
-            const handledBy = latest.status === 'Picked Up' ? (latest.picked_up_by || '---') : (latest.received_by || '---');
+        if (currentView === 'live') {
+            headRow.innerHTML = `<th>Last Update</th><th>Document Name</th><th>Location</th><th>Handled By</th><th>Status</th>`;
             
-            const mainRow = document.createElement('tr');
-            mainRow.className = 'doc-row';
-            mainRow.onclick = () => toggleHistory(qr);
-            mainRow.innerHTML = `
-                <td>${new Date(latest.created_at).toLocaleDateString()}<br><small>${new Date(latest.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</small></td>
-                <td><strong>${pName}</strong><br><small style="color:#888;">${qr}</small></td>
-                <td><span style="color:var(--primary); font-weight:bold;">${latest.department}</span></td>
-                <td>${handledBy}</td>
-                <td><span class="status-badge ${getStatusClass(latest.status)}">${latest.status}</span></td>
-            `;
+            const { data: scans } = await _supabase.from('document_tracking_events').select('*').order('created_at', { ascending: false });
+            
+            // Get IDs of documents already finished to hide them from Live view
+            const { data: finishedIDs } = await _supabase.from('finished_documents').select('qr_code');
+            const finishedSet = new Set(finishedIDs?.map(f => f.qr_code));
 
-            const historyRow = document.createElement('tr');
-            historyRow.id = `history-${qr}`;
-            historyRow.className = 'history-row';
-            historyRow.innerHTML = `
-                <td colspan="5">
-                    <div class="history-container">
-                        ${!isFinished ? `<button class="btn-finish" onclick="approveDocument('${qr}', '${pName}')">FINISH & APPROVE</button>` : ''}
-                        <h4>Routing History: ${pName}</h4>
-                        <table style="width: 100%; background: white; border-radius: 5px; margin-top:10px;">
-                            ${history.map(h => `
-                                <tr>
-                                    <td style="border:none;">${new Date(h.created_at).toLocaleString()}</td>
-                                    <td style="border:none;"><strong>${h.status}</strong> at ${h.department}</td>
-                                    <td style="border:none;">By: ${h.status === 'Picked Up' ? h.picked_up_by : h.received_by}</td>
-                                </tr>
-                            `).join('')}
-                        </table>
-                    </div>
-                </td>
-            `;
+            const grouped = {};
+            scans?.forEach(s => {
+                if (finishedSet.has(s.parent_qr_code)) return; // Hide finished ones
+                if (!grouped[s.parent_qr_code]) grouped[s.parent_qr_code] = [];
+                grouped[s.parent_qr_code].push(s);
+            });
 
-            scanBody.appendChild(mainRow);
-            scanBody.appendChild(historyRow);
-        });
+            document.getElementById('count-active').innerText = Object.keys(grouped).length;
+            document.getElementById('count-scans').innerText = scans?.length || 0;
 
-        document.getElementById('count-active').innerText = activeCount;
-        document.getElementById('count-finished').innerText = finishedCount;
-        document.getElementById('count-scans').innerText = scans?.length || 0;
+            scanBody.innerHTML = '';
+            Object.keys(grouped).forEach(qr => {
+                const history = grouped[qr];
+                const latest = history[0];
+                const pName = nameMap[qr] || "Unknown Project";
+                const handledBy = latest.status === 'Picked Up' ? (latest.picked_up_by || '---') : (latest.received_by || '---');
+
+                const row = document.createElement('tr');
+                row.className = 'doc-row';
+                row.onclick = () => toggleHistory(qr);
+                row.innerHTML = `
+                    <td>${new Date(latest.created_at).toLocaleString()}</td>
+                    <td><strong>${pName}</strong><br><small>${qr}</small></td>
+                    <td><span style="color:var(--primary); font-weight:bold;">${latest.department}</span></td>
+                    <td>${handledBy}</td>
+                    <td><span class="status-badge ${getStatusClass(latest.status)}">${latest.status}</span></td>
+                `;
+
+                const hRow = document.createElement('tr');
+                hRow.id = `history-${qr}`;
+                hRow.className = 'history-row';
+                hRow.innerHTML = `
+                    <td colspan="5">
+                        <div class="history-container">
+                            <button class="btn-finish" onclick="approveDocument('${qr}', '${pName}')">APPROVE & ARCHIVE</button>
+                            <h4>Tracking History</h4>
+                            <table style="width:100%; background:white;">
+                                ${history.map(h => `<tr><td>${new Date(h.created_at).toLocaleString()}</td><td>${h.status} at ${h.department}</td><td>By: ${h.status === 'Picked Up' ? h.picked_up_by : h.received_by}</td></tr>`).join('')}
+                            </table>
+                        </div>
+                    </td>`;
+                scanBody.appendChild(row);
+                scanBody.appendChild(hRow);
+            });
+
+        } else {
+            // FINISHED VIEW
+            headRow.innerHTML = `<th>Date Approved</th><th>Document Name</th><th>Approved By</th><th>Final Location</th><th>Status</th>`;
+            const { data: finished } = await _supabase.from('finished_documents').select('*').order('completed_at', { ascending: false });
+            
+            scanBody.innerHTML = '';
+            finished?.forEach(f => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${new Date(f.completed_at).toLocaleString()}</td>
+                    <td><strong>${f.project_name}</strong><br><small>${f.qr_code}</small></td>
+                    <td>${f.approved_by}</td>
+                    <td>${f.final_department}</td>
+                    <td><span class="status-badge status-finished">COMPLETED</span></td>
+                `;
+                scanBody.appendChild(row);
+            });
+        }
     }
 
     async function approveDocument(qr, name) {
         const approver = prompt(`Final Approval for: ${name}\nEnter your name to confirm:`);
-        if (!approver) return;
+        if (!approver || approver.trim() === "") return;
 
-        const { error } = await _supabase.from('document_tracking_events').insert([{
-            parent_qr_code: qr,
-            status: 'Approved/Finished',
-            received_by: approver,
-            department: 'FINAL ARCHIVE',
-            created_at: new Date()
-        }]);
-
-        if (!error) {
-            await _supabase.from('document_notifications').insert([{
+        try {
+            // 1. Move to Finished Table
+            const { error: err1 } = await _supabase.from('finished_documents').insert([{
                 qr_code: qr,
-                message: `✅ Document ${name} has been officially APPROVED/FINISHED by ${approver}`
+                project_name: name,
+                approved_by: approver,
+                final_department: 'FINAL ARCHIVE'
             }]);
-            alert("Document moved to Finished Archive.");
-            loadDashboard();
-        }
+
+            // 2. Mark as finished in Events Table (so history is complete)
+            const { error: err2 } = await _supabase.from('document_tracking_events').insert([{
+                parent_qr_code: qr,
+                status: 'Approved/Finished',
+                received_by: approver,
+                department: 'FINAL ARCHIVE'
+            }]);
+
+            if (!err1 && !err2) {
+                await _supabase.from('document_notifications').insert([{
+                    qr_code: qr,
+                    message: `✅ ARCHIVED: ${name} approved by ${approver}`
+                }]);
+                alert("Document successfully archived.");
+                loadDashboard();
+            } else {
+                alert("Error: " + (err1?.message || err2?.message));
+            }
+        } catch (e) { console.error(e); }
     }
 
     function toggleHistory(qr) {
@@ -243,7 +261,6 @@
 
     function getStatusClass(status) {
         const s = status?.toLowerCase() || '';
-        if (s.includes('finished')) return 'status-finished';
         if (s.includes('signed') && !s.includes('not')) return 'status-signed';
         if (s.includes('received')) return 'status-received';
         if (s.includes('picked up')) return 'status-pickup';
@@ -254,10 +271,7 @@
         const toast = document.getElementById('notification-toast');
         document.getElementById('toast-msg').innerText = msg;
         toast.style.display = 'block';
-        if (audioEnabled) {
-            const sound = document.getElementById('notif-sound');
-            sound.play().catch(() => {});
-        }
+        if (audioEnabled) document.getElementById('notif-sound').play().catch(() => {});
         setTimeout(() => { toast.style.display = 'none'; }, 8000);
     }
 
