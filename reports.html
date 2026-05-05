@@ -27,100 +27,45 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
-        .feedback-canvas {
-            position: relative;
-            height: 500px;
-            width: 100%;
-            background: #ffffff;
-            border-radius: 2.5rem;
-            border: 1px solid #f1f5f9;
-            overflow: hidden;
-        }
-        .feedback-item {
-            position: absolute;
-            font-weight: 900;
-            text-transform: uppercase;
-            white-space: nowrap;
-            line-height: 1;
-            padding: 10px 14px;
-            border-radius: 14px;
-            pointer-events: auto;
-            transition: all 0.3s ease;
-            display: inline-block;
-        }
-        
-        .center-hub {
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 50;
-            background: white;
-            width: 150px; height: 150px;
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            border-radius: 999px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.08);
-            border: 8px solid #f8fafc;
-            text-align: center;
-        }
-
         /* --- PRINT OPTIMIZATIONS --- */
         @media print {
             @page {
                 size: landscape;
                 margin: 1cm;
             }
-
             nav, .no-print, button, #logoutBtn { display: none !important; }
-            
             body { background: white !important; }
-
-            /* Ensure both dashboards show in print */
             .tab-content { 
                 display: block !important; 
                 opacity: 1 !important;
                 visibility: visible !important;
                 page-break-after: always;
             }
-
-            /* Prevent elements from being cut in half */
-            .bg-white, 
-            .grid > div, 
-            .chart-container, 
-            .chart-container-tall, 
-            .feedback-canvas,
-            table,
-            tr {
+            .bg-white, .grid > div, .chart-container, .chart-container-tall, table, tr, .closing-summary-box {
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
             }
-
-            /* Fix shadow and border issues in print */
             .shadow-3xl, .shadow-xl {
                 box-shadow: none !important;
                 border: 1px solid #e2e8f0 !important;
             }
-
-            /* Reset container widths for paper */
             main { max-width: 100% !important; width: 100% !important; padding: 0 !important; }
-            .grid { gap: 1.5rem !important; }
         }
     </style>
 </head>
 <body class="bg-slate-50 font-sans text-slate-900 min-h-screen">
 
-    <nav class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-200 p-4 shadow-sm">
+    <nav class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-200 p-4 shadow-sm no-print">
         <div class="max-w-7xl mx-auto flex justify-between items-center">
             <div class="flex items-center gap-8">
                 <h1 class="font-black text-indigo-600 tracking-tighter text-xl uppercase italic">PHMC</h1>
                 <div class="flex gap-6">
-                    <a href="index.html" class="text-sm font-bold text-slate-400 hover:text-indigo-600 transition uppercase tracking-widest flex items-center gap-2">Home</a>
+                    <a href="index.html" class="text-sm font-bold text-slate-400 hover:text-indigo-600 transition uppercase tracking-widest">Home</a>
                     <a href="reports.html" class="text-sm font-bold text-indigo-600 border-b-2 border-indigo-600 uppercase tracking-widest">Reports</a>
                 </div>
             </div>
             <div class="flex items-center gap-4">
                 <span id="userDisplay" class="text-[10px] font-black text-slate-400 uppercase tracking-widest">...</span>
-                <button id="logoutBtn" class="bg-slate-100 text-[10px] font-black px-4 py-2 rounded-full uppercase tracking-widest">Logout</button>
             </div>
         </div>
     </nav>
@@ -137,7 +82,7 @@
 
         <!-- INTERNAL SECTION -->
         <div id="section-internal" class="tab-content active space-y-10">
-            <h2 class="hidden print:block text-2xl font-black uppercase italic text-indigo-600 mb-4">Internal Patient Analytics Report</h2>
+            <h2 class="hidden print:block text-2xl font-black uppercase italic text-indigo-600 mb-4">Internal Patient Analytics</h2>
             
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-6">
                 <div class="bg-white shadow-3xl rounded-[2.5rem] p-8 border-l-8 border-indigo-600">
@@ -160,7 +105,7 @@
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div class="bg-white shadow-xl rounded-[2.5rem] p-8 border border-slate-100">
-                    <h4 class="text-xs font-black text-slate-400 uppercase tracking-[0.4em] mb-8">Demographics (Age & Gender)</h4>
+                    <h4 class="text-xs font-black text-slate-400 uppercase tracking-[0.4em] mb-8">Demographics</h4>
                     <div class="chart-container"><canvas id="demoChart"></canvas></div>
                 </div>
                 <div class="bg-white shadow-xl rounded-[2.5rem] p-8 border border-slate-100">
@@ -200,18 +145,18 @@
 
         <!-- EXTERNAL SECTION -->
         <div id="section-external" class="tab-content space-y-10">
-            <h2 class="hidden print:block text-2xl font-black uppercase italic text-rose-600 mb-4">External Market Analytics Report</h2>
+            <h2 class="hidden print:block text-2xl font-black uppercase italic text-rose-600 mb-4">External Market Analytics</h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="bg-white shadow-3xl rounded-[2.5rem] p-8 border-l-8 border-rose-500">
                     <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Market Reach</p>
                     <h3 id="extTotalCount" class="text-4xl font-black italic">--</h3>
                 </div>
                 <div class="bg-white shadow-3xl rounded-[2.5rem] p-8 border-l-8 border-rose-600">
-                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Hospital Visit Last 6mnt</p>
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Visit (Past 6mnt)</p>
                     <h3 id="extYesCount" class="text-4xl font-black italic text-rose-600">--</h3>
                 </div>
                 <div class="bg-white shadow-3xl rounded-[2.5rem] p-8 border-l-8 border-slate-300">
-                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Not Visit Last 6mnt</p>
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">No Visit (Past 6mnt)</p>
                     <h3 id="extNoCount" class="text-4xl font-black italic text-slate-400">--</h3>
                 </div>
             </div>
@@ -226,17 +171,131 @@
                     <div class="chart-container"><canvas id="extOccChart"></canvas></div>
                 </div>
             </div>
+
+            <!-- EXTERNAL CLOSING SUMMARY BOX -->
+            <div class="closing-summary-box bg-rose-50 border border-rose-100 shadow-3xl rounded-[2.5rem] p-10 space-y-8">
+                <h4 class="text-sm font-black text-rose-600 uppercase tracking-[0.5em] border-b border-rose-100 pb-4">External survey results: Closing summary</h4>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                    <div class="space-y-3">
+                        <h5 class="text-[10px] font-black text-rose-400 uppercase tracking-widest">Respondents Demographic</h5>
+                        <p class="text-sm text-slate-600 leading-relaxed">For the external respondents' demographics highest percentage is in the bracket of 20-39 years old, 29% in female respondents, and 17% in male respondents.</p>
+                    </div>
+
+                    <div class="space-y-3">
+                        <h5 class="text-[10px] font-black text-rose-400 uppercase tracking-widest">Respondents Market Occupation</h5>
+                        <p class="text-sm text-slate-600 leading-relaxed">We interviewed 58% working individuals, 22% students, 13% pensioner, 6% househusband/housewifie and 1% unemployed.</p>
+                    </div>
+
+                    <div class="space-y-3">
+                        <h5 class="text-[10px] font-black text-rose-400 uppercase tracking-widest">Market Locations</h5>
+                        <p class="text-sm text-slate-600 leading-relaxed">We interviewed respondents located in Pulang Lupa, Bf Homes, Talon 1-5, Pamplona 1-2, Casimiro, Makati, Verdant, and Mandaluyong.</p>
+                    </div>
+
+                    <div class="space-y-3">
+                        <h5 class="text-[10px] font-black text-rose-400 uppercase tracking-widest">62% visited hospitals (Past 6 Months)</h5>
+                        <p class="text-sm text-slate-600 leading-relaxed">For the 100 respondents, 26% respondents answered PHMC-LP as their last visited hospital for the past 6 months, while 7% respondents answered Ultramax as their last visited hospital. The other remaining respondents answered LPGH, Christ the King, Callejo, Asian Hospital, PGH, and Hi-Precision as their last visited hospital for the past 6 months.</p>
+                    </div>
+
+                    <div class="space-y-3">
+                        <h5 class="text-[10px] font-black text-rose-400 uppercase tracking-widest">38% visited hospitals (Over 6 Months)</h5>
+                        <p class="text-sm text-slate-600 leading-relaxed">Surprisingly 6% answered that they never visited any hospital in their lives, 4% answered LPDH, 3% answered LPGH, and Pope John Hospital as their last hospital visited over the past 6 months. While PHMC-LP is mentioned by the 2% respondents as their last hospital visited over the past 6 months.</p>
+                    </div>
+
+                    <div class="space-y-3">
+                        <h5 class="text-[10px] font-black text-rose-400 uppercase tracking-widest">Closing remarks</h5>
+                        <p class="text-sm text-slate-600 leading-relaxed">The external survey results prove that PHMC-LP still has a lot of potential consumers that they can get in the Las Pinas area. Many consumers still never consider PHMC-LP as their first choice or top of mind. Clinics are the top choice of working individuals around Las Pinas, while others still consider mostly brgy. centers as their top choice since it is more convenient and near their homes.</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </main>
 
     <script>
-        /* Existing JS Logic Remains the same */
+        const SB_URL = 'https://osfwbhcqibhtobaoojrv.supabase.co';
+        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9zZndiaGNxaWJodG9iYW9vanJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAxMDU3MzksImV4cCI6MjA4NTY4MTczOX0.2NNaOhHfXMsYVWrBkJ1gudU4l0in35WU4bT4UgzkvlA';
+        const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
+
+        window.onload = async () => {
+            fetchInternal();
+            fetchExternal();
+        };
+
+        async function fetchInternal() {
+            const { data } = await supabaseClient.from('survey_submissions').select('*');
+            if (!data) return;
+            document.getElementById('totalCount').innerText = data.length;
+            const posList = data.filter(s => s.experience_rating === 'Positive');
+            document.getElementById('posRate').innerText = Math.round((posList.length / data.length) * 100) + '%';
+            document.getElementById('repeatCount').innerText = data.filter(s => s.patient_type === 'Repeat').length;
+            document.getElementById('newCount').innerText = data.filter(s => s.patient_type !== 'Repeat').length;
+            
+            renderCharts('demoChart', 'occChart', 'locChart', 'sentimentChart', data, '#6366f1');
+            populateTable('intFeedbackTableBody', posList, data.filter(s => s.experience_rating !== 'Positive'));
+        }
+
+        async function fetchExternal() {
+            const { data } = await supabaseClient.from('external_surveys').select('*');
+            if (!data) return;
+            const yesList = data.filter(s => s.has_availed_recently === true);
+            document.getElementById('extTotalCount').innerText = data.length;
+            document.getElementById('extYesCount').innerText = yesList.length;
+            document.getElementById('extNoCount').innerText = data.length - yesList.length;
+            
+            renderCharts('extDemoChart', 'extOccChart', 'extLocChart', null, data, '#e11d48');
+        }
+
+        function renderCharts(dId, oId, lId, sId, data, color) {
+            // Demographic Chart
+            const ageDist = [0,0,0,0,0];
+            data.forEach(s => {
+                let i = s.age <= 19 ? 0 : s.age <= 39 ? 1 : s.age <= 59 ? 2 : s.age <= 79 ? 3 : 4;
+                ageDist[i]++;
+            });
+            new Chart(document.getElementById(dId), {
+                type: 'bar',
+                data: { labels: ['0-19', '20-39', '40-59', '60-79', '80+'], datasets: [{ label: 'Users', data: ageDist, backgroundColor: color }] },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            // Occupation Chart
+            const occ = data.reduce((acc, cur) => { acc[cur.occupation] = (acc[cur.occupation] || 0) + 1; return acc; }, {});
+            new Chart(document.getElementById(oId), {
+                type: 'pie',
+                data: { labels: Object.keys(occ), datasets: [{ data: Object.values(occ), backgroundColor: [color, '#2dd4bf', '#fbbf24', '#f472b6', '#94a3b8'] }] },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            // Location Chart
+            const loc = data.reduce((acc, cur) => { acc[cur.location] = (acc[cur.location] || 0) + 1; return acc; }, {});
+            new Chart(document.getElementById(lId), {
+                type: 'bar',
+                data: { labels: Object.keys(loc), datasets: [{ label: 'Region', data: Object.values(loc), backgroundColor: color }] },
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        function populateTable(id, pos, crit) {
+            const body = document.getElementById(id);
+            const len = Math.max(pos.length, crit.length);
+            for(let i=0; i<len; i++) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-2">${pos[i]?.feedback_details || '-'}</td>
+                    <td class="p-2 border-r-2">${pos[i]?.improvements || '-'}</td>
+                    <td class="p-2">${crit[i]?.feedback_details || '-'}</td>
+                    <td class="p-2">${crit[i]?.improvements || '-'}</td>
+                `;
+                body.appendChild(tr);
+            }
+        }
+
         function switchDashboard(type) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.getElementById(`section-${type}`).classList.add('active');
-            // ... (rest of your existing switch logic)
+            document.getElementById('btn-internal').className = type === 'internal' ? "px-10 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all bg-white shadow-sm text-indigo-600" : "px-10 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all text-slate-500 hover:text-slate-800";
+            document.getElementById('btn-external').className = type === 'external' ? "px-10 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all bg-white shadow-sm text-rose-600" : "px-10 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all text-slate-500 hover:text-slate-800";
         }
-        // ... (rest of your data fetching and Chart.js logic)
     </script>
 </body>
 </html>
