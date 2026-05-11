@@ -64,35 +64,35 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="glowing-border p-8">
                 <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">2026 Actual Revenue</p>
-                <h3 id="score2026" class="text-4xl font-black text-white tracking-tighter">₱0</h3>
+                <h3 id="score2026" class="text-3xl lg:text-4xl font-black text-white tracking-tighter overflow-hidden truncate">₱0</h3>
             </div>
             <div class="glowing-border p-8">
                 <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">2026 Target Goal</p>
-                <h3 id="targetTextTop" class="text-4xl font-black text-indigo-400 tracking-tighter">₱0</h3>
+                <h3 id="targetTextTop" class="text-3xl lg:text-4xl font-black text-indigo-400 tracking-tighter overflow-hidden truncate">₱0</h3>
             </div>
             <div class="glowing-border p-8">
                 <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">YoY Growth</p>
-                <h3 id="growthValue" class="text-4xl font-black tracking-tighter">0%</h3>
+                <h3 id="growthValue" class="text-3xl lg:text-4xl font-black tracking-tighter">0%</h3>
             </div>
         </div>
 
-        <div class="glowing-border p-12">
-            <div class="flex flex-col lg:flex-row items-center justify-between gap-10">
-                <div class="flex-1 text-center lg:text-left">
+        <div class="glowing-border p-8 lg:p-12">
+            <div class="flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-10">
+                <div class="flex-1 text-center lg:text-left min-w-[150px]">
                     <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Current Revenue</p>
-                    <p id="revText" class="text-4xl font-black text-indigo-400">₱0</p>
+                    <p id="revText" class="text-2xl lg:text-3xl font-black text-indigo-400 break-all">₱0</p>
                 </div>
-                <div class="flex-[3] w-full h-[350px]">
+                <div class="flex-[3] w-full h-[300px] lg:h-[350px]">
                     <div id="gaugeContainer" class="w-full h-full"></div>
                 </div>
-                <div class="flex-1 text-center lg:text-right">
+                <div class="flex-1 text-center lg:text-right min-w-[150px]">
                     <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Target Quota</p>
-                    <p id="targetText" class="text-4xl font-black text-white">₱0</p>
+                    <p id="targetText" class="text-2xl lg:text-3xl font-black text-white break-all">₱0</p>
                 </div>
             </div>
         </div>
 
-        <div class="glowing-border p-10">
+        <div class="glowing-border p-6 lg:p-10">
             <div id="comparisonContainer" class="h-[400px]"></div>
         </div>
     </div>
@@ -126,23 +126,24 @@
 
         function initCharts() {
             gaugeChart = Highcharts.chart('gaugeContainer', {
-                chart: { type: 'gauge', backgroundColor: 'transparent', margin: [0, 0, 40, 0] },
+                chart: { type: 'gauge', backgroundColor: 'transparent', margin: [0, 0, 20, 0] },
                 title: null,
-                pane: { startAngle: -120, endAngle: 120, background: null, center: ['50%', '85%'], size: '110%' },
+                pane: { startAngle: -120, endAngle: 120, background: null, center: ['50%', '85%'], size: '100%' },
                 yAxis: {
                     min: 0, max: 100, lineWidth: 0, tickWidth: 0, minorTickWidth: 0, labels: { enabled: false },
-                    plotBands: [{ from: 0, to: 100, color: '#ff1e56', thickness: 50 }] // Default Red
+                    plotBands: [{ from: 0, to: 100, color: '#ff1e56', thickness: 45 }]
                 },
                 series: [{
                     name: 'Achievement', data: [0],
                     dataLabels: {
-                        enabled: true, useHTML: true, y: -40,
+                        enabled: true, useHTML: true, y: -30, borderWidth: 0,
                         formatter: function() {
-                            return `<div style="background:#0f172a; color:white; padding: 8px 20px; border-radius: 12px; font-weight:900; font-size:28px; border: 2px solid rgba(255,255,255,0.2); shadow: 0 4px 10px rgba(0,0,0,0.5);">${this.point.realValue}%</div>`;
+                            // Reduced font size and added box-sizing to prevent spill
+                            return `<div style="background:#0f172a; color:white; padding: 5px 15px; border-radius: 10px; font-weight:900; font-size:22px; border: 2px solid rgba(255,255,255,0.1); min-width: 80px; text-align: center;">${this.point.realValue}%</div>`;
                         }
                     },
-                    dial: { radius: '90%', backgroundColor: '#fff', baseWidth: 8 },
-                    pivot: { backgroundColor: '#fff', radius: 8 }
+                    dial: { radius: '90%', backgroundColor: '#fff', baseWidth: 6 },
+                    pivot: { backgroundColor: '#fff', radius: 7 }
                 }],
                 credits: { enabled: false }
             });
@@ -185,11 +186,10 @@
             animateValue('revText', 0, curRev, 1000);
             animateValue('targetText', 0, curTarget, 1000);
 
-            // COLOR LOGIC & GAUGE CAP
             const gaugeColor = realAchieve >= 100 ? '#32ff7e' : '#ff1e56';
             const pointerValue = realAchieve > 100 ? 100 : realAchieve;
             
-            gaugeChart.yAxis[0].update({ plotBands: [{ from: 0, to: 100, color: gaugeColor, thickness: 50 }] }, false);
+            gaugeChart.yAxis[0].update({ plotBands: [{ from: 0, to: 100, color: gaugeColor, thickness: 45 }] }, false);
             gaugeChart.series[0].points[0].update({ 
                 y: pointerValue, 
                 realValue: realAchieve 
