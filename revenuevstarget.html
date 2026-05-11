@@ -31,7 +31,18 @@
 
     <nav class="border-b border-white/5 px-8 py-5 mb-10 bg-slate-900/40 backdrop-blur-xl sticky top-0 z-50">
         <div class="max-w-7xl mx-auto flex justify-between items-center">
-            <div class="flex items-center space-x-6">
+            <div class="flex items-center">
+                <a href="index.html" class="flex items-center space-x-2 group">
+                    <div class="w-8 h-8 bg-slate-800 border border-white/10 rounded-lg flex items-center justify-center group-hover:bg-indigo-600 group-hover:border-indigo-400 transition-all duration-300">
+                        <svg class="w-4 h-4 text-slate-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                        </svg>
+                    </div>
+                    <span class="text-[11px] font-black uppercase tracking-widest text-slate-400 group-hover:text-white transition-colors">Home</span>
+                </a>
+                
+                <div class="h-6 w-[1px] bg-white/10 mx-6"></div>
+
                 <div class="flex items-center space-x-3">
                     <div class="w-10 h-10 bg-indigo-600 rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.4)] flex items-center justify-center">
                         <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
@@ -39,6 +50,7 @@
                     <h1 class="text-lg font-extrabold tracking-tight text-white uppercase">Revenue Intel</h1>
                 </div>
             </div>
+            <div class="text-[11px] font-black uppercase tracking-widest text-indigo-400 hidden sm:block">Executive Dashboard</div>
         </div>
     </nav>
 
@@ -96,7 +108,7 @@
         let gaugeChart, comparisonChart;
         const MONTH_ORDER = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-        // Helper to safely clean and convert any value to a number
+        // Helper to convert any text/number into a clean calculation-ready number
         const parseVal = (val) => {
             if (val === null || val === undefined) return 0;
             if (typeof val === 'number') return val;
@@ -140,14 +152,14 @@
 
             comparisonChart = Highcharts.chart('comparisonContainer', {
                 chart: { type: 'column', backgroundColor: 'transparent' },
-                title: { text: 'Monthly Performance: 2025 vs 2026 vs Target', style: { color: '#fff', fontSize: '14px', fontWeight: '800' } },
+                title: { text: 'Monthly Flow: Actuals vs Target', style: { color: '#fff', fontSize: '14px', fontWeight: '800' } },
                 xAxis: { categories: [], labels: { style: { color: '#94a3b8' } }, lineWidth: 0 },
                 yAxis: { title: { text: null }, gridLineColor: 'rgba(255,255,255,0.05)', labels: { style: { color: '#475569' } } },
                 tooltip: { shared: true, borderRadius: 12 },
                 series: [
                     { name: '2025 Revenue', color: '#1e293b', data: [] },
                     { name: '2026 Revenue', color: '#6366f1', data: [] },
-                    { name: '2026 Target', color: '#a855f7', data: [], dashStyle: 'Dot' } // Added Target series
+                    { name: '2026 Target', color: '#a855f7', data: [] }
                 ],
                 credits: { enabled: false }
             });
@@ -157,17 +169,15 @@
             const selectedMonth = document.getElementById('monthSelect').value;
             const selectedDept = document.getElementById('deptSelect').value;
 
-            // Fetch ALL data from the table
             let { data: rawData, error } = await supabaseClient.from('revenue_targets').select('*').limit(2000);
-            if (error) { console.error("Supabase Error:", error); return; }
+            if (error) return;
 
-            // 1. Filter by Department
+            // Normalize names (handles "Apr" vs "April")
+            rawData = rawData.map(d => ({...d, month: (d.month || "").trim()}));
+
             let deptData = selectedDept === 'ALL' ? rawData : rawData.filter(d => d.department === selectedDept);
+            let metricsData = selectedMonth === 'ALL' ? deptData : deptData.filter(d => d.month === selectedMonth);
 
-            // 2. Filter for specific Month metrics
-            let metricsData = selectedMonth === 'ALL' ? deptData : deptData.filter(d => d.month.trim() === selectedMonth.trim());
-
-            // 3. Totals
             const curRev = metricsData.filter(d => d.year == 2026).reduce((s, r) => s + parseVal(r.revenue), 0);
             const curTarget = metricsData.filter(d => d.year == 2026).reduce((s, r) => s + parseVal(r.target), 0);
             const oldRev = metricsData.filter(d => d.year == 2025).reduce((s, r) => s + parseVal(r.revenue), 0);
@@ -175,7 +185,6 @@
             const achieve = curTarget > 0 ? Math.round((curRev / curTarget) * 100) : 0;
             const growth = oldRev > 0 ? Math.round(((curRev - oldRev) / oldRev) * 100) : 0;
 
-            // Update UI
             animateValue('score2026', 0, curRev, 1000);
             animateValue('targetTextTop', 0, curTarget, 1000);
             animateValue('growthValue', 0, growth, 1000, false);
@@ -183,32 +192,29 @@
             animateValue('targetText', 0, curTarget, 1000);
             document.getElementById('growthValue').className = `text-4xl font-black ${growth >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
 
-            // Update Gauge
             const gaugeColor = achieve >= 100 ? '#32ff7e' : '#ff1e56';
             gaugeChart.yAxis[0].update({ plotBands: [{ from: 0, to: 100, color: gaugeColor, thickness: 50 }] }, false);
             gaugeChart.series[0].points[0].update({ y: achieve > 115 ? 115 : achieve });
 
-            // 4. Dynamic Bar Chart (Detects Apr, May, etc. automatically)
-            const availableMonths = [...new Set(rawData.map(d => d.month.trim()))]
-                .sort((a, b) => MONTH_ORDER.indexOf(a) - MONTH_ORDER.indexOf(b));
+            // Detect and Sort Months dynamically
+            const availableMonths = [...new Set(rawData.map(d => d.month))]
+                .sort((a, b) => {
+                    const idxA = MONTH_ORDER.findIndex(m => a.startsWith(m));
+                    const idxB = MONTH_ORDER.findIndex(m => b.startsWith(m));
+                    return idxA - idxB;
+                });
             
             comparisonChart.update({ xAxis: { categories: availableMonths } }, false);
-            
-            // Series 0: 2025 Rev
-            comparisonChart.series[0].setData(availableMonths.map(m => deptData.filter(d => d.year == 2025 && d.month.trim() == m).reduce((s, r) => s + parseVal(r.revenue), 0)), false);
-            // Series 1: 2026 Rev
-            comparisonChart.series[1].setData(availableMonths.map(m => deptData.filter(d => d.year == 2026 && d.month.trim() == m).reduce((s, r) => s + parseVal(r.revenue), 0)), false);
-            // Series 2: 2026 Target
-            comparisonChart.series[2].setData(availableMonths.map(m => deptData.filter(d => d.year == 2026 && d.month.trim() == m).reduce((s, r) => s + parseVal(r.target), 0)), true);
+            comparisonChart.series[0].setData(availableMonths.map(m => deptData.filter(d => d.year == 2025 && d.month == m).reduce((s, r) => s + parseVal(r.revenue), 0)), false);
+            comparisonChart.series[1].setData(availableMonths.map(m => deptData.filter(d => d.year == 2026 && d.month == m).reduce((s, r) => s + parseVal(r.revenue), 0)), false);
+            comparisonChart.series[2].setData(availableMonths.map(m => deptData.filter(d => d.year == 2026 && d.month == m).reduce((s, r) => s + parseVal(r.target), 0)), true);
         }
 
         window.onload = async () => {
             initCharts();
-            
             const { data } = await supabaseClient.from('revenue_targets').select('department, month').limit(2000);
             if (!data) return;
 
-            // Auto-populate Departments
             const uniqueDepts = [...new Set(data.map(item => item.department))].sort();
             uniqueDepts.forEach(dept => {
                 const opt = document.createElement('option');
@@ -216,9 +222,12 @@
                 document.getElementById('deptSelect').appendChild(opt);
             });
 
-            // Auto-populate Months (finds April, etc. automatically)
-            const uniqueMonths = [...new Set(data.map(item => item.month.trim()))]
-                .sort((a, b) => MONTH_ORDER.indexOf(a) - MONTH_ORDER.indexOf(b));
+            const uniqueMonths = [...new Set(data.map(item => (item.month || "").trim()))]
+                .sort((a, b) => {
+                    const idxA = MONTH_ORDER.findIndex(m => a.startsWith(m));
+                    const idxB = MONTH_ORDER.findIndex(m => b.startsWith(m));
+                    return idxA - idxB;
+                });
             uniqueMonths.forEach(m => {
                 const opt = document.createElement('option');
                 opt.value = m; opt.innerHTML = m; opt.className = "bg-slate-900";
