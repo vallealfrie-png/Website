@@ -35,7 +35,6 @@
             pointer-events: none;
         }
 
-        /* Smoothing out the container transition */
         .highcharts-container { transition: opacity 0.5s ease; }
     </style>
 </head>
@@ -71,6 +70,7 @@
                 <option class="bg-slate-900" value="Jan">January</option>
                 <option class="bg-slate-900" value="Feb">February</option>
                 <option class="bg-slate-900" value="Mar">March</option>
+                <option class="bg-slate-900" value="Apr">April</option>
             </select>
             <select id="deptSelect" class="flex-1 bg-transparent text-sm p-4 font-bold text-white outline-none cursor-pointer rounded-xl border-l border-white/10">
                 <option class="bg-slate-900" value="ALL">Consolidated Hospital</option>
@@ -143,7 +143,7 @@
                     type: 'gauge', 
                     backgroundColor: 'transparent', 
                     margin: [0, 0, 40, 0],
-                    animation: { duration: 800, easing: 'linear' } // Removed vibrating/bounce effect
+                    animation: { duration: 800, easing: 'linear' }
                 },
                 title: null,
                 pane: { 
@@ -153,7 +153,7 @@
                 yAxis: {
                     min: 0, max: 100,
                     lineWidth: 0, tickWidth: 0, minorTickWidth: 0, labels: { enabled: false },
-                    plotBands: [{ from: 0, to: 100, color: '#ff1e56', thickness: 55 }] // Initial color Red
+                    plotBands: [{ from: 0, to: 100, color: '#ff1e56', thickness: 55 }]
                 },
                 series: [{
                     name: 'Achievement', data: [0],
@@ -171,9 +171,10 @@
             comparisonChart = Highcharts.chart('comparisonContainer', {
                 chart: { type: 'column', backgroundColor: 'transparent' },
                 title: { text: 'Monthly Performance Flow', style: { color: '#fff', fontSize: '14px', fontWeight: '800' } },
-                xAxis: { categories: ['Jan', 'Feb', 'Mar'], labels: { style: { color: '#94a3b8' } }, lineWidth: 0 },
+                // UPDATED X-AXIS TO INCLUDE APRIL
+                xAxis: { categories: ['Jan', 'Feb', 'Mar', 'Apr'], labels: { style: { color: '#94a3b8' } }, lineWidth: 0 },
                 yAxis: { title: { text: null }, gridLineColor: 'rgba(255,255,255,0.05)', labels: { style: { color: '#475569' } } },
-                series: [{ name: '2025', color: '#1e293b', data: [0,0,0] }, { name: '2026', color: '#6366f1', data: [0,0,0] }],
+                series: [{ name: '2025', color: '#1e293b', data: [0,0,0,0] }, { name: '2026', color: '#6366f1', data: [0,0,0,0] }],
                 credits: { enabled: false }
             });
         }
@@ -182,7 +183,9 @@
             const month = document.getElementById('monthSelect').value;
             const dept = document.getElementById('deptSelect').value;
 
-            let { data } = await supabaseClient.from('revenue_targets').select('*');
+            // Fetch data (extended limit to 2000 to ensure we don't miss rows)
+            let { data } = await supabaseClient.from('revenue_targets').select('*').limit(2000);
+            
             if (month !== 'ALL') data = data.filter(d => d.month === month);
             if (dept !== 'ALL') data = data.filter(d => d.department === dept);
 
@@ -193,8 +196,7 @@
             const achieve = curTarget > 0 ? Math.round((curRev / curTarget) * 100) : 0;
             const growth = oldRev > 0 ? Math.round(((curRev - oldRev) / oldRev) * 100) : 0;
 
-            // Update gauge color based on percentage
-            const gaugeColor = achieve >= 100 ? '#32ff7e' : '#ff1e56'; // Green if 100%+, else Red
+            const gaugeColor = achieve >= 100 ? '#32ff7e' : '#ff1e56';
 
             animateValue('score2026', 0, curRev, 1200);
             animateValue('score2025', 0, oldRev, 1200);
@@ -205,7 +207,6 @@
             document.getElementById('growthValue').className = `text-4xl font-black tracking-tighter ${growth >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
 
             setTimeout(() => {
-                // Update the color band and value simultaneously
                 gaugeChart.yAxis[0].update({
                     plotBands: [{ from: 0, to: 100, color: gaugeColor, thickness: 55 }]
                 }, false);
@@ -218,9 +219,15 @@
                 });
             }, 500);
 
-            const months = ['Jan', 'Feb', 'Mar'];
-            comparisonChart.series[0].setData(months.map(m => data.filter(d => d.year == 2025 && d.month == m).reduce((s, r) => s + (r.revenue || 0), 0)));
-            comparisonChart.series[1].setData(months.map(m => data.filter(d => d.year == 2026 && d.month == m).reduce((s, r) => s + (r.revenue || 0), 0)));
+            // UPDATED MONTHS ARRAY TO INCLUDE APRIL
+            const months = ['Jan', 'Feb', 'Mar', 'Apr'];
+            
+            // Re-fetching full data set for the bar chart comparison (ignoring the month filter)
+            let { data: allData } = await supabaseClient.from('revenue_targets').select('*').limit(2000);
+            if (dept !== 'ALL') allData = allData.filter(d => d.department === dept);
+
+            comparisonChart.series[0].setData(months.map(m => allData.filter(d => d.year == 2025 && d.month == m).reduce((s, r) => s + (r.revenue || 0), 0)));
+            comparisonChart.series[1].setData(months.map(m => allData.filter(d => d.year == 2026 && d.month == m).reduce((s, r) => s + (r.revenue || 0), 0)));
         }
 
         window.onload = async () => {
