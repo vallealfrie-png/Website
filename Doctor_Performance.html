@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marketing Intelligence | Neural Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        @property --bg-angle { inherits: false; initial-value: 0deg; syntax: "<angle>"; }
+        @keyframes spin { to { --bg-angle: 360deg; } }
+        
+        body { background-color: #010101; color: #e5e5e5; display: flex; height: 100vh; overflow: hidden; font-family: 'Inter', sans-serif; }
+        
+        /* Sidebar */
+        #sidebar { width: 240px; border-right: 1px solid #1a1a1a; background: #050505; display: flex; flex-direction: column; flex-shrink: 0; z-index: 50;}
+        #deptList { flex-grow: 1; overflow-y: auto; scrollbar-width: none; padding: 12px; }
+        
+        /* Navigation Styles */
+        .nav-link {
+            display: flex; align-items: center; gap: 12px; padding: 12px;
+            color: #6366f1; font-size: 10px; font-weight: 900; text-transform: uppercase;
+            letter-spacing: 2px; transition: all 0.3s ease; border-bottom: 1px solid #1a1a1a;
+        }
+        .nav-link:hover { background: rgba(99, 102, 241, 0.1); color: #fff; }
+
+        .dept-btn {
+            width: 100%; padding: 10px; margin-bottom: 6px; background: #0a0a0a;
+            border: 1px solid #1a1a1a; border-radius: 6px; color: #555;
+            font-size: 9px; font-weight: 800; text-transform: uppercase;
+            text-align: left; letter-spacing: 1px; transition: all 0.3s ease;
+        }
+        .dept-btn:hover { color: #888; border-color: #333; }
+        .dept-btn.active { color: #fff; border-color: #6366f1; background: #0c0c1e; border-left: 3px solid #6366f1; }
+
+        /* Payment Switch */
+        .switch-container {
+            display: flex; background: #000; border: 1px solid #1a1a1a;
+            border-radius: 8px; padding: 2px; margin-top: 8px; position: relative;
+        }
+        .switch-option {
+            flex: 1; text-align: center; font-size: 11px; font-weight: 900;
+            padding: 10px 0; cursor: pointer; z-index: 2; transition: color 0.3s;
+            text-transform: uppercase; letter-spacing: 1px; color: #444;
+        }
+        .switch-option.active { color: #fff; }
+        .switch-slider {
+            position: absolute; width: calc(33.33% - 2px); height: calc(100% - 4px);
+            background: #6366f1; border-radius: 6px; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.5);
+        }
+        .pos-all { transform: translateX(0%); }
+        .pos-tpp { transform: translateX(100%); }
+        .pos-cash { transform: translateX(200%); }
+
+        /* Tier Triggers */
+        .tier-trigger {
+            cursor: pointer; padding: 10px; border-radius: 8px; border: 1px solid transparent;
+            transition: all 0.3s ease; min-width: 90px;
+        }
+        .tier-trigger:hover { background: rgba(255,255,255,0.05); }
+        .tier-trigger.active {
+            background: rgba(99, 102, 241, 0.15); border-color: #6366f1;
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.2);
+        }
+
+        /* Neon Cards */
+        .neon-card { border: 2px solid transparent; border-radius: 12px; animation: spin 4s infinite linear; position: relative; }
+        .card-indigo { background: linear-gradient(#080808, #080808) padding-box, conic-gradient(from var(--bg-angle), #6366f1, #1e1b4b, #6366f1) border-box; }
+        .card-emerald { background: linear-gradient(#080808, #080808) padding-box, conic-gradient(from var(--bg-angle), #10b981, #064e3b, #10b981) border-box; }
+        .card-rose { background: linear-gradient(#080808, #080808) padding-box, conic-gradient(from var(--bg-angle), #f43f5e, #4c0519, #f43f5e) border-box; }
+        .card-amber { background: linear-gradient(#080808, #080808) padding-box, conic-gradient(from var(--bg-angle), #f59e0b, #451a03, #f59e0b) border-box; }
+
+        main { flex: 1; overflow-y: auto; padding: 30px; }
+        #loader { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .progress-bar-bg { width: 280px; height: 2px; background: #111; overflow: hidden; margin-top: 20px; }
+        #progressBar { height: 100%; width: 0%; background: #6366f1; transition: width 0.3s ease; }
+
+        .neon-checkbox {
+            appearance: none; width: 14px; height: 14px; border: 1px solid #333;
+            border-radius: 3px; background: #000; position: relative; cursor: pointer;
+        }
+        .neon-checkbox:checked { background: #6366f1; border-color: #6366f1; }
+        .neon-checkbox:checked::after {
+            content: '\f00c'; font-family: 'Font Awesome 6 Free'; font-weight: 900;
+            font-size: 8px; color: white; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loader">
+        <h1 class="text-[10px] font-black uppercase tracking-[0.5em] text-indigo-500 animate-pulse">Initializing Neural Link</h1>
+        <div class="progress-bar-bg"><div id="progressBar"></div></div>
+    </div>
+
+    <aside id="sidebar">
+        <a href="index.html" class="nav-link">
+            <i class="fa-solid fa-house-chimney text-xs"></i>
+            <span>Return Home</span>
+        </a>
+
+        <div class="p-4 border-b border-neutral-900">
+            <h2 class="text-[8px] font-black text-neutral-500 uppercase tracking-widest">Payment Matrix:</h2>
+            <div class="switch-container">
+                <div id="slider" class="switch-slider pos-all"></div>
+                <div id="opt-all" class="switch-option active" onclick="togglePayment('all')">All</div>
+                <div id="opt-tpp" class="switch-option" onclick="togglePayment('tpp')">TPP</div>
+                <div id="opt-cash" class="switch-option" onclick="togglePayment('cash')">Cash</div>
+            </div>
+        </div>
+
+        <div class="p-4 border-b border-neutral-900">
+             <h2 class="text-[8px] font-black text-neutral-500 uppercase tracking-widest mb-3">Patient Class:</h2>
+             <div class="space-y-2">
+                 <label class="flex items-center gap-3 cursor-pointer group">
+                     <input type="checkbox" value="Inpatient" checked onchange="handleFilterUpdate()" class="neon-checkbox">
+                     <span class="text-[9px] font-black text-neutral-400 uppercase tracking-wider">Inpatient</span>
+                 </label>
+                 <label class="flex items-center gap-3 cursor-pointer group">
+                     <input type="checkbox" value="Outpatient" checked onchange="handleFilterUpdate()" class="neon-checkbox">
+                     <span class="text-[9px] font-black text-neutral-400 uppercase tracking-wider">Outpatient</span>
+                 </label>
+                 <label class="flex items-center gap-3 cursor-pointer group">
+                     <input type="checkbox" value="Emergency" checked onchange="handleFilterUpdate()" class="neon-checkbox">
+                     <span class="text-[9px] font-black text-neutral-400 uppercase tracking-wider">Emergency</span>
+                 </label>
+             </div>
+        </div>
+        
+        <div class="p-4 border-b border-neutral-900">
+            <select id="monthFilter" onchange="handleFilterUpdate()" class="w-full bg-black border border-neutral-800 rounded p-2 text-[10px] font-bold text-indigo-500 uppercase outline-none cursor-pointer">
+                <option value="all">Full Cycle</option>
+            </select>
+        </div>
+
+        <div id="deptList">
+            <button onclick="handleDeptChange('all', this)" class="dept-btn active">Global Grid</button>
+        </div>
+    </aside>
+
+    <main>
+        <header class="flex justify-between items-start mb-8">
+            <div>
+                <h1 class="text-3xl font-black uppercase text-white tracking-tighter">Marketing <span class="text-indigo-500">Intelligence</span></h1>
+                <p class="text-[10px] text-neutral-500 font-bold uppercase tracking-[0.4em] mt-1">Live Feed: Node Synchronized</p>
+            </div>
+            <p id="activeDeptLabel" class="text-2xl font-black uppercase tracking-tighter text-indigo-500">GLOBAL VIEW</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-8">
+            <div class="neon-card card-indigo p-6 flex flex-col items-center justify-center text-center">
+                <p class="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Aggregate Revenue</p>
+                <h2 id="globalRevenue" class="text-3xl font-black text-white tracking-tighter mt-2">₱0</h2>
+            </div>
+            
+            <div class="neon-card card-indigo p-6 flex flex-col items-center justify-center text-center">
+                <p class="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Active Headcount</p>
+                <h2 id="totalDoctors" class="text-3xl font-black text-white tracking-tighter mt-2">0</h2>
+            </div>
+
+            <div class="neon-card card-emerald p-6 lg:col-span-2 flex items-center">
+                <div id="tierStats" class="flex flex-wrap gap-x-2 text-white justify-between items-center w-full">
+                    <div id="tier-1-card" class="tier-trigger text-center" onclick="toggleTierFilter(1)">
+                        <p class="text-[7px] text-neutral-500 uppercase tracking-widest">Elite (>10M)</p>
+                        <p id="tier-1" class="text-xl font-black">0</p>
+                    </div>
+                    <div id="tier-2-card" class="tier-trigger text-center" onclick="toggleTierFilter(2)">
+                        <p class="text-[7px] text-neutral-500 uppercase tracking-widest">High (5-10M)</p>
+                        <p id="tier-2" class="text-xl font-black">0</p>
+                    </div>
+                    <div id="tier-3-card" class="tier-trigger text-center" onclick="toggleTierFilter(3)">
+                        <p class="text-[7px] text-neutral-500 uppercase tracking-widest">Mid (2-5M)</p>
+                        <p id="tier-3" class="text-xl font-black">0</p>
+                    </div>
+                    <div id="tier-4-card" class="tier-trigger text-center" onclick="toggleTierFilter(4)">
+                        <p class="text-[7px] text-neutral-500 uppercase tracking-widest">Growth (1-2M)</p>
+                        <p id="tier-4" class="text-xl font-black">0</p>
+                    </div>
+                    <div id="tier-5-card" class="tier-trigger text-center" onclick="toggleTierFilter(5)">
+                        <p class="text-[7px] text-neutral-500 uppercase tracking-widest">Std (<1M)</p>
+                        <p id="tier-5" class="text-xl font-black">0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="neon-card card-rose p-6 h-[450px]"><canvas id="revenueChart"></canvas></div>
+            <div class="neon-card card-amber p-6 h-[450px] overflow-y-auto" id="leaderboardParent">
+                <h3 class="text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-4 border-b border-neutral-900 pb-2">Personnel Rankings</h3>
+                <div id="leaderboard" class="space-y-3 text-xs"></div>
+                <div id="loadMoreContainer" class="mt-6 text-center hidden">
+                    <button onclick="loadMoreDoctors()" class="px-6 py-2 border border-indigo-500/30 bg-indigo-500/10 text-indigo-400 text-[10px] font-black uppercase tracking-[0.2em] rounded hover:bg-indigo-500/20 transition-all">
+                        See More Results
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const SUPABASE_URL = 'https://gqlmaxlabfdvansqjufd.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxbG1heGxhYmZkdmFuc3FqdWZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0NDgxODAsImV4cCI6MjA5MzAyNDE4MH0.IdiyhRSxoEGguocFAJJyfugyFfLUvQ_IR58-8gSH48U';
+        const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let masterData = []; 
+        let currentDept = 'all';
+        let paymentMode = 'all'; 
+        let activeTier = null; 
+        let prevCounts = { total: 0, t1: 0, t2: 0, t3: 0, t4: 0, t5: 0, revenue: 0 };
+        let visibleCount = 50;
+        let currentDoctorList = [];
+
+        async function init() {
+            let allRows = [], rangeStart = 0, pageSize = 1000;
+            const progressBar = document.getElementById('progressBar');
+            try {
+                while (true) {
+                    const { data, error, count } = await sb.from('doctors').select('*', { count: 'exact' }).range(rangeStart, rangeStart + pageSize - 1);
+                    if (error) throw error;
+                    if (!data || data.length === 0) break;
+                    allRows = [...allRows, ...data];
+                    if (count) progressBar.style.width = `${(allRows.length / count) * 100}%`;
+                    if (data.length < pageSize) break;
+                    rangeStart += pageSize;
+                }
+                masterData = allRows;
+                setupFilters();
+                document.getElementById('loader').style.display = 'none';
+                render();
+            } catch (err) { console.error(err); }
+        }
+
+        function togglePayment(mode) {
+            paymentMode = mode;
+            document.getElementById('slider').className = 'switch-slider pos-' + mode;
+            ['all', 'tpp', 'cash'].forEach(opt => document.getElementById('opt-' + opt).classList.toggle('active', opt === mode));
+            render();
+        }
+
+        function toggleTierFilter(tier) {
+            if (activeTier === tier) {
+                activeTier = null;
+                document.getElementById(`tier-${tier}-card`).classList.remove('active');
+            } else {
+                if (activeTier) document.getElementById(`tier-${activeTier}-card`).classList.remove('active');
+                activeTier = tier;
+                document.getElementById(`tier-${tier}-card`).classList.add('active');
+            }
+            render();
+        }
+
+        function animateValue(id, start, end, isCurrency = false) {
+            const obj = document.getElementById(id);
+            if (!obj) return;
+            let startTime = null;
+            const step = (timestamp) => {
+                if (!startTime) startTime = timestamp;
+                const progress = Math.min((timestamp - startTime) / 800, 1);
+                const current = Math.floor(progress * (end - start) + start);
+                obj.innerText = isCurrency ? `₱${current.toLocaleString()}` : current.toLocaleString();
+                if (progress < 1) requestAnimationFrame(step);
+            };
+            requestAnimationFrame(step);
+        }
+
+        function setupFilters() {
+            const depts = [...new Set(masterData.map(d => d.department))].filter(Boolean).sort();
+            const list = document.getElementById('deptList');
+            depts.forEach(d => {
+                const btn = document.createElement('button');
+                btn.className = 'dept-btn';
+                btn.textContent = d;
+                btn.onclick = () => handleDeptChange(d, btn);
+                list.appendChild(btn);
+            });
+            const months = [...new Set(masterData.map(d => d.month))].filter(Boolean);
+            const monthSelect = document.getElementById('monthFilter');
+            months.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m; opt.textContent = m;
+                monthSelect.appendChild(opt);
+            });
+        }
+
+        function handleDeptChange(dept, el) {
+            currentDept = dept;
+            document.querySelectorAll('.dept-btn').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+            render();
+        }
+
+        function handleFilterUpdate() { render(); }
+
+        function render() {
+            visibleCount = 50; 
+            const selectedMonth = document.getElementById('monthFilter').value;
+            const selectedPtTypes = Array.from(document.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+            let filtered = masterData.filter(d => selectedPtTypes.includes(d.patient_type));
+            if (paymentMode === 'cash') filtered = filtered.filter(d => d.type === 'Self Pay');
+            else if (paymentMode === 'tpp') filtered = filtered.filter(d => ['HMO', 'INSURANCE', 'INDUSTRIAL'].includes(d.type));
+            if (currentDept !== 'all') filtered = filtered.filter(d => d.department === currentDept);
+            if (selectedMonth !== 'all') filtered = filtered.filter(d => d.month === selectedMonth);
+            const globalTotal = filtered.reduce((sum, r) => sum + (parseFloat(r.revenue) || 0), 0);
+            const agg = {};
+            filtered.forEach(r => { agg[r.doctor] = (agg[r.doctor] || 0) + (parseFloat(r.revenue) || 0); });
+            let doctorTotals = Object.keys(agg).map(name => ({ name, revenue: agg[name] }));
+            const brackets = [
+                { min: 10000000, max: Infinity, count: 0 },
+                { min: 5000000, max: 10000000, count: 0 },
+                { min: 2000000, max: 5000000, count: 0 },
+                { min: 1000000, max: 2000000, count: 0 },
+                { min: -Infinity, max: 1000000, count: 0 }
+            ];
+            doctorTotals.forEach(doc => {
+                const idx = brackets.findIndex(b => doc.revenue > b.min && doc.revenue <= b.max);
+                if (idx !== -1) brackets[idx].count++;
+            });
+            if (activeTier !== null) {
+                const b = brackets[activeTier - 1];
+                doctorTotals = doctorTotals.filter(doc => doc.revenue > b.min && doc.revenue <= b.max);
+            }
+            doctorTotals.sort((a, b) => b.revenue - a.revenue);
+            currentDoctorList = doctorTotals;
+            animateValue("globalRevenue", prevCounts.revenue, globalTotal, true);
+            animateValue("totalDoctors", prevCounts.total, doctorTotals.length);
+            brackets.forEach((b, i) => animateValue(`tier-${i+1}`, prevCounts[`t${i+1}`] || 0, b.count));
+            prevCounts.revenue = globalTotal;
+            prevCounts.total = doctorTotals.length;
+            brackets.forEach((b, i) => prevCounts[`t${i+1}`] = b.count);
+            document.getElementById('activeDeptLabel').innerText = currentDept.toUpperCase();
+            updateVisuals();
+        }
+
+        function loadMoreDoctors() {
+            visibleCount += 100;
+            updateVisuals();
+        }
+
+        let mainChart;
+        function updateVisuals() {
+            const lb = document.getElementById('leaderboard');
+            const dataToDisplay = currentDoctorList.slice(0, visibleCount);
+            lb.innerHTML = dataToDisplay.map(d => `
+                <div class="flex justify-between border-b border-neutral-900 pb-2 items-center group">
+                    <a href="profile.html?name=${encodeURIComponent(d.name)}" 
+                       class="text-neutral-300 font-bold uppercase truncate pr-4 hover:text-indigo-400 transition-colors flex items-center">
+                       <i class="fa-solid fa-user-doctor mr-3 text-[10px] opacity-30 group-hover:opacity-100"></i>${d.name}
+                    </a>
+                    <span class="text-indigo-400 font-black">₱${Math.round(d.revenue).toLocaleString()}</span>
+                </div>
+            `).join('');
+            const btnContainer = document.getElementById('loadMoreContainer');
+            if (currentDoctorList.length > visibleCount) {
+                btnContainer.classList.remove('hidden');
+            } else {
+                btnContainer.classList.add('hidden');
+            }
+            const top10 = currentDoctorList.slice(0, 10);
+            if (mainChart) mainChart.destroy();
+            mainChart = new Chart(document.getElementById('revenueChart'), {
+                type: 'bar',
+                data: {
+                    labels: top10.map(d => d.name.split(',')[0]),
+                    datasets: [{ label: 'REVENUE', data: top10.map(d => d.revenue), backgroundColor: '#6366f1' }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { grid: { color: '#111' }, ticks: { color: '#444' } },
+                        x: { grid: { display: false }, ticks: { color: '#888', font: { size: 9, weight: 'bold' } } }
+                    }
+                }
+            });
+        }
+        init();
+    </script>
+</body>
+</html>

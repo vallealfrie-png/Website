@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personnel Analytics | Neural Profile</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background-color: #010101; color: #e5e5e5; font-family: 'Inter', sans-serif; min-height: 100vh; }
+        .glass-panel { background: rgba(10, 10, 10, 0.8); border: 1px solid #1a1a1a; border-radius: 12px; }
+        .neon-text { color: #6366f1; text-shadow: 0 0 10px rgba(99, 102, 241, 0.5); }
+        .chart-container { width: 100%; height: 300px; }
+        
+        /* Custom Select Styling */
+        select { 
+            appearance: none; 
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236366f1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 0.7rem center;
+            background-size: 1em;
+        }
+
+        #loader { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease; }
+        .progress-bar-bg { width: 200px; height: 2px; background: #111; overflow: hidden; margin-top: 20px; }
+        #progressBar { height: 100%; width: 0%; background: #6366f1; transition: width 0.3s ease; }
+        
+        /* Home Link Style */
+        .nav-link-home {
+            color: #6366f1;
+            transition: all 0.3s ease;
+        }
+        .nav-link-home:hover {
+            color: #fff;
+            text-shadow: 0 0 10px rgba(99, 102, 241, 0.8);
+        }
+    </style>
+</head>
+<body class="p-8">
+
+    <div id="loader">
+        <p class="text-[9px] font-black uppercase tracking-[0.5em] text-indigo-500 animate-pulse">Synchronizing Neural Data</p>
+        <div class="progress-bar-bg"><div id="progressBar"></div></div>
+    </div>
+
+    <nav class="mb-8 flex justify-between items-center max-w-6xl mx-auto">
+        <div class="flex gap-8">
+            <a href="index.html" class="nav-link-home text-[10px] font-black uppercase tracking-[0.3em]">
+                <i class="fa-solid fa-house-chimney mr-2"></i> Home
+            </a>
+            
+            <a href="javascript:history.back()" class="text-[10px] font-black uppercase tracking-[0.3em] text-neutral-500 hover:text-white transition-colors">
+                <i class="fa-solid fa-arrow-left mr-2"></i> Back to Grid
+            </a>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <span class="text-[9px] font-black text-neutral-600 uppercase tracking-widest">Temporal Focus:</span>
+            <select id="monthFilter" onchange="processData()" class="bg-black border border-neutral-800 rounded-md px-4 py-1.5 text-[10px] font-bold text-indigo-500 uppercase outline-none cursor-pointer pr-10">
+                <option value="all">Full Cycle</option>
+            </select>
+        </div>
+    </nav>
+
+    <div id="profileContainer" class="max-w-6xl mx-auto opacity-0 transition-opacity duration-700">
+        <header class="mb-10 border-b border-neutral-900 pb-8 flex justify-between items-end">
+            <div>
+                <p class="text-indigo-500 font-black text-[10px] uppercase tracking-[0.5em] mb-2">Personnel Profile</p>
+                <h1 id="docName" class="text-5xl font-black uppercase tracking-tighter text-white">---</h1>
+                <div id="docDept" class="mt-4 inline-block px-3 py-1 bg-indigo-900/20 border border-indigo-500/30 rounded text-indigo-400 text-[10px] font-bold uppercase tracking-widest">
+                    ---
+                </div>
+            </div>
+            <div class="text-right">
+                <p class="text-neutral-600 text-[9px] font-black uppercase tracking-widest mb-1">Global Contribution</p>
+                <p id="sharePercent" class="text-4xl font-black text-emerald-500 tracking-tighter">0.00%</p>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10">
+            <div class="glass-panel p-6 flex flex-col items-center justify-center text-center border-b-2 border-indigo-600">
+                <p class="text-neutral-500 text-[9px] font-black uppercase tracking-widest mb-1">Personal Revenue</p>
+                <h3 id="totalRev" class="text-2xl font-black neon-text">₱0</h3>
+            </div>
+            <div class="glass-panel p-6 flex flex-col items-center justify-center text-center border-b-2 border-emerald-600">
+                <p class="text-neutral-500 text-[9px] font-black uppercase tracking-widest mb-1">Global Total</p>
+                <h3 id="globalRev" class="text-2xl font-black text-white">₱0</h3>
+            </div>
+            <div class="glass-panel p-6 flex flex-col items-center justify-center text-center border-b-2 border-rose-600">
+                <p class="text-neutral-500 text-[9px] font-black uppercase tracking-widest mb-1">Patient Volume</p>
+                <h3 id="patientCount" class="text-2xl font-black text-white">0</h3>
+            </div>
+            <div class="glass-panel p-6 flex flex-col items-center justify-center text-center border-b-2 border-amber-600">
+                <p class="text-neutral-500 text-[9px] font-black uppercase tracking-widest mb-1">Primary Payor</p>
+                <h3 id="topPayor" class="text-2xl font-black text-white">-</h3>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="glass-panel p-6">
+                <div id="monthlyChart" class="chart-container"></div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="glass-panel p-4">
+                    <div id="patientTypeChart" class="chart-container"></div>
+                </div>
+                <div class="glass-panel p-4">
+                    <div id="payorMixChart" class="chart-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://gqlmaxlabfdvansqjufd.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxbG1heGxhYmZkdmFuc3FqdWZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0NDgxODAsImV4cCI6MjA5MzAyNDE4MH0.IdiyhRSxoEGguocFAJJyfugyFfLUvQ_IR58-8gSH48U';
+        const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let doctorAllData = [];
+        let globalAllData = [];
+        let doctorName = "";
+
+        // Highcharts Theme Config
+        Highcharts.setOptions({
+            chart: { backgroundColor: 'transparent', style: { fontFamily: 'Inter' } },
+            title: { style: { color: '#555', fontSize: '10px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '2px' } },
+            credits: { enabled: false },
+            tooltip: { backgroundColor: '#000', style: { color: '#fff' }, borderWidth: 1, borderColor: '#333' }
+        });
+
+        async function init() {
+            const params = new URLSearchParams(window.location.search);
+            doctorName = params.get('name');
+            if (!doctorName) return;
+
+            // Recursive Fetch Logic (Pagination)
+            let allRows = [];
+            let rangeStart = 0;
+            const pageSize = 1000;
+            const progressBar = document.getElementById('progressBar');
+
+            try {
+                while (true) {
+                    const { data, error, count } = await sb
+                        .from('doctors')
+                        .select('doctor, revenue, month, type, patient_type, department', { count: 'exact' })
+                        .range(rangeStart, rangeStart + pageSize - 1);
+                    
+                    if (error) throw error;
+                    if (!data || data.length === 0) break;
+                    
+                    allRows = [...allRows, ...data];
+                    if (count) progressBar.style.width = `${(allRows.length / count) * 100}%`;
+                    
+                    if (data.length < pageSize) break;
+                    rangeStart += pageSize;
+                }
+
+                globalAllData = allRows;
+                doctorAllData = globalAllData.filter(d => d.doctor === doctorName);
+
+                setupMonthFilter();
+                processData();
+                
+                document.getElementById('loader').style.opacity = '0';
+                setTimeout(() => document.getElementById('loader').style.display = 'none', 500);
+                document.getElementById('profileContainer').classList.remove('opacity-0');
+            } catch (err) {
+                console.error("Data Sync Failed:", err);
+            }
+        }
+
+        function setupMonthFilter() {
+            const months = [...new Set(globalAllData.map(d => d.month))].filter(Boolean);
+            const monthOrder = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            months.sort((a, b) => monthOrder.indexOf(a) - monthOrder.indexOf(b));
+
+            const select = document.getElementById('monthFilter');
+            months.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m; opt.textContent = m;
+                select.appendChild(opt);
+            });
+        }
+
+        function processData() {
+            const filterMonth = document.getElementById('monthFilter').value;
+
+            // Apply Filters to both sets
+            let docFiltered = doctorAllData;
+            let globalFiltered = globalAllData;
+
+            if (filterMonth !== 'all') {
+                docFiltered = docFiltered.filter(d => d.month === filterMonth);
+                globalFiltered = globalFiltered.filter(d => d.month === filterMonth);
+            }
+
+            // Calculations
+            const personalRevenue = docFiltered.reduce((sum, r) => sum + (parseFloat(r.revenue) || 0), 0);
+            const globalRevenue = globalFiltered.reduce((sum, r) => sum + (parseFloat(r.revenue) || 0), 0);
+            const sharePercent = globalRevenue > 0 ? (personalRevenue / globalRevenue) * 100 : 0;
+
+            // Aggregations
+            const monthlySeries = {};
+            docFiltered.forEach(r => { monthlySeries[r.month] = (monthlySeries[r.month] || 0) + parseFloat(r.revenue); });
+
+            const ptTypes = { 'Inpatient': 0, 'Outpatient': 0, 'Emergency': 0 };
+            docFiltered.forEach(r => { if(ptTypes.hasOwnProperty(r.patient_type)) ptTypes[r.patient_type]++; });
+
+            const payors = {};
+            docFiltered.forEach(r => { payors[r.type] = (payors[r.type] || 0) + 1; });
+            const topPayorName = Object.keys(payors).length > 0 ? Object.keys(payors).reduce((a, b) => payors[a] > payors[b] ? a : b) : "-";
+
+            // UI Rendering
+            document.getElementById('docName').innerText = doctorName;
+            document.getElementById('docDept').innerText = doctorAllData[0]?.department || 'General';
+            document.getElementById('totalRev').innerText = `₱${Math.round(personalRevenue).toLocaleString()}`;
+            document.getElementById('globalRev').innerText = `₱${Math.round(globalRevenue).toLocaleString()}`;
+            document.getElementById('patientCount').innerText = docFiltered.length.toLocaleString();
+            document.getElementById('topPayor').innerText = topPayorName;
+            document.getElementById('sharePercent').innerText = `${sharePercent.toFixed(2)}%`;
+
+            renderCharts(monthlySeries, ptTypes, payors);
+        }
+
+        function renderCharts(monthly, patients, payors) {
+            Highcharts.chart('monthlyChart', {
+                chart: { type: 'column' },
+                title: { text: 'Monthly Performance' },
+                xAxis: { categories: Object.keys(monthly), labels: { style: { color: '#888' } } },
+                yAxis: { title: { text: null }, gridLineColor: '#1a1a1a', labels: { style: { color: '#444' } } },
+                series: [{ name: 'Revenue', data: Object.values(monthly), color: '#6366f1', borderRadius: 5 }],
+                legend: { enabled: false }
+            });
+
+            Highcharts.chart('patientTypeChart', {
+                chart: { type: 'pie' },
+                title: { text: 'Visit Type' },
+                plotOptions: { pie: { borderWidth: 0, dataLabels: { enabled: false }, showInLegend: true } },
+                series: [{ name: 'Visits', data: Object.entries(patients).map(([name, y]) => ({ name, y })), colors: ['#6366f1', '#10b981', '#f43f5e'] }],
+                legend: { itemStyle: { color: '#888', fontSize: '8px' } }
+            });
+
+            Highcharts.chart('payorMixChart', {
+                chart: { type: 'pie' },
+                title: { text: 'Payor Mix' },
+                plotOptions: { pie: { innerSize: '70%', borderWidth: 0, dataLabels: { enabled: false }, showInLegend: true } },
+                series: [{ name: 'Count', data: Object.entries(payors).map(([name, y]) => ({ name, y })), colors: ['#8b5cf6', '#f59e0b', '#3b82f6', '#ec4899'] }],
+                legend: { itemStyle: { color: '#888', fontSize: '8px' } }
+            });
+        }
+
+        init();
+    </script>
+</body>
+</html>
