@@ -62,15 +62,15 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="glowing-border p-8">
+            <div class="glowing-border p-8 text-center sm:text-left">
                 <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">2026 Actual Revenue</p>
-                <h3 id="score2026" class="text-3xl lg:text-4xl font-black text-white tracking-tighter overflow-hidden truncate">₱0</h3>
+                <h3 id="score2026" class="text-3xl lg:text-4xl font-black text-white tracking-tighter">₱0</h3>
             </div>
-            <div class="glowing-border p-8">
+            <div class="glowing-border p-8 text-center sm:text-left">
                 <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">2026 Target Goal</p>
-                <h3 id="targetTextTop" class="text-3xl lg:text-4xl font-black text-indigo-400 tracking-tighter overflow-hidden truncate">₱0</h3>
+                <h3 id="targetTextTop" class="text-3xl lg:text-4xl font-black text-indigo-400 tracking-tighter">₱0</h3>
             </div>
-            <div class="glowing-border p-8">
+            <div class="glowing-border p-8 text-center sm:text-left">
                 <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">YoY Growth</p>
                 <h3 id="growthValue" class="text-3xl lg:text-4xl font-black tracking-tighter">0%</h3>
             </div>
@@ -80,14 +80,14 @@
             <div class="flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-10">
                 <div class="flex-1 text-center lg:text-left min-w-[150px]">
                     <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Current Revenue</p>
-                    <p id="revText" class="text-2xl lg:text-3xl font-black text-indigo-400 break-all">₱0</p>
+                    <p id="revText" class="text-2xl lg:text-3xl font-black text-indigo-400">₱0</p>
                 </div>
                 <div class="flex-[3] w-full h-[300px] lg:h-[350px]">
                     <div id="gaugeContainer" class="w-full h-full"></div>
                 </div>
                 <div class="flex-1 text-center lg:text-right min-w-[150px]">
                     <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Target Quota</p>
-                    <p id="targetText" class="text-2xl lg:text-3xl font-black text-white break-all">₱0</p>
+                    <p id="targetText" class="text-2xl lg:text-3xl font-black text-white">₱0</p>
                 </div>
             </div>
         </div>
@@ -134,12 +134,13 @@
                     plotBands: [{ from: 0, to: 100, color: '#ff1e56', thickness: 45 }]
                 },
                 series: [{
-                    name: 'Achievement', data: [0],
+                    name: 'Achievement', 
+                    data: [0], // Initial start point
                     dataLabels: {
                         enabled: true, useHTML: true, y: -30, borderWidth: 0,
                         formatter: function() {
-                            // Reduced font size and added box-sizing to prevent spill
-                            return `<div style="background:#0f172a; color:white; padding: 5px 15px; border-radius: 10px; font-weight:900; font-size:22px; border: 2px solid rgba(255,255,255,0.1); min-width: 80px; text-align: center;">${this.point.realValue}%</div>`;
+                            const val = this.point.realValue || 0;
+                            return `<div style="background:#0f172a; color:white; padding: 5px 15px; border-radius: 10px; font-weight:900; font-size:22px; border: 2px solid rgba(255,255,255,0.1); min-width: 80px; text-align: center;">${val}%</div>`;
                         }
                     },
                     dial: { radius: '90%', backgroundColor: '#fff', baseWidth: 6 },
@@ -189,11 +190,12 @@
             const gaugeColor = realAchieve >= 100 ? '#32ff7e' : '#ff1e56';
             const pointerValue = realAchieve > 100 ? 100 : realAchieve;
             
+            // Smoothly Update Pointer with Animation
             gaugeChart.yAxis[0].update({ plotBands: [{ from: 0, to: 100, color: gaugeColor, thickness: 45 }] }, false);
             gaugeChart.series[0].points[0].update({ 
                 y: pointerValue, 
                 realValue: realAchieve 
-            });
+            }, true, { duration: 1000 }); // Redraw true, enable duration
 
             const availableMonths = [...new Set(rawData.map(d => d.month))]
                 .sort((a, b) => {
@@ -234,7 +236,9 @@
 
             document.getElementById('monthSelect').addEventListener('change', refreshData);
             document.getElementById('deptSelect').addEventListener('change', refreshData);
-            refreshData();
+            
+            // Short timeout to ensure chart is ready for its first smooth sweep
+            setTimeout(refreshData, 100);
         };
     </script>
 </body>
