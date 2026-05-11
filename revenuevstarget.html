@@ -40,17 +40,14 @@
                     </div>
                     <span class="text-[11px] font-black uppercase tracking-widest text-slate-400 group-hover:text-white transition-colors">Home</span>
                 </a>
-                
                 <div class="h-6 w-[1px] bg-white/10 mx-6"></div>
-
                 <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 bg-indigo-600 rounded-xl shadow-[0_0_20px_rgba(99,102,241,0.4)] flex items-center justify-center">
+                    <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center">
                         <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
                     </div>
                     <h1 class="text-lg font-extrabold tracking-tight text-white uppercase">Revenue Intel</h1>
                 </div>
             </div>
-            <div class="text-[11px] font-black uppercase tracking-widest text-indigo-400 hidden sm:block">Executive Dashboard</div>
         </div>
     </nav>
 
@@ -74,7 +71,7 @@
                 <h3 id="targetTextTop" class="text-4xl font-black text-indigo-400 tracking-tighter">₱0</h3>
             </div>
             <div class="glowing-border p-8">
-                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">YoY Growth (vs 2025)</p>
+                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">YoY Growth</p>
                 <h3 id="growthValue" class="text-4xl font-black tracking-tighter">0%</h3>
             </div>
         </div>
@@ -82,14 +79,14 @@
         <div class="glowing-border p-12">
             <div class="flex flex-col lg:flex-row items-center justify-between gap-10">
                 <div class="flex-1 text-center lg:text-left">
-                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Current Revenue</p>
+                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Actual</p>
                     <p id="revText" class="text-4xl font-black text-indigo-400">₱0</p>
                 </div>
                 <div class="flex-[3] w-full h-[350px]">
                     <div id="gaugeContainer" class="w-full h-full"></div>
                 </div>
                 <div class="flex-1 text-center lg:text-right">
-                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Target Quota</p>
+                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Target</p>
                     <p id="targetText" class="text-4xl font-black text-white">₱0</p>
                 </div>
             </div>
@@ -108,10 +105,8 @@
         let gaugeChart, comparisonChart;
         const MONTH_ORDER = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-        // Helper to convert any text/number into a clean calculation-ready number
         const parseVal = (val) => {
             if (val === null || val === undefined) return 0;
-            if (typeof val === 'number') return val;
             return parseFloat(val.toString().replace(/[₱, ]/g, '')) || 0;
         };
 
@@ -136,13 +131,16 @@
                 pane: { startAngle: -120, endAngle: 120, background: null, center: ['50%', '85%'], size: '110%' },
                 yAxis: {
                     min: 0, max: 100, lineWidth: 0, tickWidth: 0, minorTickWidth: 0, labels: { enabled: false },
-                    plotBands: [{ from: 0, to: 100, color: '#ff1e56', thickness: 50 }]
+                    plotBands: [{ from: 0, to: 100, color: '#6366f1', thickness: 50 }]
                 },
                 series: [{
                     name: 'Achievement', data: [0],
                     dataLabels: {
                         enabled: true, useHTML: true, y: -40,
-                        format: '<div style="background:#6366f1; color:white; padding: 8px 20px; border-radius: 12px; font-weight:900; font-size:28px; border: 2px solid #fff;">{y}%</div>'
+                        formatter: function() {
+                            // This shows the REAL percentage (e.g. 105%) even if pointer is capped at 100
+                            return `<div style="background:#6366f1; color:white; padding: 8px 20px; border-radius: 12px; font-weight:900; font-size:28px; border: 2px solid #fff;">${this.point.realValue}%</div>`;
+                        }
                     },
                     dial: { radius: '90%', backgroundColor: '#fff', baseWidth: 8 },
                     pivot: { backgroundColor: '#fff', radius: 8 }
@@ -152,10 +150,9 @@
 
             comparisonChart = Highcharts.chart('comparisonContainer', {
                 chart: { type: 'column', backgroundColor: 'transparent' },
-                title: { text: 'Monthly Flow: Actuals vs Target', style: { color: '#fff', fontSize: '14px', fontWeight: '800' } },
+                title: { text: 'Monthly Performance Flow', style: { color: '#fff', fontSize: '14px', fontWeight: '800' } },
                 xAxis: { categories: [], labels: { style: { color: '#94a3b8' } }, lineWidth: 0 },
                 yAxis: { title: { text: null }, gridLineColor: 'rgba(255,255,255,0.05)', labels: { style: { color: '#475569' } } },
-                tooltip: { shared: true, borderRadius: 12 },
                 series: [
                     { name: '2025 Revenue', color: '#1e293b', data: [] },
                     { name: '2026 Revenue', color: '#6366f1', data: [] },
@@ -169,12 +166,10 @@
             const selectedMonth = document.getElementById('monthSelect').value;
             const selectedDept = document.getElementById('deptSelect').value;
 
-            let { data: rawData, error } = await supabaseClient.from('revenue_targets').select('*').limit(2000);
-            if (error) return;
+            let { data: rawData } = await supabaseClient.from('revenue_targets').select('*').limit(2000);
+            if (!rawData) return;
 
-            // Normalize names (handles "Apr" vs "April")
             rawData = rawData.map(d => ({...d, month: (d.month || "").trim()}));
-
             let deptData = selectedDept === 'ALL' ? rawData : rawData.filter(d => d.department === selectedDept);
             let metricsData = selectedMonth === 'ALL' ? deptData : deptData.filter(d => d.month === selectedMonth);
 
@@ -182,7 +177,7 @@
             const curTarget = metricsData.filter(d => d.year == 2026).reduce((s, r) => s + parseVal(r.target), 0);
             const oldRev = metricsData.filter(d => d.year == 2025).reduce((s, r) => s + parseVal(r.revenue), 0);
             
-            const achieve = curTarget > 0 ? Math.round((curRev / curTarget) * 100) : 0;
+            const realAchieve = curTarget > 0 ? Math.round((curRev / curTarget) * 100) : 0;
             const growth = oldRev > 0 ? Math.round(((curRev - oldRev) / oldRev) * 100) : 0;
 
             animateValue('score2026', 0, curRev, 1000);
@@ -190,19 +185,16 @@
             animateValue('growthValue', 0, growth, 1000, false);
             animateValue('revText', 0, curRev, 1000);
             animateValue('targetText', 0, curTarget, 1000);
-            document.getElementById('growthValue').className = `text-4xl font-black ${growth >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
 
-            const gaugeColor = achieve >= 100 ? '#32ff7e' : '#ff1e56';
-            gaugeChart.yAxis[0].update({ plotBands: [{ from: 0, to: 100, color: gaugeColor, thickness: 50 }] }, false);
-            gaugeChart.series[0].points[0].update({ y: achieve > 115 ? 115 : achieve });
+            // GAUGE CAP LOGIC: Pointer stops at 100, Label shows Real Value
+            const pointerValue = realAchieve > 100 ? 100 : realAchieve;
+            gaugeChart.series[0].points[0].update({ 
+                y: pointerValue, 
+                realValue: realAchieve // Custom property for the label
+            });
 
-            // Detect and Sort Months dynamically
             const availableMonths = [...new Set(rawData.map(d => d.month))]
-                .sort((a, b) => {
-                    const idxA = MONTH_ORDER.findIndex(m => a.startsWith(m));
-                    const idxB = MONTH_ORDER.findIndex(m => b.startsWith(m));
-                    return idxA - idxB;
-                });
+                .sort((a, b) => MONTH_ORDER.findIndex(m => a.startsWith(m)) - MONTH_ORDER.findIndex(m => b.startsWith(m)));
             
             comparisonChart.update({ xAxis: { categories: availableMonths } }, false);
             comparisonChart.series[0].setData(availableMonths.map(m => deptData.filter(d => d.year == 2025 && d.month == m).reduce((s, r) => s + parseVal(r.revenue), 0)), false);
@@ -223,11 +215,7 @@
             });
 
             const uniqueMonths = [...new Set(data.map(item => (item.month || "").trim()))]
-                .sort((a, b) => {
-                    const idxA = MONTH_ORDER.findIndex(m => a.startsWith(m));
-                    const idxB = MONTH_ORDER.findIndex(m => b.startsWith(m));
-                    return idxA - idxB;
-                });
+                .sort((a, b) => MONTH_ORDER.findIndex(m => a.startsWith(m)) - MONTH_ORDER.findIndex(m => b.startsWith(m)));
             uniqueMonths.forEach(m => {
                 const opt = document.createElement('option');
                 opt.value = m; opt.innerHTML = m; opt.className = "bg-slate-900";
