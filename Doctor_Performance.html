@@ -67,6 +67,12 @@
             box-shadow: 0 0 15px rgba(99, 102, 241, 0.2);
         }
 
+        /* NEW GLOWING WHITE STYLE FOR TIER LABELS */
+        .tier-trigger p:first-child {
+            color: #ffffff;
+            text-shadow: 0 0 8px rgba(255, 255, 255, 0.8), 0 0 12px rgba(255, 255, 255, 0.4);
+        }
+
         /* Neon Cards */
         .neon-card { border: 2px solid transparent; border-radius: 12px; animation: spin 4s infinite linear; position: relative; }
         .card-indigo { background: linear-gradient(#080808, #080808) padding-box, conic-gradient(from var(--bg-angle), #6366f1, #1e1b4b, #6366f1) border-box; }
@@ -165,23 +171,23 @@
             <div class="neon-card card-emerald p-6 lg:col-span-2 flex items-center">
                 <div id="tierStats" class="flex flex-wrap gap-x-2 text-white justify-between items-center w-full">
                     <div id="tier-1-card" class="tier-trigger text-center" onclick="toggleTierFilter(1)">
-                        <p class="text-[7px] text-neutral-500 uppercase tracking-widest">Elite (>10M)</p>
+                        <p class="text-[7px] uppercase tracking-widest">Champion (>10M)</p>
                         <p id="tier-1" class="text-xl font-black">0</p>
                     </div>
                     <div id="tier-2-card" class="tier-trigger text-center" onclick="toggleTierFilter(2)">
-                        <p class="text-[7px] text-neutral-500 uppercase tracking-widest">High (5-10M)</p>
+                        <p class="text-[7px] uppercase tracking-widest">High Performers (5-10M)</p>
                         <p id="tier-2" class="text-xl font-black">0</p>
                     </div>
                     <div id="tier-3-card" class="tier-trigger text-center" onclick="toggleTierFilter(3)">
-                        <p class="text-[7px] text-neutral-500 uppercase tracking-widest">Mid (2-5M)</p>
+                        <p class="text-[7px] uppercase tracking-widest">Mid Performers (2-5M)</p>
                         <p id="tier-3" class="text-xl font-black">0</p>
                     </div>
                     <div id="tier-4-card" class="tier-trigger text-center" onclick="toggleTierFilter(4)">
-                        <p class="text-[7px] text-neutral-500 uppercase tracking-widest">Growth (1-2M)</p>
+                        <p class="text-[7px] uppercase tracking-widest">Growing (1-2M)</p>
                         <p id="tier-4" class="text-xl font-black">0</p>
                     </div>
                     <div id="tier-5-card" class="tier-trigger text-center" onclick="toggleTierFilter(5)">
-                        <p class="text-[7px] text-neutral-500 uppercase tracking-widest">Std (<1M)</p>
+                        <p class="text-[7px] uppercase tracking-widest">Static (<1M)</p>
                         <p id="tier-5" class="text-xl font-black">0</p>
                     </div>
                 </div>
