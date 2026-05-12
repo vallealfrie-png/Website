@@ -219,6 +219,7 @@
         let prevCounts = { total: 0, t1: 0, t2: 0, t3: 0, t4: 0, t5: 0, revenue: 0 };
         let visibleCount = 50;
         let currentDoctorList = [];
+        let emergencyVanguardList = [];
 
         async function init() {
             let allRows = [], rangeStart = 0, pageSize = 1000;
@@ -305,6 +306,7 @@
             visibleCount = 50; 
             const selectedMonth = document.getElementById('monthFilter').value;
             const selectedPtTypes = Array.from(document.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+            
             let filtered = masterData.filter(d => selectedPtTypes.includes(d.patient_type));
             if (paymentMode === 'cash') filtered = filtered.filter(d => d.type === 'Self Pay');
             else if (paymentMode === 'tpp') filtered = filtered.filter(d => ['HMO', 'INSURANCE', 'INDUSTRIAL'].includes(d.type));
@@ -313,7 +315,6 @@
             
             const globalTotal = filtered.reduce((sum, r) => sum + (parseFloat(r.revenue) || 0), 0);
             
-            // AGGREGATION: Include specialization here
             const agg = {};
             filtered.forEach(r => { 
                 if (!agg[r.doctor]) {
@@ -322,11 +323,15 @@
                 agg[r.doctor].revenue += (parseFloat(r.revenue) || 0); 
             });
 
-            let doctorTotals = Object.keys(agg).map(name => ({ 
+            let allDoctors = Object.keys(agg).map(name => ({ 
                 name, 
                 revenue: agg[name].revenue,
                 specialization: agg[name].specialization 
             }));
+
+            // SEPARATE EMERGENCY VANGUARD
+            emergencyVanguardList = allDoctors.filter(d => d.specialization === 'Emergency Medicine');
+            let doctorTotals = allDoctors.filter(d => d.specialization !== 'Emergency Medicine');
 
             const brackets = [
                 { min: 10000000, max: Infinity, count: 0 },
@@ -339,18 +344,25 @@
                 const idx = brackets.findIndex(b => doc.revenue > b.min && doc.revenue <= b.max);
                 if (idx !== -1) brackets[idx].count++;
             });
+
             if (activeTier !== null) {
                 const b = brackets[activeTier - 1];
                 doctorTotals = doctorTotals.filter(doc => doc.revenue > b.min && doc.revenue <= b.max);
             }
+
             doctorTotals.sort((a, b) => b.revenue - a.revenue);
+            emergencyVanguardList.sort((a, b) => b.revenue - a.revenue);
+
             currentDoctorList = doctorTotals;
+            
             animateValue("globalRevenue", prevCounts.revenue, globalTotal, true);
-            animateValue("totalDoctors", prevCounts.total, doctorTotals.length);
+            animateValue("totalDoctors", prevCounts.total, allDoctors.length);
             brackets.forEach((b, i) => animateValue(`tier-${i+1}`, prevCounts[`t${i+1}`] || 0, b.count));
+            
             prevCounts.revenue = globalTotal;
-            prevCounts.total = doctorTotals.length;
+            prevCounts.total = allDoctors.length;
             brackets.forEach((b, i) => prevCounts[`t${i+1}`] = b.count);
+            
             document.getElementById('activeDeptLabel').innerText = currentDept.toUpperCase();
             updateVisuals();
         }
@@ -365,8 +377,7 @@
             const lb = document.getElementById('leaderboard');
             const dataToDisplay = currentDoctorList.slice(0, visibleCount);
             
-            // RENDERING: Update the HTML to include specialization
-            lb.innerHTML = dataToDisplay.map(d => `
+            let html = dataToDisplay.map(d => `
                 <div class="flex justify-between border-b border-neutral-900 pb-3 items-center group">
                     <div class="flex flex-col truncate pr-4">
                         <a href="profile.html?name=${encodeURIComponent(d.name)}" 
@@ -381,12 +392,37 @@
                 </div>
             `).join('');
 
+            // APPEND EMERGENCY VANGUARD GROUP
+            if (emergencyVanguardList.length > 0) {
+                html += `
+                    <div class="mt-10 mb-4 border-l-2 border-rose-500 pl-4 py-1 bg-rose-500/5">
+                        <h4 class="text-[10px] font-black text-rose-500 uppercase tracking-[0.3em]">Emergency Vanguard</h4>
+                    </div>
+                `;
+                html += emergencyVanguardList.map(d => `
+                    <div class="flex justify-between border-b border-neutral-900 pb-3 items-center group opacity-80 hover:opacity-100">
+                        <div class="flex flex-col truncate pr-4">
+                            <span class="text-neutral-400 font-bold uppercase truncate flex items-center">
+                               <i class="fa-solid fa-bolt-lightning mr-3 text-[10px] text-rose-500 opacity-50"></i>${d.name}
+                            </span>
+                            <p class="text-[8px] text-rose-800 font-bold uppercase tracking-widest ml-6 mt-0.5">
+                                ${d.specialization}
+                            </p>
+                        </div>
+                        <span class="text-rose-500 font-black">₱${Math.round(d.revenue).toLocaleString()}</span>
+                    </div>
+                `).join('');
+            }
+
+            lb.innerHTML = html;
+
             const btnContainer = document.getElementById('loadMoreContainer');
             if (currentDoctorList.length > visibleCount) {
                 btnContainer.classList.remove('hidden');
             } else {
                 btnContainer.classList.add('hidden');
             }
+
             const top10 = currentDoctorList.slice(0, 10);
             if (mainChart) mainChart.destroy();
             mainChart = new Chart(document.getElementById('revenueChart'), {
