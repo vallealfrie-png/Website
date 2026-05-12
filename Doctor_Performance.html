@@ -67,7 +67,6 @@
             box-shadow: 0 0 15px rgba(99, 102, 241, 0.2);
         }
 
-        /* NEW GLOWING WHITE STYLE FOR TIER LABELS */
         .tier-trigger p:first-child {
             color: #ffffff;
             text-shadow: 0 0 8px rgba(255, 255, 255, 0.8), 0 0 12px rgba(255, 255, 255, 0.4);
@@ -311,10 +310,24 @@
             else if (paymentMode === 'tpp') filtered = filtered.filter(d => ['HMO', 'INSURANCE', 'INDUSTRIAL'].includes(d.type));
             if (currentDept !== 'all') filtered = filtered.filter(d => d.department === currentDept);
             if (selectedMonth !== 'all') filtered = filtered.filter(d => d.month === selectedMonth);
+            
             const globalTotal = filtered.reduce((sum, r) => sum + (parseFloat(r.revenue) || 0), 0);
+            
+            // AGGREGATION: Include specialization here
             const agg = {};
-            filtered.forEach(r => { agg[r.doctor] = (agg[r.doctor] || 0) + (parseFloat(r.revenue) || 0); });
-            let doctorTotals = Object.keys(agg).map(name => ({ name, revenue: agg[name] }));
+            filtered.forEach(r => { 
+                if (!agg[r.doctor]) {
+                    agg[r.doctor] = { revenue: 0, specialization: r.specialization || 'General Practice' };
+                }
+                agg[r.doctor].revenue += (parseFloat(r.revenue) || 0); 
+            });
+
+            let doctorTotals = Object.keys(agg).map(name => ({ 
+                name, 
+                revenue: agg[name].revenue,
+                specialization: agg[name].specialization 
+            }));
+
             const brackets = [
                 { min: 10000000, max: Infinity, count: 0 },
                 { min: 5000000, max: 10000000, count: 0 },
@@ -351,15 +364,23 @@
         function updateVisuals() {
             const lb = document.getElementById('leaderboard');
             const dataToDisplay = currentDoctorList.slice(0, visibleCount);
+            
+            // RENDERING: Update the HTML to include specialization
             lb.innerHTML = dataToDisplay.map(d => `
-                <div class="flex justify-between border-b border-neutral-900 pb-2 items-center group">
-                    <a href="profile.html?name=${encodeURIComponent(d.name)}" 
-                       class="text-neutral-300 font-bold uppercase truncate pr-4 hover:text-indigo-400 transition-colors flex items-center">
-                       <i class="fa-solid fa-user-doctor mr-3 text-[10px] opacity-30 group-hover:opacity-100"></i>${d.name}
-                    </a>
+                <div class="flex justify-between border-b border-neutral-900 pb-3 items-center group">
+                    <div class="flex flex-col truncate pr-4">
+                        <a href="profile.html?name=${encodeURIComponent(d.name)}" 
+                           class="text-neutral-300 font-bold uppercase truncate hover:text-indigo-400 transition-colors flex items-center">
+                           <i class="fa-solid fa-user-doctor mr-3 text-[10px] opacity-30 group-hover:opacity-100"></i>${d.name}
+                        </a>
+                        <p class="text-[8px] text-neutral-600 font-bold uppercase tracking-widest ml-6 mt-0.5">
+                            ${d.specialization}
+                        </p>
+                    </div>
                     <span class="text-indigo-400 font-black">₱${Math.round(d.revenue).toLocaleString()}</span>
                 </div>
             `).join('');
+
             const btnContainer = document.getElementById('loadMoreContainer');
             if (currentDoctorList.length > visibleCount) {
                 btnContainer.classList.remove('hidden');
