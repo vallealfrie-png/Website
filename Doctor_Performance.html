@@ -19,7 +19,6 @@
         #sidebar { width: 240px; border-right: 1px solid #1a1a1a; background: #050505; display: flex; flex-direction: column; flex-shrink: 0; z-index: 50;}
         #deptList { flex-grow: 1; overflow-y: auto; scrollbar-width: none; padding: 12px; }
         
-        /* Navigation Styles */
         .nav-link {
             display: flex; align-items: center; gap: 12px; padding: 12px;
             color: #6366f1; font-size: 10px; font-weight: 900; text-transform: uppercase;
@@ -58,18 +57,24 @@
 
         /* Tier Triggers */
         .tier-trigger {
-            cursor: pointer; padding: 10px; border-radius: 8px; border: 1px solid transparent;
-            transition: all 0.3s ease; min-width: 90px;
+            cursor: pointer; padding: 8px; border-radius: 8px; border: 1px solid transparent;
+            transition: all 0.3s ease; min-width: 80px;
         }
         .tier-trigger:hover { background: rgba(255,255,255,0.05); }
         .tier-trigger.active {
             background: rgba(99, 102, 241, 0.15); border-color: #6366f1;
             box-shadow: 0 0 15px rgba(99, 102, 241, 0.2);
         }
+        /* Specific Emergency Trigger Style */
+        .trigger-emergency.active {
+            background: rgba(244, 63, 94, 0.15); border-color: #f43f5e;
+            box-shadow: 0 0 15px rgba(244, 63, 94, 0.2);
+        }
+        .trigger-emergency p:last-child { color: #f43f5e; text-shadow: 0 0 8px rgba(244, 63, 94, 0.5); }
 
         .tier-trigger p:first-child {
             color: #ffffff;
-            text-shadow: 0 0 8px rgba(255, 255, 255, 0.8), 0 0 12px rgba(255, 255, 255, 0.4);
+            text-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
         }
 
         /* Neon Cards */
@@ -167,27 +172,31 @@
                 <h2 id="totalDoctors" class="text-3xl font-black text-white tracking-tighter mt-2">0</h2>
             </div>
 
-            <div class="neon-card card-emerald p-6 lg:col-span-2 flex items-center">
-                <div id="tierStats" class="flex flex-wrap gap-x-2 text-white justify-between items-center w-full">
+            <div class="neon-card card-emerald p-4 lg:col-span-2 flex items-center">
+                <div id="tierStats" class="flex flex-wrap gap-x-1 text-white justify-between items-center w-full">
                     <div id="tier-1-card" class="tier-trigger text-center" onclick="toggleTierFilter(1)">
-                        <p class="text-[7px] uppercase tracking-widest">Champion (>10M)</p>
-                        <p id="tier-1" class="text-xl font-black">0</p>
+                        <p class="text-[6px] uppercase tracking-widest">Champion</p>
+                        <p id="tier-1" class="text-lg font-black">0</p>
                     </div>
                     <div id="tier-2-card" class="tier-trigger text-center" onclick="toggleTierFilter(2)">
-                        <p class="text-[7px] uppercase tracking-widest">High Performers (5-10M)</p>
-                        <p id="tier-2" class="text-xl font-black">0</p>
+                        <p class="text-[6px] uppercase tracking-widest">High Performer</p>
+                        <p id="tier-2" class="text-lg font-black">0</p>
                     </div>
                     <div id="tier-3-card" class="tier-trigger text-center" onclick="toggleTierFilter(3)">
-                        <p class="text-[7px] uppercase tracking-widest">Mid Performers (2-5M)</p>
-                        <p id="tier-3" class="text-xl font-black">0</p>
+                        <p class="text-[6px] uppercase tracking-widest">Mid Performer</p>
+                        <p id="tier-3" class="text-lg font-black">0</p>
                     </div>
                     <div id="tier-4-card" class="tier-trigger text-center" onclick="toggleTierFilter(4)">
-                        <p class="text-[7px] uppercase tracking-widest">Growing (1-2M)</p>
-                        <p id="tier-4" class="text-xl font-black">0</p>
+                        <p class="text-[6px] uppercase tracking-widest">Growing</p>
+                        <p id="tier-4" class="text-lg font-black">0</p>
                     </div>
                     <div id="tier-5-card" class="tier-trigger text-center" onclick="toggleTierFilter(5)">
-                        <p class="text-[7px] uppercase tracking-widest">Static (<1M)</p>
-                        <p id="tier-5" class="text-xl font-black">0</p>
+                        <p class="text-[6px] uppercase tracking-widest">Static</p>
+                        <p id="tier-5" class="text-lg font-black">0</p>
+                    </div>
+                    <div id="tier-emergency-card" class="tier-trigger trigger-emergency text-center border-l border-neutral-800 ml-2 pl-4" onclick="toggleTierFilter('emergency')">
+                        <p class="text-[6px] uppercase tracking-widest text-rose-500">Vanguard</p>
+                        <p id="tier-emergency" class="text-lg font-black text-rose-500">0</p>
                     </div>
                 </div>
             </div>
@@ -216,7 +225,7 @@
         let currentDept = 'all';
         let paymentMode = 'all'; 
         let activeTier = null; 
-        let prevCounts = { total: 0, t1: 0, t2: 0, t3: 0, t4: 0, t5: 0, revenue: 0 };
+        let prevCounts = { total: 0, t1: 0, t2: 0, t3: 0, t4: 0, t5: 0, tem: 0, revenue: 0 };
         let visibleCount = 50;
         let currentDoctorList = [];
         let emergencyVanguardList = [];
@@ -249,13 +258,16 @@
         }
 
         function toggleTierFilter(tier) {
+            const cardId = tier === 'emergency' ? 'tier-emergency-card' : `tier-${tier}-card`;
+            const activeCardId = activeTier === 'emergency' ? 'tier-emergency-card' : `tier-${activeTier}-card`;
+
             if (activeTier === tier) {
                 activeTier = null;
-                document.getElementById(`tier-${tier}-card`).classList.remove('active');
+                document.getElementById(cardId).classList.remove('active');
             } else {
-                if (activeTier) document.getElementById(`tier-${activeTier}-card`).classList.remove('active');
+                if (activeTier) document.getElementById(activeCardId).classList.remove('active');
                 activeTier = tier;
-                document.getElementById(`tier-${tier}-card`).classList.add('active');
+                document.getElementById(cardId).classList.add('active');
             }
             render();
         }
@@ -345,23 +357,30 @@
                 if (idx !== -1) brackets[idx].count++;
             });
 
-            if (activeTier !== null) {
+            // FILTERING LOGIC
+            if (activeTier === 'emergency') {
+                currentDoctorList = []; // Hide main list
+                // emergencyVanguardList remains as is
+            } else if (activeTier !== null) {
                 const b = brackets[activeTier - 1];
-                doctorTotals = doctorTotals.filter(doc => doc.revenue > b.min && doc.revenue <= b.max);
+                currentDoctorList = doctorTotals.filter(doc => doc.revenue > b.min && doc.revenue <= b.max);
+                emergencyVanguardList = []; // Hide emergency list
+            } else {
+                currentDoctorList = doctorTotals;
             }
 
-            doctorTotals.sort((a, b) => b.revenue - a.revenue);
+            currentDoctorList.sort((a, b) => b.revenue - a.revenue);
             emergencyVanguardList.sort((a, b) => b.revenue - a.revenue);
 
-            currentDoctorList = doctorTotals;
-            
             animateValue("globalRevenue", prevCounts.revenue, globalTotal, true);
             animateValue("totalDoctors", prevCounts.total, allDoctors.length);
             brackets.forEach((b, i) => animateValue(`tier-${i+1}`, prevCounts[`t${i+1}`] || 0, b.count));
+            animateValue("tier-emergency", prevCounts.tem, emergencyVanguardList.length);
             
             prevCounts.revenue = globalTotal;
             prevCounts.total = allDoctors.length;
             brackets.forEach((b, i) => prevCounts[`t${i+1}`] = b.count);
+            prevCounts.tem = emergencyVanguardList.length;
             
             document.getElementById('activeDeptLabel').innerText = currentDept.toUpperCase();
             updateVisuals();
@@ -384,16 +403,13 @@
                            class="text-neutral-300 font-bold uppercase truncate hover:text-indigo-400 transition-colors flex items-center">
                            <i class="fa-solid fa-user-doctor mr-3 text-[10px] opacity-30 group-hover:opacity-100"></i>${d.name}
                         </a>
-                        <p class="text-[8px] text-neutral-600 font-bold uppercase tracking-widest ml-6 mt-0.5">
-                            ${d.specialization}
-                        </p>
+                        <p class="text-[8px] text-neutral-600 font-bold uppercase tracking-widest ml-6 mt-0.5">${d.specialization}</p>
                     </div>
                     <span class="text-indigo-400 font-black">₱${Math.round(d.revenue).toLocaleString()}</span>
                 </div>
             `).join('');
 
-            // APPEND EMERGENCY VANGUARD GROUP
-            if (emergencyVanguardList.length > 0) {
+            if (emergencyVanguardList.length > 0 && (activeTier === null || activeTier === 'emergency')) {
                 html += `
                     <div class="mt-10 mb-4 border-l-2 border-rose-500 pl-4 py-1 bg-rose-500/5">
                         <h4 class="text-[10px] font-black text-rose-500 uppercase tracking-[0.3em]">Emergency Vanguard</h4>
@@ -405,9 +421,7 @@
                             <span class="text-neutral-400 font-bold uppercase truncate flex items-center">
                                <i class="fa-solid fa-bolt-lightning mr-3 text-[10px] text-rose-500 opacity-50"></i>${d.name}
                             </span>
-                            <p class="text-[8px] text-rose-800 font-bold uppercase tracking-widest ml-6 mt-0.5">
-                                ${d.specialization}
-                            </p>
+                            <p class="text-[8px] text-rose-800 font-bold uppercase tracking-widest ml-6 mt-0.5">${d.specialization}</p>
                         </div>
                         <span class="text-rose-500 font-black">₱${Math.round(d.revenue).toLocaleString()}</span>
                     </div>
@@ -423,13 +437,16 @@
                 btnContainer.classList.add('hidden');
             }
 
-            const top10 = currentDoctorList.slice(0, 10);
+            const chartData = activeTier === 'emergency' ? emergencyVanguardList : currentDoctorList;
+            const top10 = chartData.slice(0, 10);
+            const chartColor = activeTier === 'emergency' ? '#f43f5e' : '#6366f1';
+
             if (mainChart) mainChart.destroy();
             mainChart = new Chart(document.getElementById('revenueChart'), {
                 type: 'bar',
                 data: {
                     labels: top10.map(d => d.name.split(',')[0]),
-                    datasets: [{ label: 'REVENUE', data: top10.map(d => d.revenue), backgroundColor: '#6366f1' }]
+                    datasets: [{ label: 'REVENUE', data: top10.map(d => d.revenue), backgroundColor: chartColor }]
                 },
                 options: {
                     responsive: true, maintainAspectRatio: false,
