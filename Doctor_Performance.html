@@ -15,7 +15,6 @@
         
         body { background-color: #010101; color: #e5e5e5; display: flex; height: 100vh; overflow: hidden; font-family: 'Inter', sans-serif; }
         
-        /* Sidebar */
         #sidebar { width: 240px; border-right: 1px solid #1a1a1a; background: #050505; display: flex; flex-direction: column; flex-shrink: 0; z-index: 50;}
         #deptList { flex-grow: 1; overflow-y: auto; scrollbar-width: none; padding: 12px; }
         
@@ -35,7 +34,6 @@
         .dept-btn:hover { color: #888; border-color: #333; }
         .dept-btn.active { color: #fff; border-color: #6366f1; background: #0c0c1e; border-left: 3px solid #6366f1; }
 
-        /* Payment Switch */
         .switch-container {
             display: flex; background: #000; border: 1px solid #1a1a1a;
             border-radius: 8px; padding: 2px; margin-top: 8px; position: relative;
@@ -55,29 +53,21 @@
         .pos-tpp { transform: translateX(100%); }
         .pos-cash { transform: translateX(200%); }
 
-        /* Tier Triggers */
         .tier-trigger {
             cursor: pointer; padding: 8px; border-radius: 8px; border: 1px solid transparent;
-            transition: all 0.3s ease; min-width: 80px;
+            transition: all 0.3s ease; min-width: 75px;
         }
         .tier-trigger:hover { background: rgba(255,255,255,0.05); }
         .tier-trigger.active {
             background: rgba(99, 102, 241, 0.15); border-color: #6366f1;
             box-shadow: 0 0 15px rgba(99, 102, 241, 0.2);
         }
-        /* Specific Emergency Trigger Style */
         .trigger-emergency.active {
             background: rgba(244, 63, 94, 0.15); border-color: #f43f5e;
             box-shadow: 0 0 15px rgba(244, 63, 94, 0.2);
         }
-        .trigger-emergency p:last-child { color: #f43f5e; text-shadow: 0 0 8px rgba(244, 63, 94, 0.5); }
+        .tier-trigger p:first-child { color: #ffffff; text-shadow: 0 0 8px rgba(255, 255, 255, 0.8); }
 
-        .tier-trigger p:first-child {
-            color: #ffffff;
-            text-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
-        }
-
-        /* Neon Cards */
         .neon-card { border: 2px solid transparent; border-radius: 12px; animation: spin 4s infinite linear; position: relative; }
         .card-indigo { background: linear-gradient(#080808, #080808) padding-box, conic-gradient(from var(--bg-angle), #6366f1, #1e1b4b, #6366f1) border-box; }
         .card-emerald { background: linear-gradient(#080808, #080808) padding-box, conic-gradient(from var(--bg-angle), #10b981, #064e3b, #10b981) border-box; }
@@ -194,7 +184,7 @@
                         <p class="text-[6px] uppercase tracking-widest">Static</p>
                         <p id="tier-5" class="text-lg font-black">0</p>
                     </div>
-                    <div id="tier-emergency-card" class="tier-trigger trigger-emergency text-center border-l border-neutral-800 ml-2 pl-4" onclick="toggleTierFilter('emergency')">
+                    <div id="tier-emergency-card" class="tier-trigger trigger-emergency text-center" onclick="toggleTierFilter('emergency')">
                         <p class="text-[6px] uppercase tracking-widest text-rose-500">Vanguard</p>
                         <p id="tier-emergency" class="text-lg font-black text-rose-500">0</p>
                     </div>
@@ -326,7 +316,6 @@
             if (selectedMonth !== 'all') filtered = filtered.filter(d => d.month === selectedMonth);
             
             const globalTotal = filtered.reduce((sum, r) => sum + (parseFloat(r.revenue) || 0), 0);
-            
             const agg = {};
             filtered.forEach(r => { 
                 if (!agg[r.doctor]) {
@@ -341,10 +330,10 @@
                 specialization: agg[name].specialization 
             }));
 
-            // SEPARATE EMERGENCY VANGUARD
-            emergencyVanguardList = allDoctors.filter(d => d.specialization === 'Emergency Medicine');
-            let doctorTotals = allDoctors.filter(d => d.specialization !== 'Emergency Medicine');
-
+            // CALCULATE COUNTS FIRST (So they don't drop to zero when filtered)
+            const fullEmergency = allDoctors.filter(d => d.specialization === 'Emergency Medicine');
+            const fullOthers = allDoctors.filter(d => d.specialization !== 'Emergency Medicine');
+            
             const brackets = [
                 { min: 10000000, max: Infinity, count: 0 },
                 { min: 5000000, max: 10000000, count: 0 },
@@ -352,21 +341,22 @@
                 { min: 1000000, max: 2000000, count: 0 },
                 { min: -Infinity, max: 1000000, count: 0 }
             ];
-            doctorTotals.forEach(doc => {
+            fullOthers.forEach(doc => {
                 const idx = brackets.findIndex(b => doc.revenue > b.min && doc.revenue <= b.max);
                 if (idx !== -1) brackets[idx].count++;
             });
 
-            // FILTERING LOGIC
+            // APPLY ACTIVE FILTER FOR DISPLAY
             if (activeTier === 'emergency') {
-                currentDoctorList = []; // Hide main list
-                // emergencyVanguardList remains as is
+                currentDoctorList = [];
+                emergencyVanguardList = fullEmergency;
             } else if (activeTier !== null) {
                 const b = brackets[activeTier - 1];
-                currentDoctorList = doctorTotals.filter(doc => doc.revenue > b.min && doc.revenue <= b.max);
-                emergencyVanguardList = []; // Hide emergency list
+                currentDoctorList = fullOthers.filter(doc => doc.revenue > b.min && doc.revenue <= b.max);
+                emergencyVanguardList = [];
             } else {
-                currentDoctorList = doctorTotals;
+                currentDoctorList = fullOthers;
+                emergencyVanguardList = fullEmergency;
             }
 
             currentDoctorList.sort((a, b) => b.revenue - a.revenue);
@@ -375,21 +365,18 @@
             animateValue("globalRevenue", prevCounts.revenue, globalTotal, true);
             animateValue("totalDoctors", prevCounts.total, allDoctors.length);
             brackets.forEach((b, i) => animateValue(`tier-${i+1}`, prevCounts[`t${i+1}`] || 0, b.count));
-            animateValue("tier-emergency", prevCounts.tem, emergencyVanguardList.length);
+            animateValue("tier-emergency", prevCounts.tem, fullEmergency.length);
             
             prevCounts.revenue = globalTotal;
             prevCounts.total = allDoctors.length;
             brackets.forEach((b, i) => prevCounts[`t${i+1}`] = b.count);
-            prevCounts.tem = emergencyVanguardList.length;
+            prevCounts.tem = fullEmergency.length;
             
             document.getElementById('activeDeptLabel').innerText = currentDept.toUpperCase();
             updateVisuals();
         }
 
-        function loadMoreDoctors() {
-            visibleCount += 100;
-            updateVisuals();
-        }
+        function loadMoreDoctors() { visibleCount += 100; updateVisuals(); }
 
         let mainChart;
         function updateVisuals() {
@@ -431,11 +418,8 @@
             lb.innerHTML = html;
 
             const btnContainer = document.getElementById('loadMoreContainer');
-            if (currentDoctorList.length > visibleCount) {
-                btnContainer.classList.remove('hidden');
-            } else {
-                btnContainer.classList.add('hidden');
-            }
+            if (currentDoctorList.length > visibleCount) btnContainer.classList.remove('hidden');
+            else btnContainer.classList.add('hidden');
 
             const chartData = activeTier === 'emergency' ? emergencyVanguardList : currentDoctorList;
             const top10 = chartData.slice(0, 10);
