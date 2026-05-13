@@ -9,13 +9,11 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* Base page styling */
         body { background-color: #000; color: #e5e5e5; overflow-x: hidden; margin: 0; }
         
-        /* Background Container - Resized to fit whole image */
         .dashboard-bg-container {
             background: url('https://i.imgur.com/c1t4xZ1.jpeg'); 
-            background-size: 100% 100%; /* This ensures the whole image is visible in the viewport */
+            background-size: 100% 100%;
             background-position: center;
             background-attachment: fixed;
             background-repeat: no-repeat;
@@ -23,7 +21,6 @@
             width: 100%;
         }
         
-        /* Premium Glassmorphism */
         .glass-card { 
             background: rgba(0, 0, 0, 0.82); 
             backdrop-filter: blur(20px);
@@ -33,7 +30,6 @@
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
         }
 
-        /* Collapsable Nav Logic */
         .nav-container {
             width: 50px;
             height: 50px;
@@ -57,7 +53,6 @@
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
         }
 
-        /* Nav Content Visibility */
         .nav-content {
             opacity: 0;
             transition: opacity 0.3s ease;
@@ -98,7 +93,6 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        /* Animations */
         #dashboard-content { transition: transform 0.4s ease, opacity 0.4s ease; }
         .slide-out { opacity: 0 !important; transform: translateY(20px) !important; }
         .slide-in { animation: slideUpEffect 0.6s ease forwards; }
@@ -239,6 +233,8 @@
         function render(animate) {
             const mVal = document.getElementById('monthSlicer').value;
             const nVal = document.getElementById('nameSlicer').value;
+            
+            // Apply both filters to the dataset
             const filtered = masterData.filter(d => (nVal === 'all' || d.name === nVal));
 
             updateMetrics(mVal, filtered, animate);
@@ -305,23 +301,40 @@
 
         function updateTrends(mVal, data) {
             let curSet = [], preSet = [];
+            
+            // Find the last month in the current year that actually has data
+            const lastActiveMonth = Math.max(...masterData.filter(d => d.year === maxYear && (d.amt > 0 || d.cen > 0)).map(d => d.mIndex));
+
             MONTH_NAMES.forEach((_, i) => {
-                const c_amt = data.filter(d => d.year === maxYear && d.mIndex === i).reduce((s,d)=>s+d.amt,0);
-                const p_amt = data.filter(d => d.year === (maxYear-1) && d.mIndex === i).reduce((s,d)=>s+d.amt,0);
-                const c_cen = data.filter(d => d.year === maxYear && d.mIndex === i).reduce((s,d)=>s+d.cen,0);
-                const p_cen = data.filter(d => d.year === (maxYear-1) && d.mIndex === i).reduce((s,d)=>s+d.cen,0);
-                curSet.push({ r: c_amt, n: c_cen });
-                preSet.push({ r: p_amt, n: p_cen });
+                const c_matches = data.filter(d => d.year === maxYear && d.mIndex === i);
+                const p_matches = data.filter(d => d.year === (maxYear - 1) && d.mIndex === i);
+
+                // Current Year: Use null after the last recorded month to make the line end
+                if (i <= lastActiveMonth) {
+                    curSet.push({ 
+                        r: c_matches.reduce((s,d)=>s+d.amt,0), 
+                        n: c_matches.reduce((s,d)=>s+d.cen,0) 
+                    });
+                } else {
+                    curSet.push({ r: null, n: null });
+                }
+
+                // Previous Year: Full comparison
+                preSet.push({ 
+                    r: p_matches.reduce((s,d)=>s+d.amt,0), 
+                    n: p_matches.reduce((s,d)=>s+d.cen,0) 
+                });
             });
 
+            // If a specific month is selected, the chart will highlight that single point or show the relative scale
             draw('revChart', 'line', MONTH_NAMES, [
-                { label: `${maxYear}`, data: curSet.map(v=>v.r), borderColor: '#6366f1', tension: 0.4 },
-                { label: `${maxYear-1}`, data: preSet.map(v=>v.r), borderColor: 'rgba(255,255,255,0.4)', borderDash:[5,5], tension: 0.4 }
+                { label: `${maxYear}`, data: curSet.map(v=>v.r), borderColor: '#6366f1', tension: 0.4, spanGaps: false },
+                { label: `${maxYear-1}`, data: preSet.map(v=>v.r), borderColor: '#ffffff', borderDash:[5,5], borderWidth: 1, tension: 0.4 }
             ], 'Revenue Performance');
 
             draw('cenChart', 'line', MONTH_NAMES, [
-                { label: `${maxYear}`, data: curSet.map(v=>v.n), borderColor: '#06b6d4', tension: 0.4 },
-                { label: `${maxYear-1}`, data: preSet.map(v=>v.n), borderColor: 'rgba(255,255,255,0.4)', borderDash:[5,5], tension: 0.4 }
+                { label: `${maxYear}`, data: curSet.map(v=>v.n), borderColor: '#06b6d4', tension: 0.4, spanGaps: false },
+                { label: `${maxYear-1}`, data: preSet.map(v=>v.n), borderColor: '#ffffff', borderDash:[5,5], borderWidth: 1, tension: 0.4 }
             ], 'Census Performance');
         }
 
@@ -335,24 +348,57 @@
 
         function draw(id, type, labels, datasets, title) {
             if (charts[id]) charts[id].destroy();
+
+            // Setup progressive "line drawing" animation
+            const totalDuration = 1000;
+            const delayBetweenPoints = totalDuration / labels.length;
+            const animation = {
+                x: {
+                    type: 'number',
+                    easing: 'linear',
+                    duration: delayBetweenPoints,
+                    from: NaN,
+                    delay(ctx) {
+                        if (ctx.type !== 'data' || ctx.xStarted) return 0;
+                        ctx.xStarted = true;
+                        return ctx.index * delayBetweenPoints;
+                    }
+                },
+                y: {
+                    type: 'number',
+                    easing: 'linear',
+                    duration: delayBetweenPoints,
+                    from: (ctx) => ctx.index === 0 ? ctx.chart.scales.y.getPixelForValue(0) : ctx.chart.getDatasetMeta(ctx.datasetIndex).data[ctx.index-1].getProps(['y'], true).y,
+                    delay(ctx) {
+                        if (ctx.type !== 'data' || ctx.yStarted) return 0;
+                        ctx.yStarted = true;
+                        return ctx.index * delayBetweenPoints;
+                    }
+                }
+            };
+
             charts[id] = new Chart(document.getElementById(id), {
                 type, data: { labels, datasets },
                 options: { 
                     responsive: true, maintainAspectRatio: false,
-                    animation: { duration: 1000, easing: 'easeOutQuart' },
+                    animation: animation,
                     plugins: { 
                         legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 }, color: '#eee' } },
-                        title: { display: true, text: title, color: '#fff', font: { size: 12, weight: 'bold' } }
+                        title: { display: true, text: title.toUpperCase(), color: '#fff', font: { size: 12, weight: 'bold' } }
                     },
                     scales: { 
-                        y: { grid: { color: 'rgba(255,255,255,0.15)' }, ticks: { font: { size: 9 }, color: '#eee' } },
+                        y: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { font: { size: 9 }, color: '#eee' } },
                         x: { grid: { display: false }, ticks: { font: { size: 9 }, color: '#eee' } }
                     }
                 }
             });
         }
 
-        function resetFilters() { document.getElementById('monthSlicer').value = 'all'; document.getElementById('nameSlicer').value = 'all'; render(true); }
+        function resetFilters() { 
+            document.getElementById('monthSlicer').value = 'all'; 
+            document.getElementById('nameSlicer').value = 'all'; 
+            render(true); 
+        }
         init();
     </script>
 </body>
