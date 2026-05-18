@@ -121,22 +121,44 @@
         async function init() {
             let rows = [], p = 0;
             while (true) {
-                const { data, error } = await sb.from('database').select('*').range(p * 1000, (p + 1) * 1000 - 1);
+                // Fixed: Added systematic date ordering to guarantee chunks merge predictably
+                const { data, error } = await sb.from('database')
+                    .select('*')
+                    .order('date', { ascending: true })
+                    .range(p * 1000, (p + 1) * 1000 - 1);
+                
                 if (error || !data || data.length === 0) break;
                 rows = [...rows, ...data]; p++;
                 document.getElementById('progressBar').style.width = `${Math.min((rows.length / 61400) * 100, 100)}%`;
                 if (data.length < 1000) break;
             }
+
             masterData = rows.map(r => {
-                const d = new Date(r.date);
-                return { ...r, y: d.getUTCFullYear(), m: d.getUTCMonth(), day: d.getUTCDate(), amt: parseFloat(String(r.amount).replace(/[^0-9.-]+/g,"")) || 0 };
+                const dateStr = r.date || "2026-01-01"; 
+                
+                // Fixed: Directly parsing string splits to secure timezone normalization boundaries
+                const parts = dateStr.split('T')[0].split('-'); 
+                const year = parseInt(parts[0], 10);
+                const month = parseInt(parts[1], 10) - 1; // 0-indexed adjustment for JavaScript components
+                const day = parseInt(parts[2], 10);
+
+                return { 
+                    ...r, 
+                    y: year, 
+                    m: month, 
+                    day: day, 
+                    amt: parseFloat(String(r.amount).replace(/[^0-9.-]+/g,"")) || 0 
+                };
             });
+
             maxYear = Math.max(...masterData.map(d => d.y));
             activeMonths = [...new Set(masterData.filter(d => d.y === maxYear).map(d => d.m))];
             const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
             document.getElementById('monthSlicer').innerHTML = `<option value="all">Cumulative Comparison</option>` + months.map((m,i)=>`<option value="${i}">${m}</option>`).join('');
+            
             const catEl = document.getElementById('catSlicer');
             [...new Set(masterData.map(d=>d.category))].filter(Boolean).sort().forEach(c => catEl.innerHTML += `<option value="${c}">${c}</option>`);
+            
             document.getElementById('loader').classList.add('hidden');
             ['monthSlicer', 'catSlicer'].forEach(id => document.getElementById(id).addEventListener('change', render));
             render();
@@ -158,9 +180,10 @@
                 const sub = mVal === "all" ? data.filter(d => d.y === yr && activeMonths.includes(d.m)) : data.filter(d => d.y === yr && d.m === parseInt(mVal));
                 return { yr, r: sub.reduce((s,d)=>s+d.amt,0), n: sub.length };
             });
-            document.getElementById('valYear3').textContent = `₱${stats[2].r.toLocaleString()}`;
+            // Fixed decimal processing for standard formatting logic
+            document.getElementById('valYear3').textContent = `₱${Math.round(stats[2].r).toLocaleString()}`;
             document.getElementById('cenYear3').textContent = `${stats[2].n.toLocaleString()} Patients`;
-            document.getElementById('valYear2').textContent = `₱${stats[1].r.toLocaleString()}`;
+            document.getElementById('valYear2').textContent = `₱${Math.round(stats[1].r).toLocaleString()}`;
             document.getElementById('cenYear2').textContent = `${stats[1].n.toLocaleString()} Patients`;
             const diff = stats[1].r ? ((stats[2].r - stats[1].r) / stats[1].r * 100) : 0;
             const vEl = document.getElementById('varRev');
@@ -212,7 +235,7 @@
                 document.getElementById(id).innerHTML = list.map(([n,v], i) => `
                     <div class="flex justify-between items-center p-3 rounded-lg bg-neutral-900/40 border border-neutral-800">
                         <span class="text-[10px] font-black text-white truncate pr-2 uppercase tracking-tighter">#${i+1} ${n}</span>
-                        <span class="text-[10px] font-black ${pre ? 'text-indigo-400' : 'text-emerald-400'}">${pre}${v.toLocaleString()}</span>
+                        <span class="text-[10px] font-black ${pre ? 'text-indigo-400' : 'text-emerald-400'}">${pre}${Math.round(v).toLocaleString()}</span>
                     </div>`).join('');
             };
             build('topRevList', getGrp('rev'), '₱');
