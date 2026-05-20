@@ -70,7 +70,7 @@
     <div class="header-flex">
         <div style="display: flex; align-items: center; gap: 15px;">
             <img src="https://i.imgur.com/VbZKWAf.png" alt="Logo" style="height: 40px;">
-            <h1 id="page-title" style="color: #333; margin: 0; font-size: 1.5rem;">Live Tracking</h1>
+            <h1 id="page-title" style="color: #333; margin: 0; font-size: 1.5rem;">Live Tracking View</h1>
         </div>
         
         <div class="nav-links">
@@ -154,13 +154,24 @@
                 grouped[s.parent_qr_code].push(s);
             });
 
-            document.getElementById('count-active').innerText = Object.keys(grouped).length;
+            // Map object to sortable array using the timestamp of the first (newest) item in each group
+            const sortedActiveDocs = Object.keys(grouped).map(qr => {
+                return {
+                    qr_code: qr,
+                    history: grouped[qr],
+                    latestEvent: grouped[qr][0]
+                };
+            }).sort((a, b) => new Date(b.latestEvent.created_at) - new Date(a.latestEvent.created_at));
+
+            document.getElementById('count-active').innerText = sortedActiveDocs.length;
             scanBody.innerHTML = '';
 
-            Object.keys(grouped).forEach(qr => {
-                const history = grouped[qr];
-                const latest = history[0];
+            sortedActiveDocs.forEach(item => {
+                const qr = item.qr_code;
+                const history = item.history;
+                const latest = item.latestEvent;
                 const pName = nameMap[qr] || "Unknown Project";
+                
                 const row = document.createElement('tr');
                 row.className = 'doc-row';
                 row.onclick = () => toggleHistory(qr);
@@ -230,7 +241,6 @@
             qr_code: qr, project_name: name, approved_by: approver
         }]);
         
-        // This insert relies on you having updated the check constraint in SQL as discussed previously
         const { error: err2 } = await _supabase.from('document_tracking_events').insert([{
             parent_qr_code: qr, status: 'Approved/Finished', received_by: approver, department: 'FINAL ARCHIVE'
         }]);
@@ -271,7 +281,6 @@
             (payload) => { triggerAlert(payload.new.message); loadDashboard(); }
         ).subscribe();
         
-        // Specifically listen for new Inbound Logs
         _supabase.channel('inbound-updates').on('postgres_changes', 
             { event: 'INSERT', schema: 'public', table: 'inbound_logs' }, 
             () => { triggerAlert("New Inbound Document Logged!"); loadDashboard(); }
