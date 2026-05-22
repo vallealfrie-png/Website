@@ -71,7 +71,7 @@
                 <h3 id="targetTextTop" class="text-3xl lg:text-4xl font-black text-indigo-400 tracking-tighter">₱0</h3>
             </div>
             <div class="glowing-border p-8 text-center sm:text-left">
-                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">YoY Growth</p>
+                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Goal Percentage</p>
                 <h3 id="growthValue" class="text-3xl lg:text-4xl font-black tracking-tighter text-white">0%</h3>
             </div>
         </div>
@@ -122,13 +122,14 @@
                 if (isCurrency) {
                     obj.innerHTML = '₱' + value.toLocaleString();
                 } else {
-                    obj.innerHTML = (value >= 0 ? '+' : '') + value + '%';
-                    if (value > 0) {
-                        obj.className = "text-3xl lg:text-4xl font-black tracking-tighter text-[#32ff7e]";
-                    } else if (value < 0) {
-                        obj.className = "text-3xl lg:text-4xl font-black tracking-tighter text-[#ff1e56]";
+                    obj.innerHTML = value + '%';
+                    // Alert systems layout based on Target completion benchmarks
+                    if (value >= 100) {
+                        obj.className = "text-3xl lg:text-4xl font-black tracking-tighter text-[#32ff7e]"; // Green (Goal Achieved)
+                    } else if (value < 50) {
+                        obj.className = "text-3xl lg:text-4xl font-black tracking-tighter text-[#ff1e56]"; // Red (Needs Attention)
                     } else {
-                        obj.className = "text-3xl lg:text-4xl font-black tracking-tighter text-white";
+                        obj.className = "text-3xl lg:text-4xl font-black tracking-tighter text-indigo-400"; // Indigo (On track)
                     }
                 }
                 if (progress < 1) window.requestAnimationFrame(step);
@@ -182,7 +183,6 @@
             let { data: rawData } = await supabaseClient.from('revenue_targets').select('*').limit(2000);
             if (!rawData) return;
 
-            // Normalize fields safely across string / integer setups
             rawData = rawData.map(d => ({
                 ...d, 
                 month: (d.month || "").trim(),
@@ -192,27 +192,25 @@
             let deptData = selectedDept === 'ALL' ? rawData : rawData.filter(d => d.department === selectedDept);
             let metricsData = selectedMonth === 'ALL' ? deptData : deptData.filter(d => d.month === selectedMonth);
 
-            // FIXED: Using type-agnostic casting filters for matching year fields cleanly
             const curRev = metricsData.filter(d => d.year === 2026).reduce((s, r) => s + parseVal(r.revenue), 0);
             const curTarget = metricsData.filter(d => d.year === 2026).reduce((s, r) => s + parseVal(r.target), 0);
-            const oldRev = metricsData.filter(d => d.year === 2025).reduce((s, r) => s + parseVal(r.revenue), 0);
             
-            const realAchieve = curTarget > 0 ? Math.round((curRev / curTarget) * 100) : 0;
-            const growth = oldRev > 0 ? Math.round(((curRev - oldRev) / oldRev) * 100) : 0;
+            // FIXED: Calculating Revenue vs Target Goal directly instead of old YoY growth
+            const targetPercentage = curTarget > 0 ? Math.round((curRev / curTarget) * 100) : 0;
 
             animateValue('score2026', 0, curRev, 1000);
             animateValue('targetTextTop', 0, curTarget, 1000);
-            animateValue('growthValue', 0, growth, 1000, false);
+            animateValue('growthValue', 0, targetPercentage, 1000, false); // Target Rate output
             animateValue('revText', 0, curRev, 1000);
             animateValue('targetText', 0, curTarget, 1000);
 
-            const gaugeColor = realAchieve >= 100 ? '#32ff7e' : '#ff1e56';
-            const pointerValue = realAchieve > 100 ? 100 : realAchieve;
+            const gaugeColor = targetPercentage >= 100 ? '#32ff7e' : '#ff1e56';
+            const pointerValue = targetPercentage > 100 ? 100 : targetPercentage;
             
             gaugeChart.yAxis[0].update({ plotBands: [{ from: 0, to: 100, color: gaugeColor, thickness: 45 }] }, false);
             gaugeChart.series[0].points[0].update({ 
                 y: pointerValue, 
-                realValue: realAchieve 
+                realValue: targetPercentage 
             }, true, { duration: 1000 });
 
             const availableMonths = [...new Set(rawData.map(d => d.month))]
