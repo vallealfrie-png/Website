@@ -71,7 +71,7 @@
                 <h3 id="score2025" class="text-3xl lg:text-4xl font-black text-indigo-400 tracking-tighter">₱0</h3>
             </div>
             <div class="glowing-border p-8 text-center sm:text-left">
-                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Goal Percentage</p>
+                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">YoY Growth</p>
                 <h3 id="growthValue" class="text-3xl lg:text-4xl font-black tracking-tighter text-white">0%</h3>
             </div>
         </div>
@@ -123,14 +123,13 @@
                 if (isCurrency) {
                     obj.innerHTML = '₱' + value.toLocaleString();
                 } else {
-                    obj.innerHTML = value + '%';
-                    // Performance colors based on goal percentage thresholds
-                    if (value >= 100) {
+                    obj.innerHTML = (value >= 0 ? '+' : '') + value + '%';
+                    if (value > 0) {
                         obj.className = "text-3xl lg:text-4xl font-black tracking-tighter text-[#32ff7e]";
-                    } else if (value < 50) {
+                    } else if (value < 0) {
                         obj.className = "text-3xl lg:text-4xl font-black tracking-tighter text-[#ff1e56]";
                     } else {
-                        obj.className = "text-3xl lg:text-4xl font-black tracking-tighter text-indigo-400";
+                        obj.className = "text-3xl lg:text-4xl font-black tracking-tighter text-white";
                     }
                 }
                 
@@ -193,22 +192,23 @@
             const curTarget = metricsData.filter(d => d.year == 2026).reduce((s, r) => s + parseVal(r.target), 0);
             const oldRev = metricsData.filter(d => d.year == 2025).reduce((s, r) => s + parseVal(r.revenue), 0);
             
-            // UPDATED: Calculate Goal Percentage (2026 Revenue vs 2026 Target Goal)
-            const goalPercentage = curTarget > 0 ? Math.round((curRev / curTarget) * 100) : 0;
+            const realAchieve = curTarget > 0 ? Math.round((curRev / curTarget) * 100) : 0;
+            const growth = oldRev > 0 ? Math.round(((curRev - oldRev) / oldRev) * 100) : 0;
 
             animateValue('score2026', 0, curRev, 1000);
-            animateValue('score2025', 0, oldRev, 1000); // Updated to target 2025 Actual revenue
-            animateValue('growthValue', 0, goalPercentage, 1000, false); // Dynamic percentage output
+            // FIXED: Animated the score2025 element using oldRev data instead of curTarget
+            animateValue('score2025', 0, oldRev, 1000); 
+            animateValue('growthValue', 0, growth, 1000, false);
             animateValue('revText', 0, curRev, 1000);
             animateValue('targetText', 0, curTarget, 1000);
 
-            const gaugeColor = goalPercentage >= 100 ? '#32ff7e' : '#ff1e56';
-            const pointerValue = goalPercentage > 100 ? 100 : goalPercentage;
+            const gaugeColor = realAchieve >= 100 ? '#32ff7e' : '#ff1e56';
+            const pointerValue = realAchieve > 100 ? 100 : realAchieve;
             
             gaugeChart.yAxis[0].update({ plotBands: [{ from: 0, to: 100, color: gaugeColor, thickness: 45 }] }, false);
             gaugeChart.series[0].points[0].update({ 
                 y: pointerValue, 
-                realValue: goalPercentage 
+                realValue: realAchieve 
             }, true, { duration: 1000 });
 
             const availableMonths = [...new Set(rawData.map(d => d.month))]
