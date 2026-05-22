@@ -117,15 +117,12 @@
             const step = (timestamp) => {
                 if (!startTimestamp) startTimestamp = timestamp;
                 const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-                
-                // FIXED: Changed Math.floor to Math.round to handle negative percentages seamlessly
                 const value = Math.round(progress * (end - start) + start);
                 
                 if (isCurrency) {
                     obj.innerHTML = '₱' + value.toLocaleString();
                 } else {
                     obj.innerHTML = (value >= 0 ? '+' : '') + value + '%';
-                    // Dynamic coloring for growth card text
                     if (value > 0) {
                         obj.className = "text-3xl lg:text-4xl font-black tracking-tighter text-[#32ff7e]";
                     } else if (value < 0) {
@@ -134,7 +131,6 @@
                         obj.className = "text-3xl lg:text-4xl font-black tracking-tighter text-white";
                     }
                 }
-                
                 if (progress < 1) window.requestAnimationFrame(step);
             };
             window.requestAnimationFrame(step);
@@ -186,13 +182,20 @@
             let { data: rawData } = await supabaseClient.from('revenue_targets').select('*').limit(2000);
             if (!rawData) return;
 
-            rawData = rawData.map(d => ({...d, month: (d.month || "").trim()}));
+            // Normalize fields safely across string / integer setups
+            rawData = rawData.map(d => ({
+                ...d, 
+                month: (d.month || "").trim(),
+                year: parseInt(d.year, 10) || 0
+            }));
+            
             let deptData = selectedDept === 'ALL' ? rawData : rawData.filter(d => d.department === selectedDept);
             let metricsData = selectedMonth === 'ALL' ? deptData : deptData.filter(d => d.month === selectedMonth);
 
-            const curRev = metricsData.filter(d => d.year == 2026).reduce((s, r) => s + parseVal(r.revenue), 0);
-            const curTarget = metricsData.filter(d => d.year == 2026).reduce((s, r) => s + parseVal(r.target), 0);
-            const oldRev = metricsData.filter(d => d.year == 2025).reduce((s, r) => s + parseVal(r.revenue), 0);
+            // FIXED: Using type-agnostic casting filters for matching year fields cleanly
+            const curRev = metricsData.filter(d => d.year === 2026).reduce((s, r) => s + parseVal(r.revenue), 0);
+            const curTarget = metricsData.filter(d => d.year === 2026).reduce((s, r) => s + parseVal(r.target), 0);
+            const oldRev = metricsData.filter(d => d.year === 2025).reduce((s, r) => s + parseVal(r.revenue), 0);
             
             const realAchieve = curTarget > 0 ? Math.round((curRev / curTarget) * 100) : 0;
             const growth = oldRev > 0 ? Math.round(((curRev - oldRev) / oldRev) * 100) : 0;
@@ -220,9 +223,9 @@
                 });
             
             comparisonChart.update({ xAxis: { categories: availableMonths } }, false);
-            comparisonChart.series[0].setData(availableMonths.map(m => deptData.filter(d => d.year == 2025 && d.month == m).reduce((s, r) => s + parseVal(r.revenue), 0)), false);
-            comparisonChart.series[1].setData(availableMonths.map(m => deptData.filter(d => d.year == 2026 && d.month == m).reduce((s, r) => s + parseVal(r.revenue), 0)), false);
-            comparisonChart.series[2].setData(availableMonths.map(m => deptData.filter(d => d.year == 2026 && d.month == m).reduce((s, r) => s + parseVal(r.target), 0)), true);
+            comparisonChart.series[0].setData(availableMonths.map(m => deptData.filter(d => d.year === 2025 && d.month === m).reduce((s, r) => s + parseVal(r.revenue), 0)), false);
+            comparisonChart.series[1].setData(availableMonths.map(m => deptData.filter(d => d.year === 2026 && d.month === m).reduce((s, r) => s + parseVal(r.revenue), 0)), false);
+            comparisonChart.series[2].setData(availableMonths.map(m => deptData.filter(d => d.year === 2026 && d.month === m).reduce((s, r) => s + parseVal(r.target), 0)), true);
         }
 
         window.onload = async () => {
