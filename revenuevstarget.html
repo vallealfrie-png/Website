@@ -72,7 +72,7 @@
             </div>
             <div class="glowing-border p-8 text-center sm:text-left">
                 <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">YoY Growth</p>
-                <h3 id="growthValue" class="text-3xl lg:text-4xl font-black tracking-tighter">0%</h3>
+                <h3 id="growthValue" class="text-3xl lg:text-4xl font-black tracking-tighter text-white">0%</h3>
             </div>
         </div>
 
@@ -117,8 +117,24 @@
             const step = (timestamp) => {
                 if (!startTimestamp) startTimestamp = timestamp;
                 const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-                const value = Math.floor(progress * (end - start) + start);
-                obj.innerHTML = isCurrency ? '₱' + value.toLocaleString() : (end >= 0 ? '+' : '') + value + '%';
+                
+                // FIXED: Changed Math.floor to Math.round to handle negative percentages seamlessly
+                const value = Math.round(progress * (end - start) + start);
+                
+                if (isCurrency) {
+                    obj.innerHTML = '₱' + value.toLocaleString();
+                } else {
+                    obj.innerHTML = (value >= 0 ? '+' : '') + value + '%';
+                    // Dynamic coloring for growth card text
+                    if (value > 0) {
+                        obj.className = "text-3xl lg:text-4xl font-black tracking-tighter text-[#32ff7e]";
+                    } else if (value < 0) {
+                        obj.className = "text-3xl lg:text-4xl font-black tracking-tighter text-[#ff1e56]";
+                    } else {
+                        obj.className = "text-3xl lg:text-4xl font-black tracking-tighter text-white";
+                    }
+                }
+                
                 if (progress < 1) window.requestAnimationFrame(step);
             };
             window.requestAnimationFrame(step);
@@ -135,7 +151,7 @@
                 },
                 series: [{
                     name: 'Achievement', 
-                    data: [0], // Initial start point
+                    data: [0],
                     dataLabels: {
                         enabled: true, useHTML: true, y: -30, borderWidth: 0,
                         formatter: function() {
@@ -190,12 +206,11 @@
             const gaugeColor = realAchieve >= 100 ? '#32ff7e' : '#ff1e56';
             const pointerValue = realAchieve > 100 ? 100 : realAchieve;
             
-            // Smoothly Update Pointer with Animation
             gaugeChart.yAxis[0].update({ plotBands: [{ from: 0, to: 100, color: gaugeColor, thickness: 45 }] }, false);
             gaugeChart.series[0].points[0].update({ 
                 y: pointerValue, 
                 realValue: realAchieve 
-            }, true, { duration: 1000 }); // Redraw true, enable duration
+            }, true, { duration: 1000 });
 
             const availableMonths = [...new Set(rawData.map(d => d.month))]
                 .sort((a, b) => {
@@ -237,7 +252,6 @@
             document.getElementById('monthSelect').addEventListener('change', refreshData);
             document.getElementById('deptSelect').addEventListener('change', refreshData);
             
-            // Short timeout to ensure chart is ready for its first smooth sweep
             setTimeout(refreshData, 100);
         };
     </script>
