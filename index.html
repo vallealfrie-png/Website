@@ -6,6 +6,7 @@
     <title>Marketing Central Intelligence | Projectvibe</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { 
             margin: 0; 
@@ -73,32 +74,32 @@
                     <div class="dropdown-menu">
                         <p class="px-4 py-2 text-[8px] text-emerald-500/60 font-black tracking-[0.3em] uppercase">Intelligence Hub</p>
                         
-                        <a href="Doctor_Performance.html" class="dropdown-link">
+                        <a href="Doctor_Performance.html" class="dropdown-link dashboard-gate">
                             <i class="fa-solid fa-user-doctor text-xs"></i>
                             <span class="text-[10px] tracking-wide">Doctor Performance</span>
                         </a>
 
-                        <a href="revenuevstarget.html" class="dropdown-link">
+                        <a href="revenuevstarget.html" class="dropdown-link dashboard-gate">
                             <i class="fa-solid fa-hand-holding-dollar text-xs"></i>
                             <span class="text-[10px] tracking-wide">Revenue VS Target</span>
                         </a>
 
-                        <a href="centers.html" class="dropdown-link">
+                        <a href="centers.html" class="dropdown-link dashboard-gate">
                             <i class="fa-solid fa-brain text-xs"></i>
                             <span class="text-[10px] tracking-wide">Centers Census</span>
                         </a>
 
-                        <a href="visual.html" class="dropdown-link">
+                        <a href="visual.html" class="dropdown-link dashboard-gate">
                             <i class="fa-solid fa-folder-tree text-xs"></i>
                             <span class="text-[10px] tracking-wide">Document Tracker</span>
                         </a>
 
-                        <a href="package.html" class="dropdown-link">
+                        <a href="package.html" class="dropdown-link dashboard-gate">
                             <i class="fa-solid fa-chart-line text-xs"></i>
                             <span class="text-[10px] tracking-wide">Package Availment</span>
                         </a>
 
-                        <a href="reports.html" class="dropdown-link">
+                        <a href="reports.html" class="dropdown-link dashboard-gate">
                             <i class="fa-solid fa-poll-h text-xs"></i>
                             <span class="text-[10px] tracking-wide">Survey Result</span>
                         </a>
@@ -116,9 +117,9 @@
             </nav>
         </div>
 
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-4" id="auth-container">
             <div class="w-8 h-8 rounded-full border border-white/20 bg-white/5 flex items-center justify-center text-white/40">
-                <i class="fa-solid fa-user text-xs"></i>
+                <i class="fa-solid fa-circle-notch class animate-spin text-xs"></i>
             </div>
         </div>
     </header>
@@ -186,6 +187,62 @@
             </div>
         </div>
     </section>
+
+    <script>
+        // Initialize Supabase Client
+        const _supabaseUrl = 'https://jhldmarwkulkcjnrjvfk.supabase.co';
+        const _supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpobGRtYXJ3a3Vsa2NqbnJqdmZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODAzMjQsImV4cCI6MjA5MTg1NjMyNH0.AhjpHXlZSgWNlEshgc0giSSUvHV249f34424i-5g8do';
+        const supabase = supabase.createClient(_supabaseUrl, _supabaseAnonKey);
+
+        let currentUser = null;
+
+        // Check Login State and Modify UI Elements Dynamically
+        async function checkUserSession() {
+            const { data: { session } } = await supabase.auth.getSession();
+            const authContainer = document.getElementById('auth-container');
+            
+            if (session && session.user) {
+                currentUser = session.user;
+                // Render Authorized Template Profile and Logout Link Action
+                authContainer.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <span class="text-[9px] text-white/50 tracking-wider hidden sm:inline font-bold uppercase select-none">${currentUser.email.split('@')[0]}</span>
+                        <button onclick="handleUserLogout()" title="Logout" class="w-8 h-8 rounded-full border border-[#a7c957]/40 bg-[#a7c957]/10 flex items-center justify-center text-[#a7c957] hover:bg-red-500/10 hover:border-red-500/40 hover:text-red-400 transition-all duration-200">
+                            <i class="fa-solid fa-right-from-bracket text-xs"></i>
+                        </button>
+                    </div>
+                `;
+            } else {
+                currentUser = null;
+                // Render Unauthenticated Action Link to login.html
+                authContainer.innerHTML = `
+                    <a href="login.html" class="px-4 py-1.5 rounded-lg border border-[#a7c957]/40 text-[#a7c957] text-[10px] font-black uppercase tracking-wider bg-[#a7c957]/5 hover:bg-[#a7c957] hover:text-emerald-950 transition-all duration-200">
+                        Login
+                    </a>
+                `;
+            }
+        }
+
+        // Handle Logouts Safely
+        async function handleUserLogout() {
+            await supabase.auth.signOut();
+            window.location.reload();
+        }
+
+        // Intercept Dashboard Link Click actions if users are unauthorized
+        document.querySelectorAll('.dashboard-gate').forEach(element => {
+            element.addEventListener('click', function(e) {
+                if (!currentUser) {
+                    e.preventDefault();
+                    alert('Access Restricted. Please log in first to view system analytics models.');
+                    window.location.href = 'login.html';
+                }
+            });
+        });
+
+        // Run authentications check on window load
+        window.addEventListener('DOMContentLoaded', checkUserSession);
+    </script>
 
     <script>
         const canvas = document.getElementById('bg-canvas');
