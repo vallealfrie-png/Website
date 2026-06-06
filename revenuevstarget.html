@@ -95,6 +95,25 @@
         <div class="glowing-border p-6 lg:p-10">
             <div id="comparisonContainer" class="h-[400px]"></div>
         </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="glowing-border p-6">
+                <h4 class="text-xs font-black text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-[#228b22]"></span> Achieved Target
+                </h4>
+                <div id="hitList" class="space-y-2 max-h-[300px] overflow-y-auto pr-2">
+                    <p class="text-sm text-slate-500 italic">No data matched or targets completed.</p>
+                </div>
+            </div>
+            <div class="glowing-border p-6">
+                <h4 class="text-xs font-black text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-[#ff1e56]"></span> Missed Target
+                </h4>
+                <div id="missList" class="space-y-2 max-h-[300px] overflow-y-auto pr-2">
+                    <p class="text-sm text-slate-500 italic">No items identified.</p>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -163,7 +182,6 @@
                 credits: { enabled: false }
             });
 
-            // FIXED: Removed 2025 revenue block entirely from series list
             comparisonChart = Highcharts.chart('comparisonContainer', {
                 chart: { backgroundColor: 'transparent' },
                 title: { text: 'Monthly Performance Flow', style: { color: '#fff', fontSize: '14px', fontWeight: '800' } },
@@ -219,11 +237,9 @@
             
             comparisonChart.update({ xAxis: { categories: availableMonths } }, false);
             
-            // FIXED: Pre-calculate raw numerical lists to evaluate conditional point coloring per month element
             const revList2026 = availableMonths.map(m => deptData.filter(d => d.year == 2026 && d.month == m).reduce((s, r) => s + parseVal(r.revenue), 0));
             const targetList2026 = availableMonths.map(m => deptData.filter(d => d.year == 2026 && d.month == m).reduce((s, r) => s + parseVal(r.target), 0));
             
-            // Generate point objects assigning forest green (#228b22) if target is met, and theme red (#ff1e56) if missed
             const dynamicColoredBars = revList2026.map((rev, idx) => {
                 const targetValue = targetList2026[idx];
                 return {
@@ -232,9 +248,54 @@
                 };
             });
 
-            // Populate updated series indices cleanly
             comparisonChart.series[0].setData(dynamicColoredBars, false);
             comparisonChart.series[1].setData(targetList2026, true);
+
+            // FIXED: Compute dynamic Department Target lists for the specified year (2026) & timeline filter
+            const distinctDepartments = [...new Set(rawData.map(item => item.department))].sort();
+            const achievedContainer = document.getElementById('hitList');
+            const missedContainer = document.getElementById('missList');
+            
+            achievedContainer.innerHTML = '';
+            missedContainer.innerHTML = '';
+
+            let hitCounter = 0, missCounter = 0;
+
+            distinctDepartments.forEach(dept => {
+                // Filter rows assigned to this looping department and match current global selections
+                const deptMetricsRows = metricsData.filter(row => row.department === dept && row.year == 2026);
+                if (deptMetricsRows.length === 0) return; // Skip if no dataset exists
+
+                const totalDeptRev = deptMetricsRows.reduce((acc, row) => acc + parseVal(row.revenue), 0);
+                const totalDeptTarget = deptMetricsRows.reduce((acc, row) => acc + parseVal(row.target), 0);
+                const percentage = totalDeptTarget > 0 ? Math.round((totalDeptRev / totalDeptTarget) * 100) : 0;
+
+                const deptItemElement = document.createElement('div');
+                deptItemElement.className = "flex justify-between items-center bg-slate-900/60 border border-white/5 p-3.5 rounded-xl text-sm font-semibold tracking-tight text-slate-200";
+                
+                if (totalDeptRev >= totalDeptTarget) {
+                    deptItemElement.innerHTML = `
+                        <span class="flex items-center gap-2">
+                            <span class="text-xs bg-[#228b22]/20 text-[#32ff7e] px-1.5 py-0.5 rounded border border-[#228b22]/30">✓</span> 
+                            ${dept}
+                        </span>
+                        <span class="font-bold text-[#32ff7e]">${percentage}%</span>`;
+                    achievedContainer.appendChild(deptItemElement);
+                    hitCounter++;
+                } else {
+                    deptItemElement.innerHTML = `
+                        <span class="flex items-center gap-2">
+                            <span class="text-xs bg-[#ff1e56]/20 text-[#ff1e56] px-2 py-0.5 rounded border border-[#ff1e56]/30">✕</span> 
+                            ${dept}
+                        </span>
+                        <span class="font-bold text-[#ff1e56]">${percentage}%</span>`;
+                    missedContainer.appendChild(deptItemElement);
+                    missCounter++;
+                }
+            });
+
+            if(hitCounter === 0) achievedContainer.innerHTML = '<p class="text-sm text-slate-500 italic p-2">No departments achieved quota in this view.</p>';
+            if(missCounter === 0) missedContainer.innerHTML = '<p class="text-sm text-slate-500 italic p-2">All filtered departments hit their targets!</p>';
         }
 
         window.onload = async () => {
