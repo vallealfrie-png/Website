@@ -163,15 +163,16 @@
                 credits: { enabled: false }
             });
 
+            // FIXED: Transformed into a mixed combination chart type.
             comparisonChart = Highcharts.chart('comparisonContainer', {
-                chart: { type: 'column', backgroundColor: 'transparent' },
+                chart: { backgroundColor: 'transparent' },
                 title: { text: 'Monthly Performance Flow', style: { color: '#fff', fontSize: '14px', fontWeight: '800' } },
                 xAxis: { categories: [], labels: { style: { color: '#94a3b8' } }, lineWidth: 0 },
                 yAxis: { title: { text: null }, gridLineColor: 'rgba(255,255,255,0.05)', labels: { style: { color: '#475569' } } },
                 series: [
-                    { name: '2025 Revenue', color: '#1e293b', data: [] },
-                    { name: '2026 Revenue', color: '#6366f1', data: [] },
-                    { name: '2026 Target', color: '#a855f7', data: [] }
+                    { type: 'column', name: '2025 Revenue', color: '#1e293b', data: [] },
+                    { type: 'column', name: '2026 Revenue', color: '#6366f1', data: [] },
+                    { type: 'line', name: '2026 Target', color: '#a855f7', data: [], marker: { radius: 4 } }
                 ],
                 credits: { enabled: false }
             });
@@ -196,7 +197,6 @@
             const growth = oldRev > 0 ? Math.round(((curRev - oldRev) / oldRev) * 100) : 0;
 
             animateValue('score2026', 0, curRev, 1000);
-            // FIXED: Animated the score2025 element using oldRev data instead of curTarget
             animateValue('score2025', 0, oldRev, 1000); 
             animateValue('growthValue', 0, growth, 1000, false);
             animateValue('revText', 0, curRev, 1000);
