@@ -118,10 +118,37 @@
 
         let masterData = [], charts = {}, maxYear, activeMonths = [];
 
+        // Count Animation Engine
+        function animateNumber(id, target, prefix = '', suffix = '') {
+            const el = document.getElementById(id);
+            if (!el) return;
+            
+            const start = parseInt(el.textContent.replace(/[^0-9.-]+/g, "")) || 0;
+            const duration = 800; 
+            const startTime = performance.now();
+
+            function update(now) {
+                const elapsed = now - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                // EaseOutQuad smoothing
+                const ease = progress * (2 - progress);
+                const current = Math.round(start + (target - start) * ease);
+
+                el.textContent = `${prefix}${current.toLocaleString()}${suffix}`;
+
+                if (progress < 1) {
+                    requestAnimationFrame(update);
+                } else {
+                    el.textContent = `${prefix}${Math.round(target).toLocaleString()}${suffix}`;
+                }
+            }
+            requestAnimationFrame(update);
+        }
+
         async function init() {
             let rows = [], p = 0;
             while (true) {
-                // Fixed: Added systematic date ordering to guarantee chunks merge predictably
                 const { data, error } = await sb.from('database')
                     .select('*')
                     .order('date', { ascending: true })
@@ -136,10 +163,9 @@
             masterData = rows.map(r => {
                 const dateStr = r.date || "2026-01-01"; 
                 
-                // Fixed: Directly parsing string splits to secure timezone normalization boundaries
                 const parts = dateStr.split('T')[0].split('-'); 
                 const year = parseInt(parts[0], 10);
-                const month = parseInt(parts[1], 10) - 1; // 0-indexed adjustment for JavaScript components
+                const month = parseInt(parts[1], 10) - 1; 
                 const day = parseInt(parts[2], 10);
 
                 return { 
@@ -180,11 +206,13 @@
                 const sub = mVal === "all" ? data.filter(d => d.y === yr && activeMonths.includes(d.m)) : data.filter(d => d.y === yr && d.m === parseInt(mVal));
                 return { yr, r: sub.reduce((s,d)=>s+d.amt,0), n: sub.length };
             });
-            // Fixed decimal processing for standard formatting logic
-            document.getElementById('valYear3').textContent = `₱${Math.round(stats[2].r).toLocaleString()}`;
-            document.getElementById('cenYear3').textContent = `${stats[2].n.toLocaleString()} Patients`;
-            document.getElementById('valYear2').textContent = `₱${Math.round(stats[1].r).toLocaleString()}`;
-            document.getElementById('cenYear2').textContent = `${stats[1].n.toLocaleString()} Patients`;
+            
+            // Integrated Count Animations Here
+            animateNumber('valYear3', stats[2].r, '₱');
+            animateNumber('cenYear3', stats[2].n, '', ' Patients');
+            animateNumber('valYear2', stats[1].r, '₱');
+            animateNumber('cenYear2', stats[1].n, '', ' Patients');
+
             const diff = stats[1].r ? ((stats[2].r - stats[1].r) / stats[1].r * 100) : 0;
             const vEl = document.getElementById('varRev');
             vEl.textContent = `${diff >= 0 ? '+' : ''}${diff.toFixed(1)}%`;
