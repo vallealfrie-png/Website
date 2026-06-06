@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Central Intelligence | Login</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root { 
+      --corp-green: #007941; 
+      --corp-light: #10b981; 
+      --glass-bg: rgba(255, 255, 255, 0.08); 
+      --glass-border: rgba(255, 255, 255, 0.2); 
+    }
+    body { 
+      margin: 0; 
+      padding: 0; 
+      overflow: hidden; 
+      background: radial-gradient(circle at center, #064e3b 0%, #022c22 100%); 
+      font-family: ui-sans-serif, system-ui; 
+      min-height: 100vh; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      perspective: 1200px; 
+    }
+    #bg-canvas { 
+      position: fixed; 
+      top: 0; 
+      left: 0; 
+      z-index: -1; 
+      pointer-events: none; 
+    }
+    .glass-card { 
+      position: relative; 
+      width: 100%; 
+      max-width: 380px; 
+      background: var(--glass-bg); 
+      backdrop-filter: blur(20px); 
+      -webkit-backdrop-filter: blur(20px); 
+      border: 1px solid var(--glass-border); 
+      border-radius: 2.5rem; 
+      padding: 2.5rem; 
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); 
+      opacity: 0; 
+      transform: translateZ(-300px) scale(0.3); 
+      animation: cardProject 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; 
+      overflow: hidden; 
+    }
+    .glass-card::after { 
+      content: ""; 
+      position: absolute; 
+      top: -100%; 
+      left: 0; 
+      width: 100%; 
+      height: 4px; 
+      background: linear-gradient(to bottom, transparent, var(--corp-light), transparent); 
+      animation: scan 4s linear infinite; 
+      box-shadow: 0 0 15px var(--corp-light); 
+    }
+    @keyframes scan { 
+      0% { top: -10%; } 
+      100% { top: 110%; } 
+    }
+    @keyframes cardProject { 
+      to { opacity: 1; transform: translateZ(0px) scale(1); } 
+    }
+    input { 
+      background: rgba(0, 0, 0, 0.2) !important; 
+      border: 1px solid rgba(255, 255, 255, 0.1) !important; 
+      color: white !important; 
+    }
+    input:focus { 
+      border-color: var(--corp-light) !important; 
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.3) !important; 
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="bg-canvas"></canvas>
+
+  <div class="glass-card">
+    <div class="flex justify-center mb-6">
+      <img src="https://i.imgur.com/VbZKWAf.png" alt="Logo" class="h-16 w-auto object-contain brightness-110" />
+    </div>
+    
+    <form id="login-form" class="space-y-5">
+      <div>
+        <label class="block pl-1 text-[9px] font-bold text-emerald-500 uppercase tracking-widest mb-2">Identifier</label>
+        <input id="email" type="email" required placeholder="email@hospital.com" class="w-full px-4 py-3 rounded-xl outline-none text-sm" />
+      </div>
+      <div>
+        <label class="block pl-1 text-[9px] font-bold text-emerald-500 uppercase tracking-widest mb-2">Access Key</label>
+        <div class="relative">
+          <input id="password" type="password" required placeholder="••••••••" class="w-full px-4 py-3 rounded-xl outline-none text-sm pr-12" />
+          <button type="button" id="togglePassword" class="absolute right-4 top-3 text-emerald-400 focus:outline-none">👁️</button>
+        </div>
+      </div>
+      <button type="submit" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-all text-xs uppercase tracking-widest shadow-lg active:scale-95">Initialize Login</button>
+    </form>
+    
+    <p id="error" class="hidden text-red-400 text-center mt-4 text-[10px] bg-red-900/20 p-2 rounded-lg"></p>
+  </div>
+
+  <script>
+    // --- GATEKEEPER ACCOUNT CONFIGURATION ---
+    // Swap these strings out with the credentials you will provide later
+    const CENTRAL_SUPABASE_URL = 'https://jhldmarwkulkcjnrjvfk.supabase.co'; 
+    const CENTRAL_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpobGRtYXJ3a3Vsa2NqbnJqdmZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODAzMjQsImV4cCI6MjA5MTg1NjMyNH0.AhjpHXlZSgWNlEshgc0giSSUvHV249f34424i-5g8do';
+
+    const dbClient = supabase.createClient(CENTRAL_SUPABASE_URL, CENTRAL_SUPABASE_ANON_KEY);
+
+    // Password view toggle engine logic
+    const passInput = document.getElementById('password');
+    const toggleBtn = document.getElementById('togglePassword');
+    toggleBtn.addEventListener('click', () => {
+      passInput.type = (passInput.type === 'password') ? 'text' : 'password';
+      toggleBtn.textContent = (passInput.type === 'password') ? '👁️' : '🙈';
+    });
+
+    // Form interception and submission logic
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const err = document.getElementById('error');
+      
+      err.classList.add('hidden');
+
+      // Authenticate directly against the single authentication system
+      const { data: authData, error } = await dbClient.auth.signInWithPassword({ email, password });
+      
+      if (error) {
+        err.textContent = error.message;
+        err.classList.remove('hidden');
+        return;
+      }
+
+      // Success context tracking - redirecting browser straight into website.html portal
+      window.location.href = "website.html";
+    });
+
+    // --- FULL MOLECULE PHYSICS CANVAS ENGINE ---
+    const canvas = document.getElementById('bg-canvas');
+    const ctx = canvas.getContext('2d');
+    let molecules = [];
+    
+    function resize() { 
+      canvas.width = window.innerWidth; 
+      canvas.height = window.innerHeight; 
+      initMolecules(); 
+    }
+    
+    class Molecule {
+      constructor() { this.init(); }
+      init() { 
+        this.x = Math.random() * canvas.width; 
+        this.y = Math.random() * canvas.height; 
+        this.vx = (Math.random() - 0.5) * 1.2; 
+        this.vy = (Math.random() - 0.5) * 1.2; 
+        this.angle = Math.random() * Math.PI * 2; 
+        this.rotationSpeed = (Math.random() - 0.5) * 0.015; 
+        this.scale = Math.random() * 0.4 + 0.6; 
+        this.structure = [
+          { x: 0, y: 0, r: 8, color: 'rgba(255,255,255,0.3)' }, 
+          { x: 30, y: 0, r: 6, color: 'rgba(255,255,255,0.15)' }, 
+          { x: -20, y: 25, r: 6, color: 'rgba(255,255,255,0.15)' }, 
+          { x: -20, y: -25, r: 6, color: 'rgba(255,255,255,0.15)' }
+        ]; 
+        this.bonds = [[0, 1], [0, 2], [0, 3]]; 
+      }
+      draw() { 
+        ctx.save(); 
+        ctx.translate(this.x, this.y); 
+        ctx.rotate(this.angle); 
+        ctx.scale(this.scale, this.scale); 
+        ctx.strokeStyle = 'rgba(255,255,255,0.1)'; 
+        ctx.lineWidth = 2; 
+        
+        this.bonds.forEach(b => { 
+          ctx.beginPath(); 
+          ctx.moveTo(this.structure[b[0]].x, this.structure[b[0]].y); 
+          ctx.lineTo(this.structure[b[1]].x, this.structure[b[1]].y); 
+          ctx.stroke(); 
+        }); 
+        
+        this.structure.forEach(a => { 
+          ctx.beginPath(); 
+          ctx.arc(a.x, a.y, a.r, 0, Math.PI * 2); 
+          ctx.fillStyle = a.color; 
+          ctx.fill(); 
+        }); 
+        ctx.restore(); 
+      }
+      update() { 
+        this.x += this.vx; 
+        this.y += this.vy; 
+        this.angle += this.rotationSpeed; 
+        if (this.x > canvas.width + 100) this.x = -100; 
+        else if (this.x < -100) this.x = canvas.width + 100; 
+        if (this.y > canvas.height + 100) this.y = -100; 
+        else if (this.y < -100) this.y = canvas.height + 100; 
+      }
+    }
+    
+    function initMolecules() { 
+      molecules = []; 
+      const density = window.innerWidth < 640 ? 60000 : 45000; 
+      for (let i = 0; i < Math.floor((canvas.width * canvas.height) / density); i++) {
+        molecules.push(new Molecule()); 
+      }
+    }
+    
+    function animate() { 
+      ctx.clearRect(0, 0, canvas.width, canvas.height); 
+      molecules.forEach(m => { 
+        m.update(); 
+        m.draw(); 
+      }); 
+      requestAnimationFrame(animate); 
+    }
+    
+    window.addEventListener('resize', resize); 
+    resize(); 
+    animate();
+  </script>
+</body>
+</html>
