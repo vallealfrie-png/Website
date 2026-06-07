@@ -117,7 +117,6 @@
             </nav>
         </div>
 
-        <!-- Logout Action Layout -->
         <div class="flex items-center gap-4" id="auth-container">
             <span id="user-display-name" class="text-[9px] text-white/50 tracking-wider hidden sm:inline font-bold uppercase select-none"></span>
             <button onclick="handleUserLogout()" class="px-3 py-1.5 rounded-lg border border-red-500/40 text-red-400 text-[10px] font-black uppercase tracking-wider bg-red-500/5 hover:bg-red-500 hover:text-white transition-all duration-200 flex items-center gap-1.5">
@@ -192,29 +191,31 @@
     </section>
 
     <script>
-        // Initialize Supabase Client
+        // 1. Initialize Supabase Client
         const _supabaseUrl = 'https://gqlmaxlabfdvansqjufd.supabase.co';
         const _supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxbG1heGxhYmZkdmFuc3FqdWZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0NDgxODAsImV4cCI6MjA5MzAyNDE4MH0.IdiyhRSxoEGguocFAJJyfugyFfLUvQ_IR58-8gSH48U';
         
         const supabase = window.supabase.createClient(_supabaseUrl, _supabaseAnonKey);
-
         let currentUser = null;
 
-        // Check Session and update only the user display name element if logged in
+        // 2. Define Auth Functions (Global Scope for inline execution)
         async function checkUserSession() {
-            const { data: { session } } = await supabase.auth.getSession();
-            const nameDisplay = document.getElementById('user-display-name');
-            
-            if (session && session.user) {
-                currentUser = session.user;
-                nameDisplay.textContent = currentUser.email.split('@')[0];
-            } else {
-                currentUser = null;
-                nameDisplay.textContent = "GUEST";
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                const nameDisplay = document.getElementById('user-display-name');
+                
+                if (session && session.user) {
+                    currentUser = session.user;
+                    nameDisplay.textContent = currentUser.email.split('@')[0];
+                } else {
+                    currentUser = null;
+                    nameDisplay.textContent = "GUEST";
+                }
+            } catch (err) {
+                console.error("Session check error:", err);
             }
         }
 
-        // FIXED: Handle Logouts and cleanly force window rewrite back to index.html
         async function handleUserLogout() {
             try {
                 await supabase.auth.signOut();
@@ -225,7 +226,7 @@
             }
         }
 
-        // Intercept Dashboard Link Click actions if users are unauthorized
+        // 3. Setup Interactive Event Listeners
         document.querySelectorAll('.dashboard-gate').forEach(element => {
             element.addEventListener('click', function(e) {
                 if (!currentUser) {
@@ -236,11 +237,9 @@
             });
         });
 
-        // Run session checks on load
         window.addEventListener('DOMContentLoaded', checkUserSession);
-    </script>
 
-    <script>
+        // 4. Background Molecule Animation Logic
         const canvas = document.getElementById('bg-canvas');
         const ctx = canvas.getContext('2d');
         let molecules = [];
@@ -314,7 +313,8 @@
         }
 
         window.addEventListener('resize', resize);
-        resize(); animate();
+        resize(); 
+        animate();
     </script>
 </body>
 </html>
