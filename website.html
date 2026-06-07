@@ -118,9 +118,11 @@
         </div>
 
         <div class="flex items-center gap-4" id="auth-container">
-            <div class="w-8 h-8 rounded-full border border-white/20 bg-white/5 flex items-center justify-center text-white/40">
-                <i class="fa-solid fa-circle-notch class animate-spin text-xs"></i>
-            </div>
+            <span id="user-display-name" class="text-[9px] text-white/50 tracking-wider hidden sm:inline font-bold uppercase select-none"></span>
+            <button onclick="handleUserLogout()" class="px-3 py-1.5 rounded-lg border border-red-500/40 text-red-400 text-[10px] font-black uppercase tracking-wider bg-red-500/5 hover:bg-red-500 hover:text-white transition-all duration-200 flex items-center gap-1.5">
+                <i class="fa-solid fa-right-from-bracket text-xs"></i>
+                <span>Log Out</span>
+            </button>
         </div>
     </header>
 
@@ -193,45 +195,34 @@
         const _supabaseUrl = 'https://gqlmaxlabfdvansqjufd.supabase.co';
         const _supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxbG1heGxhYmZkdmFuc3FqdWZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0NDgxODAsImV4cCI6MjA5MzAyNDE4MH0.IdiyhRSxoEGguocFAJJyfugyFfLUvQ_IR58-8gSH48U';
         
-        // FIX: Using window.supabase to avoid self-reference initialization errors
+        // Using window.supabase to grab the library context correctly
         const supabase = window.supabase.createClient(_supabaseUrl, _supabaseAnonKey);
 
         let currentUser = null;
 
-        // Check Login State and Modify UI Elements Dynamically
+        // Check Session and update only the user display name element if logged in
         async function checkUserSession() {
             const { data: { session } } = await supabase.auth.getSession();
-            const authContainer = document.getElementById('auth-container');
+            const nameDisplay = document.getElementById('user-display-name');
             
             if (session && session.user) {
                 currentUser = session.user;
-                // Render Authorized Template with clear "Log Out" button text layout
-                authContainer.innerHTML = `
-                    <div class="flex items-center gap-4">
-                        <span class="text-[9px] text-white/50 tracking-wider hidden sm:inline font-bold uppercase select-none">
-                            ${currentUser.email.split('@')[0]}
-                        </span>
-                        <button onclick="handleUserLogout()" class="px-3 py-1.5 rounded-lg border border-red-500/40 text-red-400 text-[10px] font-black uppercase tracking-wider bg-red-500/5 hover:bg-red-500 hover:text-white transition-all duration-200 flex items-center gap-1.5">
-                            <i class="fa-solid fa-right-from-bracket text-xs"></i>
-                            <span>Log Out</span>
-                        </button>
-                    </div>
-                `;
+                nameDisplay.textContent = currentUser.email.split('@')[0];
             } else {
                 currentUser = null;
-                // Render Unauthenticated Action Link to login.html
-                authContainer.innerHTML = `
-                    <a href="login.html" class="px-4 py-1.5 rounded-lg border border-[#a7c957]/40 text-[#a7c957] text-[10px] font-black uppercase tracking-wider bg-[#a7c957]/5 hover:bg-[#a7c957] hover:text-emerald-950 transition-all duration-200">
-                        Login
-                    </a>
-                `;
+                nameDisplay.textContent = "GUEST";
             }
         }
 
         // Handle Logouts Safely
         async function handleUserLogout() {
-            await supabase.auth.signOut();
-            window.location.reload();
+            try {
+                await supabase.auth.signOut();
+                alert('Logged out successfully!');
+                window.location.reload();
+            } catch (error) {
+                console.error("Logout failed:", error);
+            }
         }
 
         // Intercept Dashboard Link Click actions if users are unauthorized
@@ -239,13 +230,12 @@
             element.addEventListener('click', function(e) {
                 if (!currentUser) {
                     e.preventDefault();
-                    alert('Access Restricted. Please log in first to view system analytics models.');
-                    window.location.href = 'login.html';
+                    alert('Access Restricted. Active user session required.');
                 }
             });
         });
 
-        // Run authentications check on window load
+        // Run session checks on load
         window.addEventListener('DOMContentLoaded', checkUserSession);
     </script>
 
