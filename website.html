@@ -191,17 +191,18 @@
     </section>
 
     <script>
-        // 1. Initialize Supabase Client
+        // 1. Initialize Supabase Client safely using a unique identifier name
         const _supabaseUrl = 'https://gqlmaxlabfdvansqjufd.supabase.co';
         const _supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxbG1heGxhYmZkdmFuc3FqdWZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0NDgxODAsImV4cCI6MjA5MzAyNDE4MH0.IdiyhRSxoEGguocFAJJyfugyFfLUvQ_IR58-8gSH48U';
         
-        const supabase = window.supabase.createClient(_supabaseUrl, _supabaseAnonKey);
+        // Changed "supabase" to "supabaseClient" to avoid collision with global CDN definitions
+        const supabaseClient = window.supabase.createClient(_supabaseUrl, _supabaseAnonKey);
         let currentUser = null;
 
-        // 2. Define Auth Functions (Global Scope for inline execution)
+        // 2. Define Authentication Routines
         async function checkUserSession() {
             try {
-                const { data: { session } } = await supabase.auth.getSession();
+                const { data: { session } } = await supabaseClient.auth.getSession();
                 const nameDisplay = document.getElementById('user-display-name');
                 
                 if (session && session.user) {
@@ -212,21 +213,21 @@
                     nameDisplay.textContent = "GUEST";
                 }
             } catch (err) {
-                console.error("Session check error:", err);
+                console.error("Session lookup error:", err);
             }
         }
 
         async function handleUserLogout() {
             try {
-                await supabase.auth.signOut();
+                await supabaseClient.auth.signOut();
                 alert('Logged out successfully!');
                 window.location.href = 'index.html'; 
             } catch (error) {
-                console.error("Logout failed:", error);
+                console.error("Logout execution failed:", error);
             }
         }
 
-        // 3. Setup Interactive Event Listeners
+        // 3. Intercept and Gate Protected Navigation Elements
         document.querySelectorAll('.dashboard-gate').forEach(element => {
             element.addEventListener('click', function(e) {
                 if (!currentUser) {
@@ -239,7 +240,7 @@
 
         window.addEventListener('DOMContentLoaded', checkUserSession);
 
-        // 4. Background Molecule Animation Logic
+        // 4. Background Canvas Graphic Engine
         const canvas = document.getElementById('bg-canvas');
         const ctx = canvas.getContext('2d');
         let molecules = [];
