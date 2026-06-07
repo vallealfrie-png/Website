@@ -95,7 +95,7 @@
                         </a>
 
                         <a href="package.html" class="dropdown-link dashboard-gate">
-                            <i class="fa-solid fa-line-chart text-xs"></i>
+                            <i class="fa-solid fa-chart-line text-xs"></i>
                             <span class="text-[10px] tracking-wide">Package Availment</span>
                         </a>
 
@@ -192,7 +192,9 @@
         // Initialize Supabase Client
         const _supabaseUrl = 'https://gqlmaxlabfdvansqjufd.supabase.co';
         const _supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxbG1heGxhYmZkdmFuc3FqdWZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0NDgxODAsImV4cCI6MjA5MzAyNDE4MH0.IdiyhRSxoEGguocFAJJyfugyFfLUvQ_IR58-8gSH48U';
-        const supabase = supabase.createClient(_supabaseUrl, _supabaseAnonKey);
+        
+        // FIX: Using window.supabase to avoid self-reference initialization errors
+        const supabase = window.supabase.createClient(_supabaseUrl, _supabaseAnonKey);
 
         let currentUser = null;
 
@@ -203,12 +205,15 @@
             
             if (session && session.user) {
                 currentUser = session.user;
-                // Render Authorized Template Profile and Logout Link Action
+                // Render Authorized Template with clear "Log Out" button text layout
                 authContainer.innerHTML = `
-                    <div class="flex items-center gap-3">
-                        <span class="text-[9px] text-white/50 tracking-wider hidden sm:inline font-bold uppercase select-none">${currentUser.email.split('@')[0]}</span>
-                        <button onclick="handleUserLogout()" title="Logout" class="w-8 h-8 rounded-full border border-[#a7c957]/40 bg-[#a7c957]/10 flex items-center justify-center text-[#a7c957] hover:bg-red-500/10 hover:border-red-500/40 hover:text-red-400 transition-all duration-200">
+                    <div class="flex items-center gap-4">
+                        <span class="text-[9px] text-white/50 tracking-wider hidden sm:inline font-bold uppercase select-none">
+                            ${currentUser.email.split('@')[0]}
+                        </span>
+                        <button onclick="handleUserLogout()" class="px-3 py-1.5 rounded-lg border border-red-500/40 text-red-400 text-[10px] font-black uppercase tracking-wider bg-red-500/5 hover:bg-red-500 hover:text-white transition-all duration-200 flex items-center gap-1.5">
                             <i class="fa-solid fa-right-from-bracket text-xs"></i>
+                            <span>Log Out</span>
                         </button>
                     </div>
                 `;
