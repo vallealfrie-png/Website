@@ -117,6 +117,7 @@
             </nav>
         </div>
 
+        <!-- Logout Action Layout -->
         <div class="flex items-center gap-4" id="auth-container">
             <span id="user-display-name" class="text-[9px] text-white/50 tracking-wider hidden sm:inline font-bold uppercase select-none"></span>
             <button onclick="handleUserLogout()" class="px-3 py-1.5 rounded-lg border border-red-500/40 text-red-400 text-[10px] font-black uppercase tracking-wider bg-red-500/5 hover:bg-red-500 hover:text-white transition-all duration-200 flex items-center gap-1.5">
@@ -195,7 +196,6 @@
         const _supabaseUrl = 'https://gqlmaxlabfdvansqjufd.supabase.co';
         const _supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxbG1heGxhYmZkdmFuc3FqdWZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0NDgxODAsImV4cCI6MjA5MzAyNDE4MH0.IdiyhRSxoEGguocFAJJyfugyFfLUvQ_IR58-8gSH48U';
         
-        // Using window.supabase to grab the library context correctly
         const supabase = window.supabase.createClient(_supabaseUrl, _supabaseAnonKey);
 
         let currentUser = null;
@@ -214,12 +214,12 @@
             }
         }
 
-        // Handle Logouts Safely
+        // FIXED: Handle Logouts and cleanly force window rewrite back to index.html
         async function handleUserLogout() {
             try {
                 await supabase.auth.signOut();
                 alert('Logged out successfully!');
-                window.location.reload();
+                window.location.href = 'index.html'; 
             } catch (error) {
                 console.error("Logout failed:", error);
             }
@@ -230,7 +230,8 @@
             element.addEventListener('click', function(e) {
                 if (!currentUser) {
                     e.preventDefault();
-                    alert('Access Restricted. Active user session required.');
+                    alert('Access Restricted. Please log in through index.html first.');
+                    window.location.href = 'index.html';
                 }
             });
         });
