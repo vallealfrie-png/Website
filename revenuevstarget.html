@@ -8,10 +8,12 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://code.highcharts.com/highcharts.js"></script>
     <script src="https://code.highcharts.com/highcharts-more.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
         body { font-family: 'Plus Jakarta Sans', sans-serif; background: #020617; color: #f8fafc; }
+        
         .glowing-border {
             position: relative;
             background: rgba(15, 23, 42, 0.9);
@@ -25,95 +27,124 @@
             mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
             -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none;
         }
+
+        /* Access Denied Warning Overlay Styles */
+        #accessDeniedModal {
+            position: fixed; inset: 0; background: rgba(2, 6, 23, 0.98);
+            backdrop-filter: blur(12px); z-index: 10000; display: none;
+            align-items: center; justify-content: center; padding: 20px;
+        }
+        .denied-box {
+            max-width: 500px; width: 100%; background: #0b0206;
+            border: 2px solid #ff1e56; box-shadow: 0 0 50px rgba(255, 30, 86, 0.3);
+            border-radius: 24px; text-align: center; padding: 50px 32px;
+        }
     </style>
 </head>
 <body class="min-h-screen pb-12">
 
-    <nav class="border-b border-white/5 px-8 py-5 mb-10 bg-slate-900/40 backdrop-blur-xl sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto flex justify-between items-center">
-            <div class="flex items-center">
-                <a href="website.html" class="flex items-center space-x-2 group">
-                    <div class="w-8 h-8 bg-slate-800 border border-white/10 rounded-lg flex items-center justify-center group-hover:bg-indigo-600 group-hover:border-indigo-400 transition-all duration-300">
-                        <svg class="w-4 h-4 text-slate-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
-                        </svg>
-                    </div>
-                    <span class="text-[11px] font-black uppercase tracking-widest text-slate-400 group-hover:text-white transition-colors">Home</span>
-                </a>
-                <div class="h-6 w-[1px] bg-white/10 mx-6"></div>
-                <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
-                    </div>
-                    <h1 class="text-lg font-extrabold tracking-tight text-white uppercase">KPI Department Revenue & Target</h1>
-                </div>
+    <div id="accessDeniedModal">
+        <div class="denied-box animate-pulse">
+            <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-[#ff1e56]/10 border border-[#ff1e56]/30 text-[#ff1e56] text-4xl mb-6">
+                <i class="fa-solid fa-shield-halved"></i>
             </div>
+            <h1 class="text-4xl font-black uppercase text-[#ff1e56] tracking-tighter mb-3">Access Denied</h1>
+            <p class="text-xs text-slate-400 font-semibold tracking-wide max-w-sm mx-auto leading-relaxed mb-8">
+                Security clearance verification failed. You must be explicitly authenticated to establish an active handshake context with this department engine.
+            </p>
+            <a href="index.html" class="inline-block px-8 py-3 border.5 border-[#ff1e56] bg-[#ff1e56]/10 text-[#ff1e56] text-[11px] font-black uppercase tracking-[0.2em] rounded-xl hover:bg-[#ff1e56] hover:text-white shadow-[0_0_20px_rgba(255,30,86,0.15)] transition-all duration-300">
+                <i class="fa-solid fa-right-to-bracket mr-2"></i>Return to Login
+            </a>
         </div>
-    </nav>
+    </div>
 
-    <div class="max-w-7xl mx-auto px-6 space-y-8">
-        <div class="glowing-border p-2 flex flex-wrap gap-2 items-center">
-            <select id="monthSelect" class="flex-1 bg-transparent text-sm p-4 font-bold text-white outline-none cursor-pointer rounded-xl">
-                <option class="bg-slate-900" value="ALL">Year-to-Date (All Months)</option>
-            </select>
-            <select id="deptSelect" class="flex-1 bg-transparent text-sm p-4 font-bold text-white outline-none cursor-pointer rounded-xl border-l border-white/10">
-                <option class="bg-slate-900" value="ALL">Consolidated Hospital</option>
-            </select>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="glowing-border p-8 text-center sm:text-left">
-                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">2026 Actual Revenue</p>
-                <h3 id="score2026" class="text-3xl lg:text-4xl font-black text-white tracking-tighter">₱0</h3>
-            </div>
-            <div class="glowing-border p-8 text-center sm:text-left">
-                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">2025 Actual Revenue</p>
-                <h3 id="score2025" class="text-3xl lg:text-4xl font-black text-indigo-400 tracking-tighter">₱0</h3>
-            </div>
-            <div class="glowing-border p-8 text-center sm:text-left">
-                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">YoY Growth</p>
-                <h3 id="growthValue" class="text-3xl lg:text-4xl font-black tracking-tighter text-white">0%</h3>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div class="glowing-border p-8 flex flex-col justify-between">
-                <div class="flex items-center justify-between gap-4 w-full mb-4">
-                    <div class="text-left min-w-[120px]">
-                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Current Revenue</p>
-                        <p id="revText" class="text-xl lg:text-2xl font-black text-indigo-400">₱0</p>
-                    </div>
-                    <div class="text-right min-w-[120px]">
-                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Target Quota</p>
-                        <p id="targetText" class="text-xl lg:text-2xl font-black text-white">₱0</p>
+    <div id="dashboardViewport">
+        <nav class="border-b border-white/5 px-8 py-5 mb-10 bg-slate-900/40 backdrop-blur-xl sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto flex justify-between items-center">
+                <div class="flex items-center">
+                    <a href="website.html" class="flex items-center space-x-2 group">
+                        <div class="w-8 h-8 bg-slate-800 border border-white/10 rounded-lg flex items-center justify-center group-hover:bg-indigo-600 group-hover:border-indigo-400 transition-all duration-300">
+                            <svg class="w-4 h-4 text-slate-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                            </svg>
+                        </div>
+                        <span class="text-[11px] font-black uppercase tracking-widest text-slate-400 group-hover:text-white transition-colors">Home</span>
+                    </a>
+                    <div class="h-6 w-[1px] bg-white/10 mx-6"></div>
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                        </div>
+                        <h1 class="text-lg font-extrabold tracking-tight text-white uppercase">KPI Department Revenue & Target</h1>
                     </div>
                 </div>
-                <div class="w-full h-[260px]">
-                    <div id="gaugeContainer" class="w-full h-full"></div>
+            </div>
+        </nav>
+
+        <div class="max-w-7xl mx-auto px-6 space-y-8">
+            <div class="glowing-border p-2 flex flex-wrap gap-2 items-center">
+                <select id="monthSelect" class="flex-1 bg-transparent text-sm p-4 font-bold text-white outline-none cursor-pointer rounded-xl">
+                    <option class="bg-slate-900" value="ALL">Year-to-Date (All Months)</option>
+                </select>
+                <select id="deptSelect" class="flex-1 bg-transparent text-sm p-4 font-bold text-white outline-none cursor-pointer rounded-xl border-l border-white/10">
+                    <option class="bg-slate-900" value="ALL">Consolidated Hospital</option>
+                </select>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="glowing-border p-8 text-center sm:text-left">
+                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">2026 Actual Revenue</p>
+                    <h3 id="score2026" class="text-3xl lg:text-4xl font-black text-white tracking-tighter">₱0</h3>
+                </div>
+                <div class="glowing-border p-8 text-center sm:text-left">
+                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">2025 Actual Revenue</p>
+                    <h3 id="score2025" class="text-3xl lg:text-4xl font-black text-indigo-400 tracking-tighter">₱0</h3>
+                </div>
+                <div class="glowing-border p-8 text-center sm:text-left">
+                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">YoY Growth</p>
+                    <h3 id="growthValue" class="text-3xl lg:text-4xl font-black tracking-tighter text-white">0%</h3>
                 </div>
             </div>
 
-            <div class="glowing-border p-6 flex flex-col">
-                <h4 class="text-xs font-black text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                    <span class="w-2.5 h-2.5 rounded-full bg-[#228b22]"></span> Achieved Target
-                </h4>
-                <div id="hitList" class="space-y-2 flex-1 overflow-y-auto max-h-[310px] pr-1">
-                    <p class="text-sm text-slate-500 italic">No data matched or targets completed.</p>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="glowing-border p-8 flex flex-col justify-between">
+                    <div class="flex items-center justify-between gap-4 w-full mb-4">
+                        <div class="text-left min-w-[120px]">
+                            <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Current Revenue</p>
+                            <p id="revText" class="text-xl lg:text-2xl font-black text-indigo-400">₱0</p>
+                        </div>
+                        <div class="text-right min-w-[120px]">
+                            <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Target Quota</p>
+                            <p id="targetText" class="text-xl lg:text-2xl font-black text-white">₱0</p>
+                        </div>
+                    </div>
+                    <div class="w-full h-[260px]">
+                        <div id="gaugeContainer" class="w-full h-full"></div>
+                    </div>
+                </div>
+
+                <div class="glowing-border p-6 flex flex-col">
+                    <h4 class="text-xs font-black text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-[#228b22]"></span> Achieved Target
+                    </h4>
+                    <div id="hitList" class="space-y-2 flex-1 overflow-y-auto max-h-[310px] pr-1">
+                        <p class="text-sm text-slate-500 italic">No data matched or targets completed.</p>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div class="glowing-border p-6 lg:col-span-2">
-                <div id="comparisonContainer" class="h-[360px]"></div>
-            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="glowing-border p-6 lg:col-span-2">
+                    <div id="comparisonContainer" class="h-[360px]"></div>
+                </div>
 
-            <div class="glowing-border p-6 flex flex-col">
-                <h4 class="text-xs font-black text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                    <span class="w-2.5 h-2.5 rounded-full bg-[#ff1e56]"></span> Missed Target
-                </h4>
-                <div id="missList" class="space-y-2 flex-1 overflow-y-auto max-h-[310px] pr-1">
-                    <p class="text-sm text-slate-500 italic">No items identified.</p>
+                <div class="glowing-border p-6 flex flex-col">
+                    <h4 class="text-xs font-black text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-[#ff1e56]"></span> Missed Target
+                    </h4>
+                    <div id="missList" class="space-y-2 flex-1 overflow-y-auto max-h-[310px] pr-1">
+                        <p class="text-sm text-slate-500 italic">No items identified.</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -122,7 +153,13 @@
     <script>
         const SUPABASE_URL = 'https://jhldmarwkulkcjnrjvfk.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpobGRtYXJ3a3Vsa2NqbnJqdmZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODAzMjQsImV4cCI6MjA5MTg1NjMyNH0.AhjpHXlZSgWNlEshgc0giSSUvHV249f34424i-5g8do';
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // Initializing with explicitly isolated session parameters
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: {
+                storageKey: 'revenue-target-dashboard-session'
+            }
+        });
 
         let gaugeChart, comparisonChart;
         const MONTH_ORDER = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -254,7 +291,6 @@
             comparisonChart.series[0].setData(dynamicColoredBars, false);
             comparisonChart.series[1].setData(targetList2026, true);
 
-            // Refreshed layout calculations targeting specific status list blocks
             const distinctDepartments = [...new Set(rawData.map(item => item.department))].sort();
             const achievedContainer = document.getElementById('hitList');
             const missedContainer = document.getElementById('missList');
@@ -301,6 +337,19 @@
         }
 
         window.onload = async () => {
+            // STEP 1: Verify dashboard credentials prior to populating categories
+            const { data: { session }, error: authError } = await supabaseClient.auth.getSession();
+            
+            if (authError || !session) {
+                console.warn('Unauthorized access validation state active.');
+                // Shield user dashboard viewport from layout leaks
+                document.getElementById('dashboardViewport').style.display = 'none';
+                // Deploy the Access Denied Overlay
+                document.getElementById('accessDeniedModal').style.display = 'flex';
+                return; // Complete logic processing halt
+            }
+
+            // STEP 2: Initiate safe pipeline load when verified
             initCharts();
             const { data } = await supabaseClient.from('revenue_targets').select('department, month').limit(2000);
             if (!data) return;
@@ -328,6 +377,14 @@
             document.getElementById('deptSelect').addEventListener('change', refreshData);
             
             setTimeout(refreshData, 100);
+
+            // STEP 3: Monitor auth state continuously for downstream signouts
+            supabaseClient.auth.onAuthStateChange((event, currentSession) => {
+                if (event === 'SIGNED_OUT' || !currentSession) {
+                    document.getElementById('dashboardViewport').style.display = 'none';
+                    document.getElementById('accessDeniedModal').style.display = 'flex';
+                }
+            });
         };
     </script>
 </body>
