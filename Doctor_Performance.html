@@ -221,6 +221,15 @@
         let emergencyVanguardList = [];
 
         async function init() {
+            // Check if user has an authenticated session
+            const { data: { session }, error: authError } = await sb.auth.getSession();
+            
+            if (authError || !session) {
+                console.log('Unauthorized access attempt. Redirecting to login...');
+                window.location.href = 'index.html'; // Adjust this filename if your login screen is named differently
+                return;
+            }
+
             let allRows = [], rangeStart = 0, pageSize = 1000;
             const progressBar = document.getElementById('progressBar');
             try {
