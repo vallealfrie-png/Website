@@ -61,156 +61,183 @@
 
     <canvas id="bg-canvas"></canvas>
 
-    <header class="fixed top-0 w-full z-50 p-4 px-12 flex justify-between items-center glass border-b border-white/10 h-[75px]">
-        <div class="flex items-center gap-10">
-            <img src="https://i.imgur.com/VWEvNnK.png" alt="Logo" class="h-8 bg-white/90 p-1 rounded-lg">
+    <div id="access-denied-screen" class="fixed inset-0 z-[1000] flex flex-col justify-center items-center bg-black/95 text-center px-4">
+        <div class="p-8 md:p-12 bg-red-950/20 border border-red-500/30 rounded-[2rem] max-w-xl backdrop-blur-md shadow-2xl flex flex-col items-center">
+            <div class="w-24 h-24 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center text-4xl mb-6 border border-red-500/20 animate-pulse">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h1 class="text-4xl md:text-6xl font-black text-red-500 uppercase tracking-tighter mb-4">
+                Access Denied
+            </h1>
+            <p class="text-sm md:text-base text-red-200/70 max-w-md leading-relaxed mb-8 font-medium">
+                You do not have active clearance to view Marketing Central Intelligence. Please return to the command terminal portal to verify credentials.
+            </p>
+            <a href="index.html" class="px-6 py-3 bg-red-600 hover:bg-red-500 text-white font-bold text-xs uppercase tracking-widest rounded-xl transition-all duration-200 shadow-lg shadow-red-600/20 flex items-center gap-2">
+                <i class="fa-solid fa-lock-open"></i> Return to Login
+            </a>
+        </div>
+    </div>
 
-            <nav class="flex gap-8 text-[11px] font-bold tracking-widest uppercase text-white/80">
+    <div id="protected-content" class="hidden">
+        <header class="fixed top-0 w-full z-50 p-4 px-12 flex justify-between items-center glass border-b border-white/10 h-[75px]">
+            <div class="flex items-center gap-10">
+                <img src="https://i.imgur.com/VWEvNnK.png" alt="Logo" class="h-8 bg-white/90 p-1 rounded-lg">
+
+                <nav class="flex gap-8 text-[11px] font-bold tracking-widest uppercase text-white/80">
+                    <div class="nav-item">
+                        <a href="#" class="hover:text-[#a7c957] transition-colors flex items-center gap-2">
+                            Dashboard <i class="fa-solid fa-chevron-down text-[8px] opacity-50"></i>
+                        </a>
+                        <div class="dropdown-menu">
+                            <p class="px-4 py-2 text-[8px] text-emerald-500/60 font-black tracking-[0.3em] uppercase">Intelligence Hub</p>
+                            
+                            <a href="Doctor_Performance.html" class="dropdown-link dashboard-gate">
+                                <i class="fa-solid fa-user-doctor text-xs"></i>
+                                <span class="text-[10px] tracking-wide">Doctor Performance</span>
+                            </a>
+
+                            <a href="revenuevstarget.html" class="dropdown-link dashboard-gate">
+                                <i class="fa-solid fa-hand-holding-dollar text-xs"></i>
+                                <span class="text-[10px] tracking-wide">Revenue VS Target</span>
+                            </a>
+
+                            <a href="centers.html" class="dropdown-link dashboard-gate">
+                                <i class="fa-solid fa-brain text-xs"></i>
+                                <span class="text-[10px] tracking-wide">Centers Census</span>
+                            </a>
+
+                            <a href="visual.html" class="dropdown-link dashboard-gate">
+                                <i class="fa-solid fa-folder-tree text-xs"></i>
+                                <span class="text-[10px] tracking-wide">Document Tracker</span>
+                            </a>
+
+                            <a href="package.html" class="dropdown-link dashboard-gate">
+                                <i class="fa-solid fa-chart-line text-xs"></i>
+                                <span class="text-[10px] tracking-wide">Package Availment</span>
+                            </a>
+
+                            <a href="reports.html" class="dropdown-link dashboard-gate">
+                                <i class="fa-solid fa-poll-h text-xs"></i>
+                                <span class="text-[10px] tracking-wide">Survey Result</span>
+                            </a>
+
+                            <div class="border-t border-white/5 my-2"></div>
+                            <a href="#" class="dropdown-link opacity-30 cursor-not-allowed">
+                                <i class="fa-solid fa-plus text-xs"></i>
+                                <span class="text-[10px] tracking-wide italic">Future System</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <a href="#" class="nav-item hover:text-[#a7c957] transition-colors py-2.5">About Us</a>
+                    <a href="#" class="nav-item hover:text-[#a7c957] transition-colors py-2.5">Contact Us</a>
+                </nav>
+            </div>
+
+            <div class="flex items-center gap-4" id="auth-container">
+                <span id="user-display-name" class="text-[9px] text-white/50 tracking-wider hidden sm:inline font-bold uppercase select-none"></span>
+                <button onclick="handleUserLogout()" class="px-3 py-1.5 rounded-lg border border-red-500/40 text-red-400 text-[10px] font-black uppercase tracking-wider bg-red-500/5 hover:bg-red-500 hover:text-white transition-all duration-200 flex items-center gap-1.5">
+                    <i class="fa-solid fa-right-from-bracket text-xs"></i>
+                    <span>Log Out</span>
+                </button>
+            </div>
+        </header>
+
+        <section class="flex flex-col justify-center items-center min-h-screen pt-[75px]">
+            <div class="relative w-full h-[600px] bg-black/40 overflow-hidden shadow-2xl border-y border-white/10">
+                <video class="absolute inset-0 w-full h-full object-cover opacity-60" autoplay muted loop playsinline>
+                    <source src="https://i.imgur.com/f0hf38l.mp4" type="video/mp4">
+                </video>
                 
-                <div class="nav-item">
-                    <a href="#" class="hover:text-[#a7c957] transition-colors flex items-center gap-2">
-                        Dashboard <i class="fa-solid fa-chevron-down text-[8px] opacity-50"></i>
-                    </a>
-                    <div class="dropdown-menu">
-                        <p class="px-4 py-2 text-[8px] text-emerald-500/60 font-black tracking-[0.3em] uppercase">Intelligence Hub</p>
-                        
-                        <a href="Doctor_Performance.html" class="dropdown-link dashboard-gate">
-                            <i class="fa-solid fa-user-doctor text-xs"></i>
-                            <span class="text-[10px] tracking-wide">Doctor Performance</span>
-                        </a>
-
-                        <a href="revenuevstarget.html" class="dropdown-link dashboard-gate">
-                            <i class="fa-solid fa-hand-holding-dollar text-xs"></i>
-                            <span class="text-[10px] tracking-wide">Revenue VS Target</span>
-                        </a>
-
-                        <a href="centers.html" class="dropdown-link dashboard-gate">
-                            <i class="fa-solid fa-brain text-xs"></i>
-                            <span class="text-[10px] tracking-wide">Centers Census</span>
-                        </a>
-
-                        <a href="visual.html" class="dropdown-link dashboard-gate">
-                            <i class="fa-solid fa-folder-tree text-xs"></i>
-                            <span class="text-[10px] tracking-wide">Document Tracker</span>
-                        </a>
-
-                        <a href="package.html" class="dropdown-link dashboard-gate">
-                            <i class="fa-solid fa-chart-line text-xs"></i>
-                            <span class="text-[10px] tracking-wide">Package Availment</span>
-                        </a>
-
-                        <a href="reports.html" class="dropdown-link dashboard-gate">
-                            <i class="fa-solid fa-poll-h text-xs"></i>
-                            <span class="text-[10px] tracking-wide">Survey Result</span>
-                        </a>
-
-                        <div class="border-t border-white/5 my-2"></div>
-                        <a href="#" class="dropdown-link opacity-30 cursor-not-allowed">
-                            <i class="fa-solid fa-plus text-xs"></i>
-                            <span class="text-[10px] tracking-wide italic">Future System</span>
-                        </a>
-                    </div>
-                </div>
-
-                <a href="#" class="nav-item hover:text-[#a7c957] transition-colors py-2.5">About Us</a>
-                <a href="#" class="nav-item hover:text-[#a7c957] transition-colors py-2.5">Contact Us</a>
-            </nav>
-        </div>
-
-        <div class="flex items-center gap-4" id="auth-container">
-            <span id="user-display-name" class="text-[9px] text-white/50 tracking-wider hidden sm:inline font-bold uppercase select-none"></span>
-            <button onclick="handleUserLogout()" class="px-3 py-1.5 rounded-lg border border-red-500/40 text-red-400 text-[10px] font-black uppercase tracking-wider bg-red-500/5 hover:bg-red-500 hover:text-white transition-all duration-200 flex items-center gap-1.5">
-                <i class="fa-solid fa-right-from-bracket text-xs"></i>
-                <span>Log Out</span>
-            </button>
-        </div>
-    </header>
-
-    <section class="flex flex-col justify-center items-center min-h-screen pt-[75px]">
-        <div class="relative w-full h-[600px] bg-black/40 overflow-hidden shadow-2xl border-y border-white/10">
-            <video class="absolute inset-0 w-full h-full object-cover opacity-60" autoplay muted loop playsinline>
-                <source src="https://i.imgur.com/f0hf38l.mp4" type="video/mp4">
-            </video>
-            
-            <div class="absolute inset-0 bg-gradient-to-r from-black/80 via-black/20 to-transparent flex items-center">
-                <div class="container mx-auto max-w-[1140px] px-12 text-white">
-                    <div class="max-w-xl">
-                        <h1 class="text-4xl md:text-6xl font-bold leading-tight mb-4">Providing <span class="text-[#a7c957]">Intelligent Insights</span></h1>
-                        <p class="text-base opacity-80 mb-8 max-w-sm leading-relaxed">Trusted marketing data and strategy for your business growth.</p>
-                        <div class="bg-white/10 backdrop-blur-md p-2 px-6 rounded-full border border-white/20 inline-block text-[10px] font-bold uppercase tracking-[0.2em]">
-                            Marketing Central Intelligence
+                <div class="absolute inset-0 bg-gradient-to-r from-black/80 via-black/20 to-transparent flex items-center">
+                    <div class="container mx-auto max-w-[1140px] px-12 text-white">
+                        <div class="max-w-xl">
+                            <h1 class="text-4xl md:text-6xl font-bold leading-tight mb-4">Providing <span class="text-[#a7c957]">Intelligent Insights</span></h1>
+                            <p class="text-base opacity-80 mb-8 max-w-sm leading-relaxed">Trusted marketing data and strategy for your business growth.</p>
+                            <div class="bg-white/10 backdrop-blur-md p-2 px-6 rounded-full border border-white/20 inline-block text-[10px] font-bold uppercase tracking-[0.2em]">
+                                Marketing Central Intelligence
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <section class="container mx-auto max-w-[1140px] px-4 -mt-16 relative z-30 grid md:grid-cols-3 gap-6 mb-12">
-        <div class="bg-white/90 backdrop-blur-sm p-8 flex flex-col items-center shadow-2xl rounded-3xl border border-white/20 transition hover:-translate-y-2 text-center">
-            <i class="fa-solid fa-chart-pie text-[#386641] text-2xl mb-4"></i>
-            <h3 class="font-bold text-gray-800 text-sm uppercase tracking-wider">Our Services</h3>
-            <button class="mt-6 w-full py-3 bg-[#6a994e] text-white rounded-xl text-[10px] font-bold uppercase">Explore</button>
-        </div>
-        <div class="bg-white/90 backdrop-blur-sm p-8 flex flex-col items-center shadow-2xl rounded-3xl border-b-4 border-red-500 transition hover:-translate-y-2 text-center">
-            <i class="fa-solid fa-magnifying-glass text-[#bc2c2c] text-2xl mb-4"></i>
-            <h3 class="font-bold text-gray-800 text-sm uppercase tracking-wider">Strategy Hub</h3>
-            <button class="mt-6 w-full py-3 bg-[#bc2c2c] text-white rounded-xl text-[10px] font-bold uppercase">Search</button>
-        </div>
-        <div class="bg-white/90 backdrop-blur-sm p-8 flex flex-col items-center shadow-2xl rounded-3xl border border-white/20 transition hover:-translate-y-2 text-center">
-            <i class="fa-solid fa-calendar-check text-[#386641] text-2xl mb-4"></i>
-            <h3 class="font-bold text-gray-800 text-sm uppercase tracking-wider">Consultation</h3>
-            <button class="mt-6 w-full py-3 bg-[#386641] text-white rounded-xl text-[10px] font-bold uppercase">Book Now</button>
-        </div>
-    </section>
+        <section class="container mx-auto max-w-[1140px] px-4 -mt-16 relative z-30 grid md:grid-cols-3 gap-6 mb-12">
+            <div class="bg-white/90 backdrop-blur-sm p-8 flex flex-col items-center shadow-2xl rounded-3xl border border-white/20 transition hover:-translate-y-2 text-center">
+                <i class="fa-solid fa-chart-pie text-[#386641] text-2xl mb-4"></i>
+                <h3 class="font-bold text-gray-800 text-sm uppercase tracking-wider">Our Services</h3>
+                <button class="mt-6 w-full py-3 bg-[#6a994e] text-white rounded-xl text-[10px] font-bold uppercase">Explore</button>
+            </div>
+            <div class="bg-white/90 backdrop-blur-sm p-8 flex flex-col items-center shadow-2xl rounded-3xl border-b-4 border-red-500 transition hover:-translate-y-2 text-center">
+                <i class="fa-solid fa-magnifying-glass text-[#bc2c2c] text-2xl mb-4"></i>
+                <h3 class="font-bold text-gray-800 text-sm uppercase tracking-wider">Strategy Hub</h3>
+                <button class="mt-6 w-full py-3 bg-[#bc2c2c] text-white rounded-xl text-[10px] font-bold uppercase">Search</button>
+            </div>
+            <div class="bg-white/90 backdrop-blur-sm p-8 flex flex-col items-center shadow-2xl rounded-3xl border border-white/20 transition hover:-translate-y-2 text-center">
+                <i class="fa-solid fa-calendar-check text-[#386641] text-2xl mb-4"></i>
+                <h3 class="font-bold text-gray-800 text-sm uppercase tracking-wider">Consultation</h3>
+                <button class="mt-6 w-full py-3 bg-[#386641] text-white rounded-xl text-[10px] font-bold uppercase">Book Now</button>
+            </div>
+        </section>
 
-    <section class="container mx-auto max-w-[1140px] px-4 py-16">
-        <div class="relative bg-black/60 backdrop-blur-md rounded-[3rem] overflow-hidden shadow-2xl p-12 md:p-20 border border-white/10">
-            <div class="ceo-glow absolute w-[500px] h-[500px] top-1/2 right-0 -translate-y-1/2 opacity-60"></div>
-            <div class="relative z-10 flex flex-col md:flex-row items-center gap-16 text-white">
-                <div class="w-full md:w-4/12 flex justify-center">
-                    <div class="rounded-[2rem] overflow-hidden border border-white/10 bg-white/5 shadow-2xl max-w-[280px]">
-                        <img src="https://i.imgur.com/bAhRhlV.jpeg" alt="Luis B. Mendoza">
-                        <div class="p-6 bg-white/5 backdrop-blur-md text-center">
-                            <p class="font-bold tracking-widest text-[11px] uppercase">Rosalie C. Operaña</p>
-                            <p class="text-[#a7c957] text-[10px] uppercase font-semibold">Sales and Marketing Director</p>
+        <section class="container mx-auto max-w-[1140px] px-4 py-16">
+            <div class="relative bg-black/60 backdrop-blur-md rounded-[3rem] overflow-hidden shadow-2xl p-12 md:p-20 border border-white/10">
+                <div class="ceo-glow absolute w-[500px] h-[500px] top-1/2 right-0 -translate-y-1/2 opacity-60"></div>
+                <div class="relative z-10 flex flex-col md:flex-row items-center gap-16 text-white">
+                    <div class="w-full md:w-4/12 flex justify-center">
+                        <div class="rounded-[2rem] overflow-hidden border border-white/10 bg-white/5 shadow-2xl max-w-[280px]">
+                            <img src="https://i.imgur.com/bAhRhlV.jpeg" alt="Luis B. Mendoza">
+                            <div class="p-6 bg-white/5 backdrop-blur-md text-center">
+                                <p class="font-bold tracking-widest text-[11px] uppercase">Rosalie C. Operaña</p>
+                                <p class="text-[#a7c957] text-[10px] uppercase font-semibold">Sales and Marketing Director</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="w-full md:w-8/12">
+                        <h2 class="text-2xl md:text-4xl font-light italic leading-relaxed mb-8">
+                            "Data tells you <span class="text-[#a7c957] font-bold">what happened</span>. Strategy tells you why. Creative tells you <span class="text-[#a7c957] font-bold">how to make it happen again</span>."
+                        </h2>
+                        <div class="flex items-center gap-4">
+                            <div class="w-20 h-1 bg-[#a7c957]/60"></div>
+                            <p class="text-[#a7c957] uppercase tracking-[0.4em] font-bold text-[11px]">Strategic Vision</p>
                         </div>
                     </div>
                 </div>
-                <div class="w-full md:w-8/12">
-                    <h2 class="text-2xl md:text-4xl font-light italic leading-relaxed mb-8">
-                        "Data tells you <span class="text-[#a7c957] font-bold">what happened</span>. Strategy tells you why. Creative tells you <span class="text-[#a7c957] font-bold">how to make it happen again</span>."
-                    </h2>
-                    <div class="flex items-center gap-4">
-                        <div class="w-20 h-1 bg-[#a7c957]/60"></div>
-                        <p class="text-[#a7c957] uppercase tracking-[0.4em] font-bold text-[11px]">Strategic Vision</p>
-                    </div>
-                </div>
             </div>
-        </div>
-    </section>
+        </section>
+    </div>
 
     <script>
-        // 1. Initialize Supabase Client safely using a unique identifier name
+        // 1. Initialize Supabase Client
         const _supabaseUrl = 'https://gqlmaxlabfdvansqjufd.supabase.co';
         const _supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxbG1heGxhYmZkdmFuc3FqdWZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0NDgxODAsImV4cCI6MjA5MzAyNDE4MH0.IdiyhRSxoEGguocFAJJyfugyFfLUvQ_IR58-8gSH48U';
         
-        // Changed "supabase" to "supabaseClient" to avoid collision with global CDN definitions
         const supabaseClient = window.supabase.createClient(_supabaseUrl, _supabaseAnonKey);
         let currentUser = null;
 
-        // 2. Define Authentication Routines
+        // 2. Define Authentication Routines & Enforce Route Gating
         async function checkUserSession() {
             try {
                 const { data: { session } } = await supabaseClient.auth.getSession();
                 const nameDisplay = document.getElementById('user-display-name');
+                const deniedScreen = document.getElementById('access-denied-screen');
+                const protectedContent = document.getElementById('protected-content');
                 
                 if (session && session.user) {
                     currentUser = session.user;
                     nameDisplay.textContent = currentUser.email.split('@')[0];
+                    
+                    // User is validated -> clear blocking screen and show website
+                    deniedScreen.classList.add('hidden');
+                    protectedContent.classList.remove('hidden');
                 } else {
                     currentUser = null;
                     nameDisplay.textContent = "GUEST";
+                    
+                    // User is not logged in -> guarantee blocking screen rules apply
+                    deniedScreen.classList.remove('hidden');
+                    protectedContent.classList.add('hidden');
                 }
             } catch (err) {
                 console.error("Session lookup error:", err);
@@ -232,7 +259,6 @@
             element.addEventListener('click', function(e) {
                 if (!currentUser) {
                     e.preventDefault();
-                    alert('Access Restricted. Please log in through index.html first.');
                     window.location.href = 'index.html';
                 }
             });
