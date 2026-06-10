@@ -102,6 +102,7 @@
             </div>
             <div class="space-y-6">
                 <div class="neon-card card-rose p-6 h-[270px]"><canvas id="locChart"></canvas></div>
+                <div class="neon-card card-slate p-6 h-[270px]"><canvas id="typeChart"></canvas></div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="neon-card card-amber p-6 h-[270px]"><canvas id="genChart"></canvas></div>
                     <div class="neon-card card-indigo p-6 h-[270px]"><canvas id="ageChart"></canvas></div>
@@ -276,10 +277,14 @@
                 const s = Object.entries(o).sort((a,b)=>b[1]-a[1]).slice(0, 6);
                 return { k: s.map(x=>x[0]), v: s.map(x=>x[1]) };
             };
-            const l = grp('location'), g = grp('gender'), a = grp('age_bracket');
+            const l = grp('location'), g = grp('gender'), a = grp('age_bracket'), t = grp('type');
+            
             draw('locChart', 'bar', l.k, [{ label: 'Patients', data: l.v, backgroundColor: neonPalette, borderRadius: 5 }], 'Geographic Clusters');
             draw('genChart', 'doughnut', g.k, [{ data: g.v, backgroundColor: neonPalette, borderWidth: 0 }], 'Gender Split');
             draw('ageChart', 'doughnut', a.k, [{ data: a.v, backgroundColor: neonPalette, borderWidth: 0 }], 'Age Distribution');
+            
+            // New type parsing chart call engine mapping column entry variations
+            draw('typeChart', 'pie', t.k, [{ data: t.v, backgroundColor: neonPalette, borderWidth: 0 }], 'Registration Type');
         }
 
         function drawSpark(id, data) {
