@@ -92,22 +92,23 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div class="neon-card overflow-hidden h-full card-slate border-opacity-20">
+            <div class="neon-card overflow-hidden card-slate border-opacity-20 h-[480px]">
                 <div class="bg-neutral-900/30 px-6 py-4 border-b border-neutral-800 font-black text-[10px] uppercase text-indigo-400 tracking-widest">Top 10 Packages (Revenue)</div>
-                <div id="topRevList" class="p-4 space-y-2 max-h-[500px] overflow-y-auto custom-scrollbar"></div>
+                <div id="topRevList" class="p-4 space-y-2 max-h-[410px] overflow-y-auto custom-scrollbar"></div>
             </div>
-            <div class="neon-card overflow-hidden h-full card-slate border-opacity-20">
+            <div class="neon-card overflow-hidden card-slate border-opacity-20 h-[480px]">
                 <div class="bg-neutral-900/30 px-6 py-4 border-b border-neutral-800 font-black text-[10px] uppercase text-white tracking-widest">Top 10 Packages (Census)</div>
-                <div id="topCenList" class="p-4 space-y-2 max-h-[500px] overflow-y-auto custom-scrollbar"></div>
+                <div id="topCenList" class="p-4 space-y-2 max-h-[410px] overflow-y-auto custom-scrollbar"></div>
             </div>
-            <div class="space-y-6">
-                <div class="neon-card card-rose p-6 h-[270px]"><canvas id="locChart"></canvas></div>
-                <div class="neon-card card-slate p-6 h-[270px]"><canvas id="typeChart"></canvas></div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="neon-card card-amber p-6 h-[270px]"><canvas id="genChart"></canvas></div>
-                    <div class="neon-card card-indigo p-6 h-[270px]"><canvas id="ageChart"></canvas></div>
-                </div>
+            <div class="neon-card card-rose p-6 h-[480px]">
+                <canvas id="locChart"></canvas>
             </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="neon-card card-slate p-6 h-[290px]"><canvas id="typeChart"></canvas></div>
+            <div class="neon-card card-amber p-6 h-[290px]"><canvas id="genChart"></canvas></div>
+            <div class="neon-card card-indigo p-6 h-[290px]"><canvas id="ageChart"></canvas></div>
         </div>
     </main>
 
@@ -208,7 +209,6 @@
                 return { yr, r: sub.reduce((s,d)=>s+d.amt,0), n: sub.length };
             });
             
-            // Integrated Count Animations Here
             animateNumber('valYear3', stats[2].r, '₱');
             animateNumber('cenYear3', stats[2].n, '', ' Patients');
             animateNumber('valYear2', stats[1].r, '₱');
@@ -282,11 +282,10 @@
             draw('locChart', 'bar', l.k, [{ label: 'Patients', data: l.v, backgroundColor: neonPalette, borderRadius: 5 }], 'Geographic Clusters');
             draw('genChart', 'doughnut', g.k, [{ data: g.v, backgroundColor: neonPalette, borderWidth: 0 }], 'Gender Split');
             draw('ageChart', 'doughnut', a.k, [{ data: a.v, backgroundColor: neonPalette, borderWidth: 0 }], 'Age Distribution');
-            
-            // New type parsing chart call engine mapping column entry variations
             draw('typeChart', 'pie', t.k, [{ data: t.v, backgroundColor: neonPalette, borderWidth: 0 }], 'Registration Type');
         }
 
+        // Mini line engine spark setup
         function drawSpark(id, data) {
             if (charts[id]) charts[id].destroy();
             charts[id] = new Chart(document.getElementById(id), {
