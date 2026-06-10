@@ -180,7 +180,7 @@
             });
 
             maxYear = Math.max(...masterData.map(d => d.y));
-            activeMonths = [...new Set(masterData.filter(d => d.y === maxYear).map(d => d.m))];
+            activeMonths = [...new Set(masterData.filter(d => d.y === maxYear).map(d => d.m))].sort((a,b)=>a-b);
             const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
             document.getElementById('monthSlicer').innerHTML = `<option value="all">Cumulative Comparison</option>` + months.map((m,i)=>`<option value="${i}">${m}</option>`).join('');
             
@@ -225,7 +225,11 @@
         function updateTrends(mVal, data) {
             let labels = [], curSet = [], preSet = [];
             if (mVal === "all") {
-                labels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                const allMonths = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                // Find latest active month index in master data to clip lines
+                const latestActiveMonth = activeMonths.length > 0 ? Math.max(...activeMonths) : 11;
+                
+                labels = allMonths.slice(0, latestActiveMonth + 1);
                 labels.forEach((_, i) => {
                     const c = data.filter(d => d.y === maxYear && d.m === i);
                     const p = data.filter(d => d.y === (maxYear-1) && d.m === i);
@@ -235,7 +239,17 @@
             } else {
                 const m = parseInt(mVal);
                 const days = new Date(maxYear, m + 1, 0).getDate();
+                
+                // Track latest day containing records to safely break trail lines
+                let maxDayWithData = 0;
                 for(let i=1; i<=days; i++) {
+                    if(data.some(d => d.y === maxYear && d.m === m && d.day === i)) {
+                        maxDayWithData = i;
+                    }
+                }
+                if(maxDayWithData === 0) maxDayWithData = days;
+
+                for(let i=1; i<=maxDayWithData; i++) {
                     labels.push(i);
                     const c = data.filter(d => d.y === maxYear && d.m === m && d.day === i);
                     const p = data.filter(d => d.y === (maxYear-1) && d.m === m && d.day === i);
@@ -282,10 +296,9 @@
             draw('locChart', 'bar', l.k, [{ label: 'Patients', data: l.v, backgroundColor: neonPalette, borderRadius: 5 }], 'Geographic Clusters');
             draw('genChart', 'doughnut', g.k, [{ data: g.v, backgroundColor: neonPalette, borderWidth: 0 }], 'Gender Split');
             draw('ageChart', 'doughnut', a.k, [{ data: a.v, backgroundColor: neonPalette, borderWidth: 0 }], 'Age Distribution');
-            draw('typeChart', 'pie', t.k, [{ data: t.v, backgroundColor: neonPalette, borderWidth: 0 }], 'Payment Type');
+            draw('typeChart', 'pie', t.k, [{ data: t.v, backgroundColor: neonPalette, borderWidth: 0 }], 'Registration Type');
         }
 
-        // Mini line engine spark setup
         function drawSpark(id, data) {
             if (charts[id]) charts[id].destroy();
             charts[id] = new Chart(document.getElementById(id), {
