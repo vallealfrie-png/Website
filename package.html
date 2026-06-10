@@ -224,23 +224,30 @@
 
         function updateTrends(mVal, data) {
             let labels = [], curSet = [], preSet = [];
+            const allMonths = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
             if (mVal === "all") {
-                const allMonths = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-                // Find latest active month index in master data to clip lines
+                // Always render full 12 month horizontal labels for the chart structure
+                labels = allMonths;
                 const latestActiveMonth = activeMonths.length > 0 ? Math.max(...activeMonths) : 11;
                 
-                labels = allMonths.slice(0, latestActiveMonth + 1);
                 labels.forEach((_, i) => {
-                    const c = data.filter(d => d.y === maxYear && d.m === i);
-                    const p = data.filter(d => d.y === (maxYear-1) && d.m === i);
-                    curSet.push({ r: c.reduce((s,d)=>s+d.amt,0), n: c.length });
+                    // Current year checks data boundaries to clip line cleanly
+                    if (i <= latestActiveMonth) {
+                        const c = data.filter(d => d.y === maxYear && d.m === i);
+                        curSet.push({ r: c.reduce((s,d)=>s+d.amt,0), n: c.length });
+                    } else {
+                        curSet.push({ r: null, n: null }); // stops line progression smoothly
+                    }
+                    
+                    // Historic previous year parses all 12 months completely
+                    const p = data.filter(d => d.y === (maxYear - 1) && d.m === i);
                     preSet.push({ r: p.reduce((s,d)=>s+d.amt,0), n: p.length });
                 });
             } else {
                 const m = parseInt(mVal);
                 const days = new Date(maxYear, m + 1, 0).getDate();
                 
-                // Track latest day containing records to safely break trail lines
                 let maxDayWithData = 0;
                 for(let i=1; i<=days; i++) {
                     if(data.some(d => d.y === maxYear && d.m === m && d.day === i)) {
@@ -249,20 +256,26 @@
                 }
                 if(maxDayWithData === 0) maxDayWithData = days;
 
-                for(let i=1; i<=maxDayWithData; i++) {
+                for(let i=1; i<=days; i++) {
                     labels.push(i);
-                    const c = data.filter(d => d.y === maxYear && d.m === m && d.day === i);
-                    const p = data.filter(d => d.y === (maxYear-1) && d.m === m && d.day === i);
-                    curSet.push({ r: c.reduce((s,d)=>s+d.amt,0), n: c.length });
+                    
+                    if (i <= maxDayWithData) {
+                        const c = data.filter(d => d.y === maxYear && d.m === m && d.day === i);
+                        curSet.push({ r: c.reduce((s,d)=>s+d.amt,0), n: c.length });
+                    } else {
+                        curSet.push({ r: null, n: null });
+                    }
+                    
+                    const p = data.filter(d => d.y === (maxYear - 1) && d.m === m && d.day === i);
                     preSet.push({ r: p.reduce((s,d)=>s+d.amt,0), n: p.length });
                 }
             }
             draw('revChart', 'line', labels, [
-                { label: `${maxYear}`, data: curSet.map(v=>v.r), borderColor: '#6366f1', tension: 0.4 }, 
+                { label: `${maxYear}`, data: curSet.map(v=>v.r), borderColor: '#6366f1', tension: 0.4, spanGaps: false }, 
                 { label: `${maxYear-1}`, data: preSet.map(v=>v.r), borderColor: '#ffffff', borderDash:[5,5], borderWidth: 1, tension: 0.4 }
             ], 'Revenue Matrix');
             draw('cenChart', 'line', labels, [
-                { label: `${maxYear}`, data: curSet.map(v=>v.n), borderColor: '#10b981', tension: 0.4 }, 
+                { label: `${maxYear}`, data: curSet.map(v=>v.n), borderColor: '#10b981', tension: 0.4, spanGaps: false }, 
                 { label: `${maxYear-1}`, data: preSet.map(v=>v.n), borderColor: '#ffffff', borderDash:[5,5], borderWidth: 1, tension: 0.4 }
             ], 'Census Matrix');
         }
