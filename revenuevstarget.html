@@ -254,7 +254,6 @@
             comparisonChart.series[0].setData(dynamicColoredBars, false);
             comparisonChart.series[1].setData(targetList2026, true);
 
-            // Refreshed layout calculations targeting specific status list blocks
             const distinctDepartments = [...new Set(rawData.map(item => item.department))].sort();
             const achievedContainer = document.getElementById('hitList');
             const missedContainer = document.getElementById('missList');
