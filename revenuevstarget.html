@@ -73,9 +73,12 @@
                 <p class="text-[10px] font-bold text-indigo-400/80 uppercase tracking-widest mb-1">2025 Actual Revenue</p>
                 <h3 id="score2025" class="text-3xl font-extrabold tracking-tight text-white">₱0</h3>
             </div>
-            <div class="bg-gray-950 neon-amber rounded-2xl p-6 transition-all duration-300 hover:scale-[1.01]">
-                <p class="text-[10px] font-bold text-amber-500/80 uppercase tracking-widest mb-1">YoY Growth</p>
-                <h3 id="growthValue" class="text-3xl font-extrabold tracking-tight text-white">0%</h3>
+            <div class="bg-gray-950 neon-amber rounded-2xl p-6 transition-all duration-300 hover:scale-[1.01] flex justify-between items-center">
+                <div>
+                    <p class="text-[10px] font-bold text-amber-500/80 uppercase tracking-widest mb-1">YoY Growth</p>
+                    <h3 id="growthValue" class="text-3xl font-extrabold tracking-tight text-white">0%</h3>
+                </div>
+                <div id="sparklineContainer" class="w-24 h-12"></div>
             </div>
         </div>
 
@@ -127,7 +130,7 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpobGRtYXJ3a3Vsa2NqbnJqdmZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODAzMjQsImV4cCI6MjA5MTg1NjMyNH0.AhjpHXlZSgWNlEshgc0giSSUvHV249f34424i-5g8do';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        let gaugeChart, comparisonChart;
+        let gaugeChart, comparisonChart, sparklineChart;
         const MONTH_ORDER = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
         const parseVal = (val) => {
@@ -146,8 +149,6 @@
                 const value = Math.round(progress * (end - start) + start);
                 
                 if (isCurrency) {
-                    // For general currency animations if needed. 
-                    // Note: score2026, score2025, targetText override static inline configurations below.
                     if (id === 'score2026') {
                         obj.innerHTML = '₱' + value.toLocaleString();
                         obj.className = "text-3xl font-extrabold tracking-tight text-[#228b22]";
@@ -179,6 +180,22 @@
         }
 
         function initCharts() {
+            // Sparkline Initialization
+            sparklineChart = Highcharts.chart('sparklineContainer', {
+                chart: { type: 'area', backgroundColor: 'transparent', margin: [2, 2, 2, 2], skipClone: true },
+                title: null, xAxis: { visible: false }, yAxis: { visible: false },
+                legend: { enabled: false }, credits: { enabled: false },
+                tooltip: { enabled: false },
+                plotOptions: {
+                    series: {
+                        enableMouseTracking: false, lineWidth: 2, shadow: false,
+                        states: { hover: { enabled: false } },
+                        marker: { enabled: false }
+                    }
+                },
+                series: [{ data: [0, 0], color: '#10b981', fillColor: 'rgba(16, 185, 129, 0.05)' }]
+            });
+
             gaugeChart = Highcharts.chart('gaugeContainer', {
                 chart: { type: 'gauge', backgroundColor: 'transparent', margin: [0, 0, 10, 0] },
                 title: null,
@@ -240,12 +257,27 @@
             animateValue('revText', 0, curRev, 1000);
             animateValue('targetText', 0, curTarget, 1000);
 
-            // Dynamic Changing Colors logic for Gauge & Target Headers
+            // Dynamic Sparkline Vector Direction Logic
+            const sparkColor = growth >= 0 ? '#10b981' : '#f43f5e';
+            const sparkFill = growth >= 0 ? 'rgba(16, 185, 129, 0.05)' : 'rgba(244, 63, 94, 0.05)';
+            
+            // Generate visual path array relative to final outcome
+            const sparkData = growth >= 0 
+                ? [oldRev * 0.9, oldRev, curRev] 
+                : [oldRev * 1.1, oldRev, curRev];
+                
+            sparklineChart.series[0].update({
+                color: sparkColor,
+                fillColor: sparkFill
+            }, false);
+            sparklineChart.series[0].setData(sparkData, true);
+
+            // Dynamic Changing Colors logic for Gauge Headers
             const revTextEl = document.getElementById('revText');
-            let gaugeColor = '#f43f5e'; // default missed target red
+            let gaugeColor = '#f43f5e';
             
             if (realAchieve >= 100) {
-                gaugeColor = '#228b22'; // Forest green
+                gaugeColor = '#228b22';
                 if (revTextEl) revTextEl.className = "text-2xl font-extrabold text-[#228b22]";
             } else {
                 if (revTextEl) revTextEl.className = "text-2xl font-extrabold text-[#f43f5e]";
