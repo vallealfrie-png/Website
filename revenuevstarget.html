@@ -10,88 +10,85 @@
     <script src="https://code.highcharts.com/11.4.0/highcharts-more.js"></script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
         body { 
             font-family: 'Plus Jakarta Sans', sans-serif; 
-            background: #0b0f19; 
-            color: #f1f5f9; 
+            background: #030712; 
+            color: #f3f4f6; 
         }
-        /* Minimalist scrollbar styling for list items */
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #334155;
-            border-radius: 2px;
-        }
+        
+        /* Distinct Neon Border Utilities */
+        .neon-emerald { border: 1px solid rgba(16, 185, 129, 0.2); box-shadow: 0 0 15px rgba(16, 185, 129, 0.1); }
+        .neon-indigo { border: 1px solid rgba(99, 102, 241, 0.2); box-shadow: 0 0 15px rgba(99, 102, 241, 0.1); }
+        .neon-amber { border: 1px solid rgba(245, 158, 11, 0.2); box-shadow: 0 0 15px rgba(245, 158, 11, 0.1); }
+        .neon-purple { border: 1px solid rgba(168, 85, 247, 0.2); box-shadow: 0 0 15px rgba(168, 85, 247, 0.1); }
+        .neon-blue { border: 1px solid rgba(59, 130, 246, 0.2); box-shadow: 0 0 15px rgba(59, 130, 246, 0.1); }
+        .neon-rose { border: 1px solid rgba(244, 63, 94, 0.2); box-shadow: 0 0 15px rgba(244, 63, 94, 0.1); }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #374151; border-radius: 2px; }
     </style>
 </head>
 <body class="min-h-screen pb-16">
 
-    <!-- Navbar -->
-    <nav class="border-b border-slate-800/80 px-8 py-4 mb-8 bg(#0b0f19)/80 backdrop-blur-md sticky top-0 z-50">
+    <nav class="border-b border-gray-800 bg-gray-950/70 backdrop-blur-md sticky top-0 z-50 px-8 py-4 mb-8">
         <div class="max-w-7xl mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-4">
-                <a href="website.html" class="flex items-center space-x-2 text-slate-400 hover:text-slate-200 transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <a href="website.html" class="flex items-center space-x-2 text-gray-400 hover:text-emerald-400 transition-colors group">
+                    <svg class="w-5 h-5 group-hover:scale-105 transition-transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"></path>
                     </svg>
-                    <span class="text-xs font-medium tracking-wider uppercase">Home</span>
+                    <span class="text-xs font-bold tracking-wider uppercase">Home</span>
                 </a>
-                <div class="h-4 w-[1px] bg-slate-800"></div>
-                <h1 class="text-sm font-semibold tracking-wider text-slate-200 uppercase">KPI Department Revenue & Target</h1>
+                <div class="h-4 w-[1px] bg-gray-800"></div>
+                <h1 class="text-xs font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-indigo-400 uppercase">KPI Department Revenue & Target</h1>
             </div>
         </div>
     </nav>
 
     <div class="max-w-7xl mx-auto px-6 space-y-6">
         
-        <!-- Dropdown Controls Portfolio -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div class="bg-slate-900/50 border border-slate-800/80 rounded-xl px-4 py-1.5">
-                <label class="block text-[10px] font-medium text-slate-500 uppercase tracking-wider">Timeline</label>
-                <select id="monthSelect" class="w-full bg-transparent text-sm font-medium text-slate-200 outline-none cursor-pointer py-1">
-                    <option class="bg-slate-950" value="ALL">Year-to-Date (All Months)</option>
+            <div class="bg-gray-900/60 border border-gray-800 rounded-xl px-4 py-2">
+                <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider">Timeline</label>
+                <select id="monthSelect" class="w-full bg-transparent text-sm font-bold text-gray-200 outline-none cursor-pointer py-0.5">
+                    <option class="bg-gray-950" value="ALL">Year-to-Date (All Months)</option>
                 </select>
             </div>
-            <div class="bg-slate-900/50 border border-slate-800/80 rounded-xl px-4 py-1.5">
-                <label class="block text-[10px] font-medium text-slate-500 uppercase tracking-wider">Scope</label>
-                <select id="deptSelect" class="w-full bg-transparent text-sm font-medium text-slate-200 outline-none cursor-pointer py-1">
-                    <option class="bg-slate-950" value="ALL">Consolidated Hospital</option>
+            <div class="bg-gray-900/60 border border-gray-800 rounded-xl px-4 py-2">
+                <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider">Scope</label>
+                <select id="deptSelect" class="w-full bg-transparent text-sm font-bold text-gray-200 outline-none cursor-pointer py-0.5">
+                    <option class="bg-gray-950" value="ALL">Consolidated Hospital</option>
                 </select>
             </div>
         </div>
 
-        <!-- Top Overview Row -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="bg-slate-900/40 border border-slate-800/80 rounded-xl p-6">
-                <p class="text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-1">2026 Actual Revenue</p>
-                <h3 id="score2026" class="text-2xl font-bold text-slate-100 tracking-tight">₱0</h3>
+            <div class="bg-gray-950 neon-emerald rounded-2xl p-6 transition-all duration-300 hover:scale-[1.01]">
+                <p class="text-[10px] font-bold text-emerald-500/80 uppercase tracking-widest mb-1">2026 Actual Revenue</p>
+                <h3 id="score2026" class="text-3xl font-extrabold tracking-tight text-[#228b22]">₱0</h3>
             </div>
-            <div class="bg-slate-900/40 border border-slate-800/80 rounded-xl p-6">
-                <p class="text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-1">2025 Actual Revenue</p>
-                <h3 id="score2025" class="text-2xl font-bold text-slate-400 tracking-tight">₱0</h3>
+            <div class="bg-gray-950 neon-indigo rounded-2xl p-6 transition-all duration-300 hover:scale-[1.01]">
+                <p class="text-[10px] font-bold text-indigo-400/80 uppercase tracking-widest mb-1">2025 Actual Revenue</p>
+                <h3 id="score2025" class="text-3xl font-extrabold tracking-tight text-white">₱0</h3>
             </div>
-            <div class="bg-slate-900/40 border border-slate-800/80 rounded-xl p-6">
-                <p class="text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-1">YoY Growth</p>
-                <h3 id="growthValue" class="text-2xl font-bold tracking-tight text-slate-100">0%</h3>
+            <div class="bg-gray-950 neon-amber rounded-2xl p-6 transition-all duration-300 hover:scale-[1.01]">
+                <p class="text-[10px] font-bold text-amber-500/80 uppercase tracking-widest mb-1">YoY Growth</p>
+                <h3 id="growthValue" class="text-3xl font-extrabold tracking-tight text-white">0%</h3>
             </div>
         </div>
 
-        <!-- Gauge & Hit List Section -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div class="bg-slate-900/40 border border-slate-800/80 rounded-xl p-6 flex flex-col justify-between">
-                <div class="flex items-center justify-between gap-4 w-full border-b border-slate-800/50 pb-4 mb-4">
+            <div class="bg-gray-950 neon-purple rounded-2xl p-6 flex flex-col justify-between">
+                <div class="flex items-center justify-between gap-4 w-full border-b border-gray-900 pb-4 mb-4">
                     <div>
-                        <p class="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Current Revenue</p>
-                        <p id="revText" class="text-lg font-semibold text-slate-200">₱0</p>
+                        <p class="text-[10px] font-bold text-purple-400 uppercase tracking-wider mb-0.5">Current Revenue</p>
+                        <p id="revText" class="text-2xl font-extrabold transition-colors duration-300">₱0</p>
                     </div>
                     <div class="text-right">
-                        <p class="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Target Quota</p>
-                        <p id="targetText" class="text-lg font-semibold text-slate-400">₱0</p>
+                        <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">Target Quota</p>
+                        <p id="targetText" class="text-2xl font-extrabold text-white">₱0</p>
                     </div>
                 </div>
                 <div class="w-full h-[240px]">
@@ -99,28 +96,27 @@
                 </div>
             </div>
 
-            <div class="bg-slate-900/40 border border-slate-800/80 rounded-xl p-6 flex flex-col">
-                <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Achieved Target
+            <div class="bg-gray-950 neon-blue rounded-2xl p-6 flex flex-col">
+                <h4 class="text-xs font-bold text-blue-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Achieved Target
                 </h4>
                 <div id="hitList" class="custom-scrollbar space-y-2 flex-1 overflow-y-auto max-h-[290px] pr-1">
-                    <p class="text-xs text-slate-500 italic">No data matched or targets completed.</p>
+                    <p class="text-xs text-gray-500 italic">No data matched or targets completed.</p>
                 </div>
             </div>
         </div>
 
-        <!-- History Flow Chart & Miss List Row -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div class="bg-slate-900/40 border border-slate-800/80 rounded-xl p-6 lg:col-span-2">
+            <div class="bg-gray-950 neon-blue lg:col-span-2 rounded-2xl p-6">
                 <div id="comparisonContainer" class="h-[360px]"></div>
             </div>
 
-            <div class="bg-slate-900/40 border border-slate-800/80 rounded-xl p-6 flex flex-col">
-                <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> Missed Target
+            <div class="bg-gray-950 neon-rose rounded-2xl p-6 flex flex-col">
+                <h4 class="text-xs font-bold text-rose-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span> Missed Target
                 </h4>
                 <div id="missList" class="custom-scrollbar space-y-2 flex-1 overflow-y-auto max-h-[310px] pr-1">
-                    <p class="text-xs text-slate-500 italic">No items identified.</p>
+                    <p class="text-xs text-gray-500 italic">No items identified.</p>
                 </div>
             </div>
         </div>
@@ -150,15 +146,30 @@
                 const value = Math.round(progress * (end - start) + start);
                 
                 if (isCurrency) {
-                    obj.innerHTML = '₱' + value.toLocaleString();
+                    // For general currency animations if needed. 
+                    // Note: score2026, score2025, targetText override static inline configurations below.
+                    if (id === 'score2026') {
+                        obj.innerHTML = '₱' + value.toLocaleString();
+                        obj.className = "text-3xl font-extrabold tracking-tight text-[#228b22]";
+                    } else if (id === 'score2025') {
+                        obj.innerHTML = '₱' + value.toLocaleString();
+                        obj.className = "text-3xl font-extrabold tracking-tight text-white";
+                    } else if (id === 'targetText') {
+                        obj.innerHTML = '₱' + value.toLocaleString();
+                        obj.className = "text-2xl font-extrabold text-white";
+                    } else if (id === 'revText') {
+                        obj.innerHTML = '₱' + value.toLocaleString();
+                    } else {
+                        obj.innerHTML = '₱' + value.toLocaleString();
+                    }
                 } else {
                     obj.innerHTML = (value >= 0 ? '+' : '') + value + '%';
                     if (value > 0) {
-                        obj.className = "text-2xl font-bold tracking-tight text-emerald-400";
+                        obj.className = "text-3xl font-extrabold tracking-tight text-emerald-400";
                     } else if (value < 0) {
-                        obj.className = "text-2xl font-bold tracking-tight text-rose-400";
+                        obj.className = "text-3xl font-extrabold tracking-tight text-rose-500";
                     } else {
-                        obj.className = "text-2xl font-bold tracking-tight text-slate-100";
+                        obj.className = "text-3xl font-extrabold tracking-tight text-white";
                     }
                 }
                 
@@ -167,7 +178,6 @@
             window.requestAnimationFrame(step);
         }
 
-        // Retaining your highcharts setup configuration directly as original
         function initCharts() {
             gaugeChart = Highcharts.chart('gaugeContainer', {
                 chart: { type: 'gauge', backgroundColor: 'transparent', margin: [0, 0, 10, 0] },
@@ -175,7 +185,7 @@
                 pane: { startAngle: -120, endAngle: 120, background: null, center: ['50%', '85%'], size: '100%' },
                 yAxis: {
                     min: 0, max: 100, lineWidth: 0, tickWidth: 0, minorTickWidth: 0, labels: { enabled: false },
-                    plotBands: [{ from: 0, to: 100, color: '#e11d48', thickness: 40 }] // Default subtle rose/coral
+                    plotBands: [{ from: 0, to: 100, color: '#f43f5e', thickness: 40 }]
                 },
                 series: [{
                     name: 'Achievement', 
@@ -184,23 +194,23 @@
                         enabled: true, useHTML: true, y: -25, borderWidth: 0,
                         formatter: function() {
                             const val = this.point.realValue || 0;
-                            return `<div style="background:#0f172a; color:#f1f5f9; padding: 4px 12px; border-radius: 8px; font-weight:600; font-size:15px; border: 1px solid #334155; min-width: 60px; text-align: center;">${val}%</div>`;
+                            return `<div style="background:#030712; color:#f3f4f6; padding: 4px 14px; border-radius: 8px; font-weight:800; font-size:16px; border: 1px solid #374151; min-width: 65px; text-align: center;">${val}%</div>`;
                         }
                     },
-                    dial: { radius: '90%', backgroundColor: '#94a3b8', baseWidth: 3 },
-                    pivot: { backgroundColor: '#475569', radius: 5 }
+                    dial: { radius: '90%', backgroundColor: '#9ca3af', baseWidth: 3 },
+                    pivot: { backgroundColor: '#4b5563', radius: 5 }
                 }],
                 credits: { enabled: false }
             });
 
             comparisonChart = Highcharts.chart('comparisonContainer', {
                 chart: { backgroundColor: 'transparent' },
-                title: { text: 'Monthly Performance Flow', style: { color: '#cbd5e1', fontSize: '13px', fontWeight: '600' } },
-                xAxis: { categories: [], labels: { style: { color: '#64748b' } }, lineWidth: 0 },
-                yAxis: { title: { text: null }, gridLineColor: 'rgba(255,255,255,0.03)', labels: { style: { color: '#475569' } } },
+                title: { text: 'Monthly Performance Flow', style: { color: '#9ca3af', fontSize: '13px', fontWeight: '700', letterSpacing: '0.05em' } },
+                xAxis: { categories: [], labels: { style: { color: '#6b7280', fontWeight: '600' } }, lineWidth: 0 },
+                yAxis: { title: { text: null }, gridLineColor: 'rgba(255,255,255,0.03)', labels: { style: { color: '#4b5563' } } },
                 series: [
-                    { type: 'column', name: '2026 Revenue', color: '#38bdf8', data: [] },
-                    { type: 'line', name: '2026 Target', color: '#818cf8', data: [], marker: { radius: 3 } }
+                    { type: 'column', name: '2026 Revenue', color: '#0ea5e9', data: [] },
+                    { type: 'line', name: '2026 Target', color: '#a855f7', data: [], marker: { radius: 3.5 } }
                 ],
                 credits: { enabled: false }
             });
@@ -230,8 +240,17 @@
             animateValue('revText', 0, curRev, 1000);
             animateValue('targetText', 0, curTarget, 1000);
 
-            // Replaced hot neon strings with crisp minimalist hues
-            const gaugeColor = realAchieve >= 100 ? '#10b981' : '#f43f5e';
+            // Dynamic Changing Colors logic for Gauge & Target Headers
+            const revTextEl = document.getElementById('revText');
+            let gaugeColor = '#f43f5e'; // default missed target red
+            
+            if (realAchieve >= 100) {
+                gaugeColor = '#228b22'; // Forest green
+                if (revTextEl) revTextEl.className = "text-2xl font-extrabold text-[#228b22]";
+            } else {
+                if (revTextEl) revTextEl.className = "text-2xl font-extrabold text-[#f43f5e]";
+            }
+
             const pointerValue = realAchieve > 100 ? 100 : realAchieve;
             
             gaugeChart.yAxis[0].update({ plotBands: [{ from: 0, to: 100, color: gaugeColor, thickness: 40 }] }, false);
@@ -256,7 +275,7 @@
                 const targetValue = targetList2026[idx];
                 return {
                     y: rev,
-                    color: rev >= targetValue ? '#10b981' : '#f43f5e'
+                    color: rev >= targetValue ? '#228b22' : '#f43f5e'
                 };
             });
 
@@ -281,31 +300,31 @@
                 const percentage = totalDeptTarget > 0 ? Math.round((totalDeptRev / totalDeptTarget) * 100) : 0;
 
                 const deptItemElement = document.createElement('div');
-                deptItemElement.className = "flex justify-between items-center bg-slate-900/30 border border-slate-800/50 p-2.5 rounded-lg text-xs font-medium text-slate-300";
+                deptItemElement.className = "flex justify-between items-center bg-gray-900/30 border border-gray-800/60 p-2.5 rounded-xl text-xs font-semibold text-gray-300";
                 
                 if (totalDeptRev >= totalDeptTarget) {
                     deptItemElement.innerHTML = `
                         <span class="flex items-center gap-2 truncate">
-                            <span class="text-[10px] text-emerald-400 font-bold">✓</span> 
-                            <span class="truncate">${dept}</span>
+                            <span class="text-emerald-400 text-[10px]">✓</span> 
+                            <span class="truncate text-gray-200">${dept}</span>
                         </span>
-                        <span class="font-semibold text-emerald-400 ml-2">${percentage}%</span>`;
+                        <span class="font-bold text-emerald-400 ml-2">${percentage}%</span>`;
                     achievedContainer.appendChild(deptItemElement);
                     hitCounter++;
                 } else {
                     deptItemElement.innerHTML = `
                         <span class="flex items-center gap-2 truncate">
-                            <span class="text-[10px] text-rose-400 font-bold">✕</span> 
-                            <span class="truncate">${dept}</span>
+                            <span class="text-rose-500 text-[10px]">✕</span> 
+                            <span class="truncate text-gray-400">${dept}</span>
                         </span>
-                        <span class="font-semibold text-rose-400 ml-2">${percentage}%</span>`;
+                        <span class="font-bold text-rose-400 ml-2">${percentage}%</span>`;
                     missedContainer.appendChild(deptItemElement);
                     missCounter++;
                 }
             });
 
-            if(hitCounter === 0) achievedContainer.innerHTML = '<p class="text-xs text-slate-600 italic p-2">No departments achieved quota.</p>';
-            if(missCounter === 0) missedContainer.innerHTML = '<p class="text-xs text-slate-600 italic p-2">All departments hit targets!</p>';
+            if(hitCounter === 0) achievedContainer.innerHTML = '<p class="text-xs text-gray-600 italic p-2">No departments achieved quota.</p>';
+            if(missCounter === 0) missedContainer.innerHTML = '<p class="text-xs text-gray-600 italic p-2">All departments hit targets!</p>';
         }
 
         window.onload = async () => {
@@ -316,7 +335,7 @@
             const uniqueDepts = [...new Set(data.map(item => item.department))].sort();
             uniqueDepts.forEach(dept => {
                 const opt = document.createElement('option');
-                opt.value = dept; opt.innerHTML = dept; opt.className = "bg-slate-950";
+                opt.value = dept; opt.innerHTML = dept; opt.className = "bg-gray-950 text-gray-200";
                 document.getElementById('deptSelect').appendChild(opt);
             });
 
@@ -328,7 +347,7 @@
                 });
             uniqueMonths.forEach(m => {
                 const opt = document.createElement('option');
-                opt.value = m; opt.innerHTML = m; opt.className = "bg-slate-950";
+                opt.value = m; opt.innerHTML = m; opt.className = "bg-gray-950 text-gray-200";
                 document.getElementById('monthSelect').appendChild(opt);
             });
 
