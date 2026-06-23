@@ -334,25 +334,23 @@
                 type, data: { labels, datasets },
                 options: { 
                     responsive: true, maintainAspectRatio: false,
-                    // Give extra padding inside the canvas so labels pulled outside don't clip
-                    layout: isPieOrDoughnut ? { padding: { top: 10, bottom: 10, left: 25, right: 25 } } : {},
                     plugins: { 
                         legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 9, weight: '900' }, color: '#ffffff', padding: 10 } }, 
-                        title: { display: !!title, text: title.toUpperCase(), color: '#ffffff', font: { size: 11, weight: '900' }, padding: 10 },
+                        title: { display: !!title, text: title.toUpperCase(), color: '#ffffff', font: { size: 11, weight: '900' }, padding: 15 },
+                        // Data labels configurations
                         datalabels: {
-                            display: isPieOrDoughnut,
+                            display: isPieOrDoughnut, // Only activate data numbers inside layout slices
                             color: '#ffffff',
-                            font: { size: 9, weight: '900' },
-                            // anchor & align 'end' forces data text entirely outside the geometric boundary
-                            anchor: 'end',
-                            align: 'end',
-                            offset: 4,
+                            font: { size: 10, weight: '900' },
+                            textShadowColor: 'rgba(0, 0, 0, 0.8)',
+                            textShadowBlur: 4,
                             formatter: (value, ctx) => {
                                 let sum = 0;
                                 let dataArr = ctx.chart.data.datasets[0].data;
                                 dataArr.forEach(data => { sum += data; });
                                 if (sum === 0) return '';
-                                return (value * 100 / sum).toFixed(1) + "%";
+                                let percentage = (value * 100 / sum).toFixed(1) + "%";
+                                return percentage;
                             }
                         }
                     },
