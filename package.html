@@ -6,6 +6,7 @@
     <title>Package Availment - Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -118,6 +119,9 @@
         const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         const neonPalette = ['#6366f1', '#10b981', '#f59e0b', '#f43f5e', '#8b5cf6', '#06b6d4'];
 
+        // Register the datalabels plugin globally so Chart.js can find it
+        Chart.register(ChartDataLabels);
+
         let masterData = [], charts = {}, maxYear, activeMonths = [];
 
         // Count Animation Engine
@@ -227,20 +231,17 @@
             const allMonths = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
             if (mVal === "all") {
-                // Always render full 12 month horizontal labels for the chart structure
                 labels = allMonths;
                 const latestActiveMonth = activeMonths.length > 0 ? Math.max(...activeMonths) : 11;
                 
                 labels.forEach((_, i) => {
-                    // Current year checks data boundaries to clip line cleanly
                     if (i <= latestActiveMonth) {
                         const c = data.filter(d => d.y === maxYear && d.m === i);
                         curSet.push({ r: c.reduce((s,d)=>s+d.amt,0), n: c.length });
                     } else {
-                        curSet.push({ r: null, n: null }); // stops line progression smoothly
+                        curSet.push({ r: null, n: null });
                     }
                     
-                    // Historic previous year parses all 12 months completely
                     const p = data.filter(d => d.y === (maxYear - 1) && d.m === i);
                     preSet.push({ r: p.reduce((s,d)=>s+d.amt,0), n: p.length });
                 });
@@ -316,21 +317,44 @@
             if (charts[id]) charts[id].destroy();
             charts[id] = new Chart(document.getElementById(id), {
                 type: 'line', data: { labels: ['','',''], datasets: [{ data, borderColor: '#f59e0b', borderWidth: 2, pointRadius: 4, tension: 0.4 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false } } }
+                options: { 
+                    responsive: true, maintainAspectRatio: false, 
+                    plugins: { legend: { display: false }, datalabels: { display: false } }, 
+                    scales: { x: { display: false }, y: { display: false } } 
+                }
             });
         }
 
         function draw(id, type, labels, datasets, title) {
             if (charts[id]) charts[id].destroy();
+            
+            const isPieOrDoughnut = (type === 'pie' || type === 'doughnut');
+
             charts[id] = new Chart(document.getElementById(id), {
                 type, data: { labels, datasets },
                 options: { 
                     responsive: true, maintainAspectRatio: false,
                     plugins: { 
                         legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 9, weight: '900' }, color: '#ffffff', padding: 10 } }, 
-                        title: { display: !!title, text: title.toUpperCase(), color: '#ffffff', font: { size: 11, weight: '900' }, padding: 15 } 
+                        title: { display: !!title, text: title.toUpperCase(), color: '#ffffff', font: { size: 11, weight: '900' }, padding: 15 },
+                        // Data labels configurations
+                        datalabels: {
+                            display: isPieOrDoughnut, // Only activate data numbers inside layout slices
+                            color: '#ffffff',
+                            font: { size: 10, weight: '900' },
+                            textShadowColor: 'rgba(0, 0, 0, 0.8)',
+                            textShadowBlur: 4,
+                            formatter: (value, ctx) => {
+                                let sum = 0;
+                                let dataArr = ctx.chart.data.datasets[0].data;
+                                dataArr.forEach(data => { sum += data; });
+                                if (sum === 0) return '';
+                                let percentage = (value * 100 / sum).toFixed(1) + "%";
+                                return percentage;
+                            }
+                        }
                     },
-                    scales: (type==='line'||type==='bar') ? { 
+                    scales: !isPieOrDoughnut ? { 
                         y: { grid: { color: '#1a1a1a' }, ticks: { font: { size: 8, weight: 'bold' }, color: '#ffffff' } }, 
                         x: { grid: { display: false }, ticks: { font: { size: 8, weight: 'bold' }, color: '#ffffff' } } 
                     } : {}
