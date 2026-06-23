@@ -20,7 +20,7 @@
             </div>
             
             <div class="flex justify-center md:justify-end order-1 md:order-2">
-                <a href="website.html" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-800/60 hover:bg-slate-700/80 text-slate-300 hover:text-white rounded-xl border border-slate-700/50 transition-all duration-200 text-sm font-medium shadow-md hover:shadow-lg backdrop-blur-sm group">
+                <a href="index.html" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-800/60 hover:bg-slate-700/80 text-slate-300 hover:text-white rounded-xl border border-slate-700/50 transition-all duration-200 text-sm font-medium shadow-md hover:shadow-lg backdrop-blur-sm group">
                     <svg class="h-4 w-4 transform group-hover:-translate-x-0.5 transition-transform duration-150" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                     </svg>
@@ -39,11 +39,12 @@
                 <input 
                     type="text" 
                     id="searchInput"
-                    placeholder="Search by Item Code or Item Name..." 
-                    class="w-full pl-12 pr-12 py-3.5 bg-slate-950/60 border border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 placeholder-slate-500 text-slate-200"
+                    placeholder="Loading database, please wait..." 
+                    class="w-full pl-12 pr-12 py-3.5 bg-slate-950/40 border border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 placeholder-slate-600 text-slate-400 cursor-not-allowed"
+                    disabled
                     autocomplete="off"
                 />
-                <div id="loadingSpinner" class="hidden absolute inset-y-0 right-0 pr-4 flex items-center">
+                <div id="loadingSpinner" class="absolute inset-y-0 right-0 pr-4 flex items-center">
                     <div class="animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full"></div>
                 </div>
             </div>
@@ -61,8 +62,8 @@
                     </thead>
                     <tbody id="resultsTableBody" class="divide-y divide-slate-800/60 text-sm">
                         <tr>
-                            <td colspan="3" class="py-12 text-center text-slate-500">
-                                Type something above to begin searching...
+                            <td colspan="3" id="statusMessage" class="py-12 text-center text-slate-500">
+                                Initializing database synchronization...
                             </td>
                         </tr>
                     </tbody>
@@ -72,20 +73,62 @@
     </div>
 
     <script>
-        // 1. Initialize Supabase Client with safe naming scope
         const SUPABASE_URL = "https://zqnqkxpseeuyovtqezbc.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpxbnFreHBzZWV1eW92dHFlemJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3OTYyOTEsImV4cCI6MjA5MjM3MjI5MX0.uR9TcF4_J58cx7XsKx4BbAQcIeYBElgJpKglbMEyHQs";
         
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // 2. DOM Elements Reference
         const searchInput = document.getElementById('searchInput');
         const resultsTableBody = document.getElementById('resultsTableBody');
         const loadingSpinner = document.getElementById('loadingSpinner');
+        const statusMessage = document.getElementById('statusMessage');
 
-        // 3. Smart Search Functionality
-        async function performSearch(query) {
-            const cleanQuery = query.trim();
+        // Global memory cache to hold all 1,309+ items after recursive fetching
+        let allItemsCache = [];
+
+        // 1. Recursive Data Fetching Engine
+        async function fetchAllItemsRecursive(offset = 0, limit = 1000) {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('items')
+                    .select('item_code, item_name, price')
+                    .range(offset, offset + limit - 1)
+                    .order('item_name', { ascending: true });
+
+                if (error) throw error;
+
+                // Append current batch to our complete collection
+                allItemsCache = allItemsCache.concat(data);
+
+                // If the response returned exactly our limit payload size, there's likely more data remaining
+                if (data.length === limit) {
+                    return await fetchAllItemsRecursive(offset + limit, limit);
+                }
+                
+                // Finished fetching everything recursively! Enable UI inputs
+                initializeSearchUI();
+
+            } catch (err) {
+                console.error("Recursive sync failed:", err.message);
+                statusMessage.innerText = "Error pulling records from database. Refresh to retry.";
+                statusMessage.className = "py-12 text-center text-red-400 font-medium bg-red-950/10";
+            }
+        }
+
+        // 2. Setup Interface Post-Fetch
+        function initializeSearchUI() {
+            loadingSpinner.classList.add('hidden');
+            searchInput.disabled = false;
+            searchInput.placeholder = `Search among ${allItemsCache.length.toLocaleString()} items...`;
+            searchInput.className = "w-full pl-12 pr-12 py-3.5 bg-slate-950/60 border border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 placeholder-slate-500 text-slate-200 cursor-text";
+            
+            statusMessage.innerText = "Type an item code or name above to look up prices.";
+            searchInput.focus();
+        }
+
+        // 3. Client-Side Smart Filtering Engine
+        function performLocalSearch(query) {
+            const cleanQuery = query.trim().toLowerCase();
             
             if (!cleanQuery) {
                 resultsTableBody.innerHTML = `
@@ -97,30 +140,14 @@
                 return;
             }
 
-            showLoading(true);
+            // High performance structural arrays parsing directly in runtime memory
+            const matchedItems = allItemsCache.filter(item => {
+                const codeMatch = item.item_code ? String(item.item_code).toLowerCase().includes(cleanQuery) : false;
+                const nameMatch = item.item_name ? String(item.item_name).toLowerCase().includes(cleanQuery) : false;
+                return codeMatch || nameMatch;
+            });
 
-            try {
-                const { data, error } = await supabaseClient
-                    .from('items')
-                    .select('item_code, item_name, price')
-                    .or(`item_code.ilike.%${cleanQuery}%,item_name.ilike.%${cleanQuery}%`)
-                    .order('item_name', { ascending: true })
-                    .limit(50);
-
-                if (error) throw error;
-                renderResults(data);
-
-            } catch (err) {
-                console.error("Database query failed:", err.message);
-                resultsTableBody.innerHTML = `
-                    <tr>
-                        <td colspan="3" class="py-12 text-center text-red-400 font-medium bg-red-950/10">
-                            Error fetching data. Please try again.
-                        </td>
-                    </tr>`;
-            } finally {
-                showLoading(false);
-            }
+            renderResults(matchedItems);
         }
 
         // 4. Render Layout UI Utility
@@ -158,29 +185,10 @@
             }).join('');
         }
 
-        // 5. Performance Optimization: Debounce Event Handler
-        function debounce(func, timeout = 300) {
-            let timer;
-            return (...args) => {
-                clearTimeout(timer);
-                timer = setTimeout(() => { func.apply(this, args); }, timeout);
-            };
-        }
-
-        const handleSearchInput = debounce((event) => {
-            performSearch(event.target.value);
+        // Basic event input listener handling local queries in real time
+        searchInput.addEventListener('input', (event) => {
+            performLocalSearch(event.target.value);
         });
-
-        searchInput.addEventListener('input', handleSearchInput);
-
-        // Helper Utilities
-        function showLoading(isLoading) {
-            if (isLoading) {
-                loadingSpinner.classList.remove('hidden');
-            } else {
-                loadingSpinner.classList.add('hidden');
-            }
-        }
 
         function escapeHtml(str) {
             if (!str) return '';
@@ -191,6 +199,11 @@
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#039;');
         }
+
+        // Kick off recursive pagination loop immediately on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            fetchAllItemsRecursive();
+        });
     </script>
 </body>
 </html>
