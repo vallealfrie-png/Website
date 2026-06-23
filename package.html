@@ -334,27 +334,30 @@
                 type, data: { labels, datasets },
                 options: { 
                     responsive: true, maintainAspectRatio: false,
+                    // Creates an isolated buffer zone around structures so outer text never clips
+                    layout: isPieOrDoughnut ? {
+                        padding: { top: 20, bottom: 10, left: 35, right: 35 }
+                    } : {},
                     plugins: { 
-                        legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 9, weight: '900' }, color: '#ffffff', padding: 10 } }, 
-                        title: { display: !!title, text: title.toUpperCase(), color: '#ffffff', font: { size: 11, weight: '900' }, padding: 15 },
+                        legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 9, weight: '900' }, color: '#ffffff', padding: 8 } }, 
+                        title: { display: !!title, text: title.toUpperCase(), color: '#ffffff', font: { size: 11, weight: '900' }, padding: { top: 5, bottom: 20 } },
                         datalabels: {
-                            // 'auto' hides labels that overlap with others dynamically
-                            display: isPieOrDoughnut ? 'auto' : false, 
+                            display: isPieOrDoughnut, 
                             color: '#ffffff',
-                            font: { size: 10, weight: '900' },
-                            textShadowColor: 'rgba(0, 0, 0, 0.8)',
-                            textShadowBlur: 4,
+                            font: { size: 9, weight: '900' },
+                            textShadowColor: 'rgba(0, 0, 0, 0.9)',
+                            textShadowBlur: 5,
+                            // Anchor and align to 'end' pulls text perfectly clear of graphic boundary lines
+                            anchor: 'end',
+                            align: 'end',
+                            offset: 6,
+                            clamp: true, // Prevents elements from sliding outside view bounds
                             formatter: (value, ctx) => {
                                 let sum = 0;
                                 let dataArr = ctx.chart.data.datasets[0].data;
                                 dataArr.forEach(data => { sum += data; });
                                 if (sum === 0) return '';
-                                
-                                let pct = (value * 100 / sum);
-                                // Hide the label inside the slice if it represents less than 3% to avoid clusters
-                                if (pct < 3) return '';
-                                
-                                return pct.toFixed(1) + "%";
+                                return (value * 100 / sum).toFixed(1) + "%";
                             }
                         }
                     },
