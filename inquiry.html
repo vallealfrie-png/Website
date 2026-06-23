@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pricing Inquiry Dashboard</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Supabase JS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-800 via-slate-900 to-black">
+
+    <div class="max-w-5xl mx-auto px-4 py-12">
+        
+        <!-- Navigation & Header Wrapper -->
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-10 pb-6 border-b border-slate-800/60">
+            <!-- Header Text -->
+            <div class="text-center md:text-left order-2 md:order-1">
+                <h1 class="text-3xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">
+                    Pricing Inquiry
+                </h1>
+                <p class="text-slate-400 mt-1 text-sm">Instant item lookup and real-time price verification.</p>
+            </div>
+            
+            <!-- Home Button Component -->
+            <div class="flex justify-center md:justify-end order-1 md:order-2">
+                <a href="index.html" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-800/60 hover:bg-slate-700/80 text-slate-300 hover:text-white rounded-xl border border-slate-700/50 transition-all duration-200 text-sm font-medium shadow-md hover:shadow-lg backdrop-blur-sm group">
+                    <svg class="h-4 w-4 transform group-hover:-translate-x-0.5 transition-transform duration-150" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                    Back to Home
+                </a>
+            </div>
+        </div>
+
+        <!-- Search Bar Section -->
+        <div class="mb-8 backdrop-blur-md bg-slate-800/40 p-6 rounded-2xl border border-slate-700/50 shadow-xl">
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <svg class="h-5 w-5 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </div>
+                <input 
+                    type="text" 
+                    id="searchInput"
+                    placeholder="Search by Item Code or Item Name..." 
+                    class="w-full pl-12 pr-12 py-3.5 bg-slate-950/60 border border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 placeholder-slate-500 text-slate-200"
+                    autocomplete="off"
+                />
+                <!-- Loading Spinner Element -->
+                <div id="loadingSpinner" class="hidden absolute inset-y-0 right-0 pr-4 flex items-center">
+                    <div class="animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Table Section -->
+        <div class="backdrop-blur-md bg-slate-800/30 rounded-2xl border border-slate-700/40 shadow-2xl overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-950/40 border-b border-slate-700/60 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                            <th class="py-4 px-6">Item Code</th>
+                            <th class="py-4 px-6">Item Name</th>
+                            <th class="py-4 px-6 text-right">Price</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsTableBody" class="divide-y divide-slate-800/60 text-sm">
+                        <tr>
+                            <td colspan="3" class="py-12 text-center text-slate-500">
+                                Type something above to begin searching...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Logic -->
+    <script>
+        const SUPABASE_URL = "https://zqnqkxpseeuyovtqezbc.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpxbnFreHBzZWV1eW92dHFlemJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3OTYyOTEsImV4cCI6MjA5MjM3MjI5MX0.uR9TcF4_J58cx7XsKx4BbAQcIeYBElgJpKglbMEyHQs";
+        
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const searchInput = document.getElementById('searchInput');
+        const resultsTableBody = document.getElementById('resultsTableBody');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+
+        async function performSearch(query) {
+            const cleanQuery = query.trim();
+            
+            if (!cleanQuery) {
+                resultsTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="3" class="py-12 text-center text-slate-500">
+                            Type something above to begin searching...
+                        </td>
+                    </tr>`;
+                return;
+            }
+
+            showLoading(true);
+
+            try {
+                const { data, error } = await supabase
+                    .from('items')
+                    .select('item_code, item_name, price')
+                    .or(`item_code.ilike.%${cleanQuery}%,item_name.ilike.%${cleanQuery}%`)
+                    .order('item_name', { ascending: true })
+                    .limit(50);
+
+                if (error) throw error;
+                renderResults(data);
+
+            } catch (err) {
+                console.error("Database query failed:", err.message);
+                resultsTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="3" class="py-12 text-center text-red-400 font-medium bg-red-950/10">
+                            Error fetching data. Please try again.
+                        </td>
+                    </tr>`;
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function renderResults(items) {
+            if (!items || items.length === 0) {
+                resultsTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="3" class="py-12 text-center text-slate-400">
+                            No items found matching your query.
+                        </td>
+                    </tr>`;
+                return;
+            }
+
+            resultsTableBody.innerHTML = items.map(item => {
+                const formattedPrice = new Intl.NumberFormat('en-US', {
+                    style: 'decimal',
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }).format(item.price || 0);
+
+                return `
+                    <tr class="hover:bg-slate-800/30 transition-colors duration-150 group">
+                        <td class="py-4 px-6 font-mono text-xs text-blue-400 font-semibold group-hover:text-blue-300">
+                            ${escapeHtml(item.item_code)}
+                        </td>
+                        <td class="py-4 px-6 text-slate-200 font-medium">
+                            ${escapeHtml(item.item_name)}
+                        </td>
+                        <td class="py-4 px-6 text-right font-semibold text-emerald-400 whitespace-nowrap">
+                            ₱ ${formattedPrice}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function debounce(func, timeout = 300) {
+            let timer;
+            return (...args) => {
+                clearTimeout(timer);
+                timer = setTimeout(() => { func.apply(this, args); }, timeout);
+            };
+        }
+
+        const handleSearchInput = debounce((event) => {
+            performSearch(event.target.value);
+        });
+
+        searchInput.addEventListener('input', handleSearchInput);
+
+        function showLoading(isLoading) {
+            if (isLoading) {
+                loadingSpinner.classList.remove('hidden');
+            } else {
+                loadingSpinner.classList.add('hidden');
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+    </script>
+</body>
+</html>
