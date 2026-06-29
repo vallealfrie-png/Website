@@ -32,7 +32,6 @@
 </head>
 <body class="min-h-screen pb-16">
 
-    <!-- Navbar -->
     <nav class="border-b border-gray-800 bg-gray-950/70 backdrop-blur-md sticky top-0 z-50 px-8 py-4 mb-8">
         <div class="max-w-7xl mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-4">
@@ -50,7 +49,6 @@
 
     <div class="max-w-7xl mx-auto px-6 space-y-6">
         
-        <!-- Controls Section -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div class="bg-gray-900/60 border border-gray-800 rounded-xl px-4 py-2">
                 <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider">Timeline</label>
@@ -66,7 +64,6 @@
             </div>
         </div>
 
-        <!-- Metric KPI Board -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="bg-gray-950 neon-emerald rounded-2xl p-6 transition-all duration-300 hover:scale-[1.01]">
                 <p class="text-[10px] font-bold text-emerald-500/80 uppercase tracking-widest mb-1">2026 Actual Revenue</p>
@@ -81,24 +78,28 @@
                     <p class="text-[10px] font-bold text-amber-500/80 uppercase tracking-widest mb-1">YoY Growth</p>
                     <h3 id="growthValue" class="text-3xl font-extrabold tracking-tight text-white">0%</h3>
                 </div>
-                <!-- HTML5 Hardware-Accelerated Curved Dynamic Sparkline with Arrowhead -->
                 <div class="relative w-36 h-14 flex items-center justify-end">
                     <canvas id="runningSparkline" width="130" height="50" class="w-[130px] h-[50px]"></canvas>
                 </div>
             </div>
         </div>
 
-        <!-- Gauge and Target Listing -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div class="bg-gray-950 neon-purple rounded-2xl p-6 flex flex-col justify-between">
-                <div class="flex items-center justify-between gap-4 w-full border-b border-gray-900 pb-4 mb-4">
-                    <div>
+                <div class="flex items-center justify-between gap-2 w-full border-b border-gray-900 pb-4 mb-4">
+                    <div class="flex-1 min-w-0">
                         <p class="text-[10px] font-bold text-purple-400 uppercase tracking-wider mb-0.5">Current Revenue</p>
-                        <p id="revText" class="text-2xl font-extrabold transition-colors duration-300">₱0</p>
+                        <p id="revText" class="text-xl sm:text-2xl font-extrabold truncate transition-colors duration-300">₱0</p>
                     </div>
-                    <div class="text-right">
+                    
+                    <div class="text-center px-2 py-1 rounded-lg bg-gray-900/40 border border-gray-800/80 min-w-[100px]">
+                        <p class="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">Quota Variance</p>
+                        <p id="varianceText" class="text-xs font-black tracking-tight">0%</p>
+                    </div>
+
+                    <div class="flex-1 min-w-0 text-right">
                         <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">Target Quota</p>
-                        <p id="targetText" class="text-2xl font-extrabold text-white">₱0</p>
+                        <p id="targetText" class="text-xl sm:text-2xl font-extrabold text-white truncate">₱0</p>
                     </div>
                 </div>
                 <div class="w-full h-[240px]">
@@ -116,7 +117,6 @@
             </div>
         </div>
 
-        <!-- Historical Stream & Deficit Board -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="bg-gray-950 neon-blue lg:col-span-2 rounded-2xl p-6">
                 <div id="comparisonContainer" class="h-[360px]"></div>
@@ -147,7 +147,6 @@
             return parseFloat(val.toString().replace(/[₱, ]/g, '')) || 0;
         };
 
-        // Canvas Engine creating animated smooth cubic Bezier curve vectors
         function drawRunningSparkline(isGoingUp) {
             const canvas = document.getElementById('runningSparkline');
             if (!canvas) return;
@@ -161,15 +160,13 @@
             const height = canvas.height;
             
             let progress = 0;
-            const speed = 0.03; // Smooth animation window timing
+            const speed = 0.03; 
             
-            // Layout dimensions matching boundaries safely
             const startX = 6;
             const startY = isGoingUp ? height - 8 : 8;
-            const endX = width - 12; // Reserves space so arrowhead stays within canvas boundaries
+            const endX = width - 12; 
             const endY = isGoingUp ? 8 : height - 8;
 
-            // Generate control points to simulate natural financial trend waves
             const cp1x = startX + (endX - startX) * 0.4;
             const cp1y = startY;
             const cp2x = startX + (endX - startX) * 0.6;
@@ -178,7 +175,6 @@
             const lineColor = isGoingUp ? '#228b22' : '#f43f5e';
             const glowColor = isGoingUp ? 'rgba(34, 139, 34, 0.35)' : 'rgba(244, 63, 94, 0.35)';
 
-            // Calculates specific properties on a cubic Bezier curve at a given time progress interval (t)
             function getBezierXY(t) {
                 const mt = 1 - t;
                 const x = mt*mt*mt*startX + 3*mt*mt*t*cp1x + 3*mt*t*t*cp2x + t*t*t*endX;
@@ -186,7 +182,6 @@
                 return { x, y };
             }
 
-            // Calculates the precise slope angle at progress window slice (t)
             function getBezierAngle(t) {
                 const mt = 1 - t;
                 const dx = 3*mt*mt*(cp1x - startX) + 6*mt*t*(cp2x - cp1x) + 3*t*t*(endX - cp2x);
@@ -200,11 +195,9 @@
 
                 ctx.clearRect(0, 0, width, height);
 
-                // Build modern multi-segment path sequence up to active point
                 ctx.beginPath();
                 ctx.moveTo(startX, startY);
                 
-                // Segment subdivision execution across frames
                 const steps = Math.floor(progress * 40);
                 for (let i = 0; i <= steps; i++) {
                     const t = (i / 40) * progress;
@@ -215,18 +208,15 @@
                 const currentPt = getBezierXY(progress);
                 ctx.lineTo(currentPt.x, currentPt.y);
 
-                // Render glowing shadow underlay trace
                 ctx.strokeStyle = glowColor;
                 ctx.lineWidth = 6;
                 ctx.lineCap = 'round';
                 ctx.stroke();
 
-                // Render pristine solid foreground curve indicator core
                 ctx.strokeStyle = lineColor;
                 ctx.lineWidth = 3;
                 ctx.stroke();
 
-                // Draw solid pointer arrowhead alignment geometry matching terminal velocity slope
                 const angle = getBezierAngle(progress);
                 ctx.save();
                 ctx.translate(currentPt.x, currentPt.y);
@@ -256,7 +246,6 @@
             const step = (timestamp) => {
                 if (!startTimestamp) startTimestamp = timestamp;
                 const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-                
                 const value = Math.round(progress * (end - start) + start);
                 
                 if (isCurrency) {
@@ -268,7 +257,6 @@
                         obj.className = "text-3xl font-extrabold tracking-tight text-white";
                     } else if (id === 'targetText') {
                         obj.innerHTML = '₱' + value.toLocaleString();
-                        obj.className = "text-2xl font-extrabold text-white";
                     } else if (id === 'revText') {
                         obj.innerHTML = '₱' + value.toLocaleString();
                     } else {
@@ -354,18 +342,33 @@
             animateValue('revText', 0, curRev, 1000);
             animateValue('targetText', 0, curTarget, 1000);
 
-            // Trigger canvas directional curved vectors
+            // Calculate exact surplus or deficit variance spread
+            const varianceEl = document.getElementById('varianceText');
+            if (varianceEl) {
+                if (curTarget === 0) {
+                    varianceEl.innerHTML = "0%";
+                    varianceEl.className = "text-xs font-black tracking-tight text-white";
+                } else if (curRev >= curTarget) {
+                    const surplusPct = Math.round(((curRev - curTarget) / curTarget) * 100);
+                    varianceEl.innerHTML = `Surplus +${surplusPct}%`;
+                    varianceEl.className = "text-xs font-black tracking-tight text-[#228b22]";
+                } else {
+                    const deficitPct = Math.round(((curTarget - curRev) / curTarget) * 100);
+                    varianceEl.innerHTML = `Deficit -${deficitPct}%`;
+                    varianceEl.className = "text-xs font-black tracking-tight text-[#f43f5e]";
+                }
+            }
+
             drawRunningSparkline(growth >= 0);
 
-            // Dynamic Changing Colors logic for Gauge Headers
             const revTextEl = document.getElementById('revText');
             let gaugeColor = '#f43f5e';
             
             if (realAchieve >= 100) {
                 gaugeColor = '#228b22';
-                if (revTextEl) revTextEl.className = "text-2xl font-extrabold text-[#228b22]";
+                if (revTextEl) revTextEl.className = "text-xl sm:text-2xl font-extrabold text-[#228b22]";
             } else {
-                if (revTextEl) revTextEl.className = "text-2xl font-extrabold text-[#f43f5e]";
+                if (revTextEl) revTextEl.className = "text-xl sm:text-2xl font-extrabold text-[#f43f5e]";
             }
 
             const pointerValue = realAchieve > 100 ? 100 : realAchieve;
