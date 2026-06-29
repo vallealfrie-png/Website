@@ -81,8 +81,10 @@
                     <p class="text-[10px] font-bold text-amber-500/80 uppercase tracking-widest mb-1">YoY Growth</p>
                     <h3 id="growthValue" class="text-3xl font-extrabold tracking-tight text-white">0%</h3>
                 </div>
-                <!-- Large Dynamic Trend Indicator Vector -->
-                <div id="growthArrow" class="leading-none select-none pr-2" style="font-size: 54px;">&#x219D;</div>
+                <!-- HTML5 Hardware-Accelerated Dynamic Running Sparkline -->
+                <div class="relative w-32 h-14 flex items-center justify-end">
+                    <canvas id="runningSparkline" width="120" height="50" class="w-[120px] h-[50px]"></canvas>
+                </div>
             </div>
         </div>
 
@@ -137,12 +139,73 @@
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let gaugeChart, comparisonChart;
+        let activeAnimationId = null; 
         const MONTH_ORDER = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
         const parseVal = (val) => {
             if (val === null || val === undefined) return 0;
             return parseFloat(val.toString().replace(/[₱, ]/g, '')) || 0;
         };
+
+        // Custom Canvas engine for generating running line animation loops
+        function drawRunningSparkline(isGoingUp) {
+            const canvas = document.getElementById('runningSparkline');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            
+            if (activeAnimationId) {
+                cancelAnimationFrame(activeAnimationId);
+            }
+
+            const width = canvas.width;
+            const height = canvas.height;
+            
+            let progress = 0;
+            const speed = 0.04; // Controls draw duration speed
+            
+            // Define points depending strictly on real growth variance direction
+            const startX = 5;
+            const startY = isGoingUp ? height - 8 : 8;
+            const endX = width - 5;
+            const endY = isGoingUp ? 8 : height - 8;
+
+            const lineColor = isGoingUp ? '#228b22' : '#f43f5e';
+            const glowColor = isGoingUp ? 'rgba(34, 139, 34, 0.4)' : 'rgba(244, 63, 94, 0.4)';
+
+            function animate() {
+                progress += speed;
+                if (progress > 1) progress = 1;
+
+                ctx.clearRect(0, 0, width, height);
+
+                // Calculate ongoing current frame path positions
+                const currentX = startX + (endX - startX) * progress;
+                const currentY = startY + (endY - startY) * progress;
+
+                // Draw glowing shadow underlay trail
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+                ctx.lineTo(currentX, currentY);
+                ctx.strokeStyle = glowColor;
+                ctx.lineWidth = 5;
+                ctx.lineCap = 'round';
+                ctx.stroke();
+
+                // Draw main sharp indicator line core vector
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+                ctx.lineTo(currentX, currentY);
+                ctx.strokeStyle = lineColor;
+                ctx.lineWidth = 3;
+                ctx.lineCap = 'round';
+                ctx.stroke();
+
+                if (progress < 1) {
+                    activeAnimationId = requestAnimationFrame(animate);
+                }
+            }
+            animate();
+        }
 
         function animateValue(id, start, end, duration, isCurrency = true) {
             const obj = document.getElementById(id);
@@ -171,28 +234,14 @@
                     }
                 } else {
                     obj.innerHTML = (value >= 0 ? '+' : '') + value + '%';
-                    
-                    const arrowEl = document.getElementById('growthArrow');
                     const cardEl = document.getElementById('growthCard');
 
                     if (value >= 0) {
                         obj.className = "text-3xl font-extrabold tracking-tight text-[#228b22]";
-                        if(arrowEl) {
-                            arrowEl.innerHTML = "&#x219D;";
-                            arrowEl.style.color = "#228b22";
-                        }
-                        if(cardEl) {
-                            cardEl.className = "bg-gray-950 neon-emerald rounded-2xl p-6 transition-all duration-300 hover:scale-[1.01] flex justify-between items-center";
-                        }
+                        if(cardEl) cardEl.className = "bg-gray-950 neon-emerald rounded-2xl p-6 transition-all duration-300 hover:scale-[1.01] flex justify-between items-center";
                     } else {
                         obj.className = "text-3xl font-extrabold tracking-tight text-[#f43f5e]";
-                        if(arrowEl) {
-                            arrowEl.innerHTML = "&#8605;";
-                            arrowEl.style.color = "#f43f5e";
-                        }
-                        if(cardEl) {
-                            cardEl.className = "bg-gray-950 neon-rose rounded-2xl p-6 transition-all duration-300 hover:scale-[1.01] flex justify-between items-center";
-                        }
+                        if(cardEl) cardEl.className = "bg-gray-950 neon-rose rounded-2xl p-6 transition-all duration-300 hover:scale-[1.01] flex justify-between items-center";
                     }
                 }
                 
@@ -262,6 +311,9 @@
             animateValue('growthValue', 0, growth, 1000, false);
             animateValue('revText', 0, curRev, 1000);
             animateValue('targetText', 0, curTarget, 1000);
+
+            // Execute dynamic vector line animation based on growth state
+            drawRunningSparkline(growth >= 0);
 
             // Dynamic Changing Colors logic for Gauge Headers
             const revTextEl = document.getElementById('revText');
