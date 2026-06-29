@@ -32,6 +32,7 @@
 </head>
 <body class="min-h-screen pb-16">
 
+    <!-- Navbar -->
     <nav class="border-b border-gray-800 bg-gray-950/70 backdrop-blur-md sticky top-0 z-50 px-8 py-4 mb-8">
         <div class="max-w-7xl mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-4">
@@ -49,6 +50,7 @@
 
     <div class="max-w-7xl mx-auto px-6 space-y-6">
         
+        <!-- Controls Section -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div class="bg-gray-900/60 border border-gray-800 rounded-xl px-4 py-2">
                 <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider">Timeline</label>
@@ -64,6 +66,7 @@
             </div>
         </div>
 
+        <!-- Metric KPI Board -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="bg-gray-950 neon-emerald rounded-2xl p-6 transition-all duration-300 hover:scale-[1.01]">
                 <p class="text-[10px] font-bold text-emerald-500/80 uppercase tracking-widest mb-1">2026 Actual Revenue</p>
@@ -73,15 +76,17 @@
                 <p class="text-[10px] font-bold text-indigo-400/80 uppercase tracking-widest mb-1">2025 Actual Revenue</p>
                 <h3 id="score2025" class="text-3xl font-extrabold tracking-tight text-white">₱0</h3>
             </div>
-            <div class="bg-gray-950 neon-amber rounded-2xl p-6 transition-all duration-300 hover:scale-[1.01] flex justify-between items-center">
+            <div id="growthCard" class="bg-gray-950 neon-amber rounded-2xl p-6 transition-all duration-300 hover:scale-[1.01] flex justify-between items-center">
                 <div>
                     <p class="text-[10px] font-bold text-amber-500/80 uppercase tracking-widest mb-1">YoY Growth</p>
                     <h3 id="growthValue" class="text-3xl font-extrabold tracking-tight text-white">0%</h3>
                 </div>
-                <div id="sparklineContainer" class="w-24 h-12"></div>
+                <!-- Large Dynamic Trend Indicator Vector -->
+                <div id="growthArrow" class="leading-none select-none pr-2" style="font-size: 54px;">&#x219D;</div>
             </div>
         </div>
 
+        <!-- Gauge and Target Listing -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div class="bg-gray-950 neon-purple rounded-2xl p-6 flex flex-col justify-between">
                 <div class="flex items-center justify-between gap-4 w-full border-b border-gray-900 pb-4 mb-4">
@@ -109,6 +114,7 @@
             </div>
         </div>
 
+        <!-- Historical Stream & Deficit Board -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="bg-gray-950 neon-blue lg:col-span-2 rounded-2xl p-6">
                 <div id="comparisonContainer" class="h-[360px]"></div>
@@ -130,7 +136,7 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpobGRtYXJ3a3Vsa2NqbnJqdmZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODAzMjQsImV4cCI6MjA5MTg1NjMyNH0.AhjpHXlZSgWNlEshgc0giSSUvHV249f34424i-5g8do';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        let gaugeChart, comparisonChart, sparklineChart;
+        let gaugeChart, comparisonChart;
         const MONTH_ORDER = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
         const parseVal = (val) => {
@@ -165,12 +171,28 @@
                     }
                 } else {
                     obj.innerHTML = (value >= 0 ? '+' : '') + value + '%';
-                    if (value > 0) {
-                        obj.className = "text-3xl font-extrabold tracking-tight text-emerald-400";
-                    } else if (value < 0) {
-                        obj.className = "text-3xl font-extrabold tracking-tight text-rose-500";
+                    
+                    const arrowEl = document.getElementById('growthArrow');
+                    const cardEl = document.getElementById('growthCard');
+
+                    if (value >= 0) {
+                        obj.className = "text-3xl font-extrabold tracking-tight text-[#228b22]";
+                        if(arrowEl) {
+                            arrowEl.innerHTML = "&#x219D;";
+                            arrowEl.style.color = "#228b22";
+                        }
+                        if(cardEl) {
+                            cardEl.className = "bg-gray-950 neon-emerald rounded-2xl p-6 transition-all duration-300 hover:scale-[1.01] flex justify-between items-center";
+                        }
                     } else {
-                        obj.className = "text-3xl font-extrabold tracking-tight text-white";
+                        obj.className = "text-3xl font-extrabold tracking-tight text-[#f43f5e]";
+                        if(arrowEl) {
+                            arrowEl.innerHTML = "&#8605;";
+                            arrowEl.style.color = "#f43f5e";
+                        }
+                        if(cardEl) {
+                            cardEl.className = "bg-gray-950 neon-rose rounded-2xl p-6 transition-all duration-300 hover:scale-[1.01] flex justify-between items-center";
+                        }
                     }
                 }
                 
@@ -180,22 +202,6 @@
         }
 
         function initCharts() {
-            // Sparkline Initialization
-            sparklineChart = Highcharts.chart('sparklineContainer', {
-                chart: { type: 'area', backgroundColor: 'transparent', margin: [2, 2, 2, 2], skipClone: true },
-                title: null, xAxis: { visible: false }, yAxis: { visible: false },
-                legend: { enabled: false }, credits: { enabled: false },
-                tooltip: { enabled: false },
-                plotOptions: {
-                    series: {
-                        enableMouseTracking: false, lineWidth: 2, shadow: false,
-                        states: { hover: { enabled: false } },
-                        marker: { enabled: false }
-                    }
-                },
-                series: [{ data: [0, 0], color: '#10b981', fillColor: 'rgba(16, 185, 129, 0.05)' }]
-            });
-
             gaugeChart = Highcharts.chart('gaugeContainer', {
                 chart: { type: 'gauge', backgroundColor: 'transparent', margin: [0, 0, 10, 0] },
                 title: null,
@@ -256,21 +262,6 @@
             animateValue('growthValue', 0, growth, 1000, false);
             animateValue('revText', 0, curRev, 1000);
             animateValue('targetText', 0, curTarget, 1000);
-
-            // Dynamic Sparkline Vector Direction Logic
-            const sparkColor = growth >= 0 ? '#10b981' : '#f43f5e';
-            const sparkFill = growth >= 0 ? 'rgba(16, 185, 129, 0.05)' : 'rgba(244, 63, 94, 0.05)';
-            
-            // Generate visual path array relative to final outcome
-            const sparkData = growth >= 0 
-                ? [oldRev * 0.9, oldRev, curRev] 
-                : [oldRev * 1.1, oldRev, curRev];
-                
-            sparklineChart.series[0].update({
-                color: sparkColor,
-                fillColor: sparkFill
-            }, false);
-            sparklineChart.series[0].setData(sparkData, true);
 
             // Dynamic Changing Colors logic for Gauge Headers
             const revTextEl = document.getElementById('revText');
