@@ -81,9 +81,9 @@
                     <p class="text-[10px] font-bold text-amber-500/80 uppercase tracking-widest mb-1">YoY Growth</p>
                     <h3 id="growthValue" class="text-3xl font-extrabold tracking-tight text-white">0%</h3>
                 </div>
-                <!-- HTML5 Hardware-Accelerated Dynamic Running Sparkline -->
-                <div class="relative w-32 h-14 flex items-center justify-end">
-                    <canvas id="runningSparkline" width="120" height="50" class="w-[120px] h-[50px]"></canvas>
+                <!-- HTML5 Hardware-Accelerated Curved Dynamic Sparkline with Arrowhead -->
+                <div class="relative w-36 h-14 flex items-center justify-end">
+                    <canvas id="runningSparkline" width="130" height="50" class="w-[130px] h-[50px]"></canvas>
                 </div>
             </div>
         </div>
@@ -147,7 +147,7 @@
             return parseFloat(val.toString().replace(/[₱, ]/g, '')) || 0;
         };
 
-        // Custom Canvas engine for generating running line animation loops
+        // Canvas Engine creating animated smooth cubic Bezier curve vectors
         function drawRunningSparkline(isGoingUp) {
             const canvas = document.getElementById('runningSparkline');
             if (!canvas) return;
@@ -161,16 +161,38 @@
             const height = canvas.height;
             
             let progress = 0;
-            const speed = 0.04; // Controls draw duration speed
+            const speed = 0.03; // Smooth animation window timing
             
-            // Define points depending strictly on real growth variance direction
-            const startX = 5;
+            // Layout dimensions matching boundaries safely
+            const startX = 6;
             const startY = isGoingUp ? height - 8 : 8;
-            const endX = width - 5;
+            const endX = width - 12; // Reserves space so arrowhead stays within canvas boundaries
             const endY = isGoingUp ? 8 : height - 8;
 
+            // Generate control points to simulate natural financial trend waves
+            const cp1x = startX + (endX - startX) * 0.4;
+            const cp1y = startY;
+            const cp2x = startX + (endX - startX) * 0.6;
+            const cp2y = endY;
+
             const lineColor = isGoingUp ? '#228b22' : '#f43f5e';
-            const glowColor = isGoingUp ? 'rgba(34, 139, 34, 0.4)' : 'rgba(244, 63, 94, 0.4)';
+            const glowColor = isGoingUp ? 'rgba(34, 139, 34, 0.35)' : 'rgba(244, 63, 94, 0.35)';
+
+            // Calculates specific properties on a cubic Bezier curve at a given time progress interval (t)
+            function getBezierXY(t) {
+                const mt = 1 - t;
+                const x = mt*mt*mt*startX + 3*mt*mt*t*cp1x + 3*mt*t*t*cp2x + t*t*t*endX;
+                const y = mt*mt*mt*startY + 3*mt*mt*t*cp1y + 3*mt*t*t*cp2y + t*t*t*endY;
+                return { x, y };
+            }
+
+            // Calculates the precise slope angle at progress window slice (t)
+            function getBezierAngle(t) {
+                const mt = 1 - t;
+                const dx = 3*mt*mt*(cp1x - startX) + 6*mt*t*(cp2x - cp1x) + 3*t*t*(endX - cp2x);
+                const dy = 3*mt*mt*(cp1y - startY) + 6*mt*t*(cp2y - cp1y) + 3*t*t*(endY - cp2y);
+                return Math.atan2(dy, dx);
+            }
 
             function animate() {
                 progress += speed;
@@ -178,27 +200,47 @@
 
                 ctx.clearRect(0, 0, width, height);
 
-                // Calculate ongoing current frame path positions
-                const currentX = startX + (endX - startX) * progress;
-                const currentY = startY + (endY - startY) * progress;
-
-                // Draw glowing shadow underlay trail
+                // Build modern multi-segment path sequence up to active point
                 ctx.beginPath();
                 ctx.moveTo(startX, startY);
-                ctx.lineTo(currentX, currentY);
+                
+                // Segment subdivision execution across frames
+                const steps = Math.floor(progress * 40);
+                for (let i = 0; i <= steps; i++) {
+                    const t = (i / 40) * progress;
+                    const pt = getBezierXY(t);
+                    ctx.lineTo(pt.x, pt.y);
+                }
+
+                const currentPt = getBezierXY(progress);
+                ctx.lineTo(currentPt.x, currentPt.y);
+
+                // Render glowing shadow underlay trace
                 ctx.strokeStyle = glowColor;
-                ctx.lineWidth = 5;
+                ctx.lineWidth = 6;
                 ctx.lineCap = 'round';
                 ctx.stroke();
 
-                // Draw main sharp indicator line core vector
-                ctx.beginPath();
-                ctx.moveTo(startX, startY);
-                ctx.lineTo(currentX, currentY);
+                // Render pristine solid foreground curve indicator core
                 ctx.strokeStyle = lineColor;
                 ctx.lineWidth = 3;
-                ctx.lineCap = 'round';
                 ctx.stroke();
+
+                // Draw solid pointer arrowhead alignment geometry matching terminal velocity slope
+                const angle = getBezierAngle(progress);
+                ctx.save();
+                ctx.translate(currentPt.x, currentPt.y);
+                ctx.rotate(angle);
+                
+                ctx.beginPath();
+                ctx.moveTo(2, 0);
+                ctx.lineTo(-6, -5);
+                ctx.lineTo(-6, 5);
+                ctx.closePath();
+                
+                ctx.fillStyle = lineColor;
+                ctx.fill();
+                ctx.restore();
 
                 if (progress < 1) {
                     activeAnimationId = requestAnimationFrame(animate);
@@ -312,7 +354,7 @@
             animateValue('revText', 0, curRev, 1000);
             animateValue('targetText', 0, curTarget, 1000);
 
-            // Execute dynamic vector line animation based on growth state
+            // Trigger canvas directional curved vectors
             drawRunningSparkline(growth >= 0);
 
             // Dynamic Changing Colors logic for Gauge Headers
