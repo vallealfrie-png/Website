@@ -32,6 +32,7 @@
 </head>
 <body class="min-h-screen pb-16">
 
+    <!-- Navbar -->
     <nav class="border-b border-gray-800 bg-gray-950/70 backdrop-blur-md sticky top-0 z-50 px-8 py-4 mb-8">
         <div class="max-w-7xl mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-4">
@@ -49,6 +50,7 @@
 
     <div class="max-w-7xl mx-auto px-6 space-y-6">
         
+        <!-- Controls Section -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div class="bg-gray-900/60 border border-gray-800 rounded-xl px-4 py-2">
                 <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider">Timeline</label>
@@ -64,6 +66,7 @@
             </div>
         </div>
 
+        <!-- Metric KPI Board -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="bg-gray-950 neon-emerald rounded-2xl p-6 transition-all duration-300 hover:scale-[1.01]">
                 <p class="text-[10px] font-bold text-emerald-500/80 uppercase tracking-widest mb-1">2026 Actual Revenue</p>
@@ -84,6 +87,7 @@
             </div>
         </div>
 
+        <!-- Gauge and Target Listing -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div class="bg-gray-950 neon-purple rounded-2xl p-6 flex flex-col justify-between">
                 <div class="flex items-center justify-between gap-2 w-full border-b border-gray-900 pb-4 mb-4">
@@ -117,6 +121,7 @@
             </div>
         </div>
 
+        <!-- Historical Stream & Deficit Board -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="bg-gray-950 neon-blue lg:col-span-2 rounded-2xl p-6">
                 <div id="comparisonContainer" class="h-[360px]"></div>
@@ -311,7 +316,25 @@
                 xAxis: { categories: [], labels: { style: { color: '#6b7280', fontWeight: '600' } }, lineWidth: 0 },
                 yAxis: { title: { text: null }, gridLineColor: 'rgba(255,255,255,0.03)', labels: { style: { color: '#4b5563' } } },
                 series: [
-                    { type: 'column', name: '2026 Revenue', color: '#0ea5e9', data: [] },
+                    { 
+                        type: 'column', 
+                        name: '2026 Revenue', 
+                        color: '#0ea5e9', 
+                        data: [],
+                        // Added Dynamic Monthly Attainment Percentage Labels Above Columns
+                        dataLabels: {
+                            enabled: true,
+                            inside: false,
+                            useHTML: true,
+                            y: -10,
+                            formatter: function() {
+                                const pct = this.point.attainmentPct;
+                                if (pct === undefined || pct === null) return '';
+                                const txtColor = pct >= 100 ? '#228b22' : '#f43f5e';
+                                return `<span style="color: ${txtColor}; font-weight: 800; font-size: 11px;">${pct}%</span>`;
+                            }
+                        }
+                    },
                     { type: 'line', name: '2026 Target', color: '#a855f7', data: [], marker: { radius: 3.5 } }
                 ],
                 credits: { enabled: false }
@@ -342,7 +365,6 @@
             animateValue('revText', 0, curRev, 1000);
             animateValue('targetText', 0, curTarget, 1000);
 
-            // Calculate exact surplus or deficit variance spread
             const varianceEl = document.getElementById('varianceText');
             if (varianceEl) {
                 if (curTarget === 0) {
@@ -393,9 +415,11 @@
             
             const dynamicColoredBars = revList2026.map((rev, idx) => {
                 const targetValue = targetList2026[idx];
+                const pct = targetValue > 0 ? Math.round((rev / targetValue) * 100) : 0;
                 return {
                     y: rev,
-                    color: rev >= targetValue ? '#228b22' : '#f43f5e'
+                    color: rev >= targetValue ? '#228b22' : '#f43f5e',
+                    attainmentPct: pct // Attach monthly milestone data context to points
                 };
             });
 
