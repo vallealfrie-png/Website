@@ -320,7 +320,7 @@
                             enabled: true,
                             inside: false,
                             useHTML: true,
-                            // Dynamic stacking-dodge positioning engine
+                            // Lock label strictly above whichever metric is higher (Target line vs Revenue bar)
                             formatter: function() {
                                 const pct = this.point.attainmentPct;
                                 if (pct === undefined || pct === null) return '';
@@ -329,24 +329,23 @@
                                 const target = this.point.monthTarget;
                                 const txtColor = pct >= 100 ? '#228b22' : '#f43f5e';
                                 
-                                // Determine distance variance window between column height and line node
-                                const delta = Math.abs(rev - target);
-                                const standardProportion = target > 0 ? (delta / target) : 1;
-                                
                                 let dynamicInlineStyle = "";
                                 
-                                // Anti-collision system logic criteria
-                                if (standardProportion < 0.12) { 
-                                    if (rev >= target) {
-                                        // Pushes label safely skyward away from trendline path
-                                        dynamicInlineStyle = "display: block; transform: translateY(-16px); background: #030712; padding: 1px 4px; border-radius: 4px;";
-                                    } else {
-                                        // Drops label down into column base to bypass the line overlay window
-                                        dynamicInlineStyle = "display: block; transform: translateY(18px); background: #030712; padding: 1px 4px; border-radius: 4px;";
-                                    }
+                                // Check if revenue is trailing behind target line
+                                if (rev < target) {
+                                    // Highcharts places labels based on the column height. 
+                                    // Since target line is higher, calculate the visual gap and shift text UP past it.
+                                    const rawDiff = target - rev;
+                                    const percentGap = target > 0 ? (rawDiff / target) : 0;
+                                    
+                                    // Translate ratio calculation directly to reactive vertical pixel adjustment offsets
+                                    let pixelShift = Math.round(percentGap * 210) + 16;
+                                    if(pixelShift > 180) pixelShift = 180; // Bound capping safeguard
+                                    
+                                    dynamicInlineStyle = `display: block; transform: translateY(-${pixelShift}px); background: #030712; padding: 1px 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.05);`;
                                 } else {
-                                    // Standard clear layout margin rules
-                                    dynamicInlineStyle = "display: block; transform: translateY(-2px);";
+                                    // Revenue surpassed target line, place text comfortably above the bar peak
+                                    dynamicInlineStyle = "display: block; transform: translateY(-16px); background: #030712; padding: 1px 4px; border-radius: 4px;";
                                 }
 
                                 return `<span style="color: ${txtColor}; font-weight: 800; font-size: 11px; ${dynamicInlineStyle}">${pct}%</span>`;
@@ -438,7 +437,7 @@
                     y: rev,
                     color: rev >= targetValue ? '#228b22' : '#f43f5e',
                     attainmentPct: pct,
-                    monthTarget: targetValue // Pass exact contextual target boundary to calculations
+                    monthTarget: targetValue
                 };
             });
 
