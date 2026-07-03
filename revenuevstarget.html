@@ -131,6 +131,12 @@
                 </div>
             </div>
         </div>
+
+        <div class="grid grid-cols-1 gap-6">
+            <div class="bg-gray-950 neon-amber rounded-2xl p-6">
+                <div id="growthStreamContainer" class="h-[360px]"></div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -138,7 +144,7 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpobGRtYXJ3a3Vsa2NqbnJqdmZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODAzMjQsImV4cCI6MjA5MTg1NjMyNH0.AhjpHXlZSgWNlEshgc0giSSUvHV249f34424i-5g8do';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        let gaugeChart, comparisonChart;
+        let gaugeChart, comparisonChart, growthStreamChart;
         let activeAnimationId = null; 
         const MONTH_ORDER = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -251,13 +257,7 @@
                 if (isCurrency) {
                     if (id === 'score2026') {
                         obj.innerHTML = '₱' + value.toLocaleString();
-                        obj.className = "text-3xl font-extrabold tracking-tight text-[#228b22]";
                     } else if (id === 'score2025') {
-                        obj.innerHTML = '₱' + value.toLocaleString();
-                        obj.className = "text-3xl font-extrabold tracking-tight text-white";
-                    } else if (id === 'targetText') {
-                        obj.innerHTML = '₱' + value.toLocaleString();
-                    } else if (id === 'revText') {
                         obj.innerHTML = '₱' + value.toLocaleString();
                     } else {
                         obj.innerHTML = '₱' + value.toLocaleString();
@@ -320,7 +320,6 @@
                             enabled: true,
                             inside: false,
                             useHTML: true,
-                            // Lock label strictly above whichever metric is higher (Target line vs Revenue bar)
                             formatter: function() {
                                 const pct = this.point.attainmentPct;
                                 if (pct === undefined || pct === null) return '';
@@ -330,29 +329,89 @@
                                 const txtColor = pct >= 100 ? '#228b22' : '#f43f5e';
                                 
                                 let dynamicInlineStyle = "";
-                                
-                                // Check if revenue is trailing behind target line
                                 if (rev < target) {
-                                    // Highcharts places labels based on the column height. 
-                                    // Since target line is higher, calculate the visual gap and shift text UP past it.
                                     const rawDiff = target - rev;
                                     const percentGap = target > 0 ? (rawDiff / target) : 0;
-                                    
-                                    // Translate ratio calculation directly to reactive vertical pixel adjustment offsets
                                     let pixelShift = Math.round(percentGap * 210) + 16;
-                                    if(pixelShift > 180) pixelShift = 180; // Bound capping safeguard
-                                    
+                                    if(pixelShift > 180) pixelShift = 180;
                                     dynamicInlineStyle = `display: block; transform: translateY(-${pixelShift}px); background: #030712; padding: 1px 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.05);`;
                                 } else {
-                                    // Revenue surpassed target line, place text comfortably above the bar peak
                                     dynamicInlineStyle = "display: block; transform: translateY(-16px); background: #030712; padding: 1px 4px; border-radius: 4px;";
                                 }
-
                                 return `<span style="color: ${txtColor}; font-weight: 800; font-size: 11px; ${dynamicInlineStyle}">${pct}%</span>`;
                             }
                         }
                     },
                     { type: 'line', name: '2026 Target', color: '#a855f7', data: [], marker: { radius: 3.5 } }
+                ],
+                credits: { enabled: false }
+            });
+
+            // NEW: Initialize Year-over-Year Growth Spline Stream
+            growthStreamChart = Highcharts.chart('growthStreamContainer', {
+                chart: { backgroundColor: 'transparent' },
+                title: { text: 'Year-over-Year (YoY) Growth Analytics Stream', style: { color: '#9ca3af', fontSize: '13px', fontWeight: '700', letterSpacing: '0.05em' } },
+                xAxis: { categories: [], labels: { style: { color: '#6b7280', fontWeight: '600' } }, lineWidth: 0 },
+                yAxis: [
+                    { 
+                        title: { text: null }, 
+                        gridLineColor: 'rgba(255,255,255,0.02)', 
+                        labels: { style: { color: '#4b5563' } } 
+                    },
+                    { 
+                        title: { text: null }, 
+                        opposite: true, 
+                        gridLineWidth: 0,
+                        labels: { 
+                            formatter: function() { return this.value + '%'; },
+                            style: { color: '#f59e0b', fontWeight: '700' } 
+                        } 
+                    }
+                ],
+                tooltip: { shared: true },
+                series: [
+                    { 
+                        type: 'spline', 
+                        name: '2025 Revenue', 
+                        color: '#4b5563', 
+                        dashStyle: 'ShortDash',
+                        data: [], 
+                        marker: { radius: 3 } 
+                    },
+                    { 
+                        type: 'areaspline', 
+                        name: '2026 Revenue', 
+                        color: {
+                            linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
+                            stops: [
+                                [0, 'rgba(16, 185, 129, 0.25)'],
+                                [1, 'rgba(16, 185, 129, 0.0)']
+                            ]
+                        },
+                        lineColor: '#10b981',
+                        lineWidth: 3,
+                        data: [], 
+                        marker: { radius: 4, fillColor: '#030712', lineWidth: 2, lineColor: '#10b981' } 
+                    },
+                    {
+                        type: 'line',
+                        name: 'Growth Rate',
+                        color: '#f59e0b',
+                        yAxis: 1,
+                        data: [],
+                        marker: { enabled: false },
+                        lineWidth: 1.5,
+                        dashStyle: 'Dot',
+                        dataLabels: {
+                            enabled: true,
+                            useHTML: true,
+                            formatter: function() {
+                                const val = this.y;
+                                const clr = val >= 0 ? '#228b22' : '#f43f5e';
+                                return `<span style="color:${clr}; font-weight:800; font-size:10px; background:#090d16; padding:1px 3px; border-radius:3px;">${val >= 0 ? '+' : ''}${val}%</span>`;
+                            }
+                        }
+                    }
                 ],
                 credits: { enabled: false }
             });
@@ -426,9 +485,17 @@
                 });
             
             comparisonChart.update({ xAxis: { categories: availableMonths } }, false);
+            growthStreamChart.update({ xAxis: { categories: availableMonths } }, false);
             
             const revList2026 = availableMonths.map(m => deptData.filter(d => d.year == 2026 && d.month == m).reduce((s, r) => s + parseVal(r.revenue), 0));
             const targetList2026 = availableMonths.map(m => deptData.filter(d => d.year == 2026 && d.month == m).reduce((s, r) => s + parseVal(r.target), 0));
+            const revList2025 = availableMonths.map(m => deptData.filter(d => d.year == 2025 && d.month == m).reduce((s, r) => s + parseVal(r.revenue), 0));
+
+            // Calculate percentage growth list for the spline timeline line
+            const monthlyGrowthRates = revList2026.map((rev26, idx) => {
+                const rev25 = revList2025[idx];
+                return rev25 > 0 ? Math.round(((rev26 - rev25) / rev25) * 100) : 0;
+            });
             
             const dynamicColoredBars = revList2026.map((rev, idx) => {
                 const targetValue = targetList2026[idx];
@@ -441,8 +508,14 @@
                 };
             });
 
+            // Update traditional Target chart
             comparisonChart.series[0].setData(dynamicColoredBars, false);
             comparisonChart.series[1].setData(targetList2026, true);
+
+            // Update new YoY Growth Analytics stream chart
+            growthStreamChart.series[0].setData(revList2025, false);
+            growthStreamChart.series[1].setData(revList2026, false);
+            growthStreamChart.series[2].setData(monthlyGrowthRates, true);
 
             const distinctDepartments = [...new Set(rawData.map(item => item.department))].sort();
             const achievedContainer = document.getElementById('hitList');
