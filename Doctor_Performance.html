@@ -89,7 +89,6 @@
             font-size: 8px; color: white; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
         }
 
-        /* Access Denied Warning Overlay Styles */
         #accessDeniedModal {
             position: fixed; inset: 0; background: rgba(0, 0, 0, 0.95);
             backdrop-filter: blur(10px); z-index: 10000; display: none;
@@ -248,16 +247,13 @@
         let emergencyVanguardList = [];
 
         async function init() {
-            // Check if user has an authenticated session
             const { data: { session }, error: authError } = await sb.auth.getSession();
             
             if (authError || !session) {
                 console.warn('Unauthorized access attempt.');
-                // Remove initial loader interface
                 document.getElementById('loader').style.display = 'none';
-                // Trigger the full-screen big warning overlay
                 document.getElementById('accessDeniedModal').style.display = 'flex';
-                return; // Cease all application data rendering operations
+                return;
             }
 
             let allRows = [], rangeStart = 0, pageSize = 1000;
@@ -346,26 +342,41 @@
         function render() {
             visibleCount = 50; 
             const selectedMonth = document.getElementById('monthFilter').value;
-            const selectedPtTypes = Array.from(document.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+            const checkedCheckboxes = Array.from(document.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
             
-            let filtered = masterData.filter(d => selectedPtTypes.includes(d.patient_type));
-            if (paymentMode === 'cash') filtered = filtered.filter(d => d.type === 'Self Pay');
-            else if (paymentMode === 'tpp') filtered = filtered.filter(d => ['HMO', 'INSURANCE', 'INDUSTRIAL'].includes(d.type));
-            if (currentDept !== 'all') filtered = filtered.filter(d => d.department === currentDept);
-            if (selectedMonth !== 'all') filtered = filtered.filter(d => d.month === selectedMonth);
+            const isPatientTypeFiltered = checkedCheckboxes.length < 3;
+            const isPaymentTypeFiltered = paymentMode !== 'all';
+
+            let filtered = masterData.filter(d => {
+                // If either Patient Type or Payment Matrix filters are modified, drop NA entries instantly
+                if (isPatientTypeFiltered || isPaymentTypeFiltered) {
+                    if (!checkedCheckboxes.includes(d.patient_type)) return false;
+                    
+                    if (paymentMode === 'cash' && d.type !== 'Self Pay') return false;
+                    if (paymentMode === 'tpp' && !['HMO', 'INSURANCE', 'INDUSTRIAL'].includes(d.type)) return false;
+                }
+                
+                // Keep NA entries alive across Month and Department filtering cycles
+                if (currentDept !== 'all' && d.department !== currentDept) return false;
+                if (selectedMonth !== 'all' && d.month !== selectedMonth) return false;
+
+                return true;
+            });
             
             const globalTotal = filtered.reduce((sum, r) => sum + (parseFloat(r.revenue) || 0), 0);
             const agg = {};
             filtered.forEach(r => { 
                 if (!agg[r.doctor]) {
-                    agg[r.doctor] = { revenue: 0, specialization: r.specialization || 'General Practice' };
+                    let spec = r.specialization;
+                    if (spec === 'NA' || !spec) spec = 'Other Income';
+                    agg[r.doctor] = { revenue: 0, specialization: spec };
                 }
                 agg[r.doctor].revenue += (parseFloat(r.revenue) || 0); 
             });
 
             let allDoctors = Object.keys(agg).map(name => ({ 
                 name, 
-                revenue: agg[name].revenue,
+                revenue: agg[name].revenue, 
                 specialization: agg[name].specialization 
             }));
 
