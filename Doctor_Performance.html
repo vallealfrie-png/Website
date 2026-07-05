@@ -100,7 +100,6 @@
             border-radius: 12px; text-align: center; padding: 40px 24px;
         }
 
-        /* SVG Font Scalar Controls */
         .responsive-svg-text { width: 100%; height: 42px; display: block; margin-top: 4px; }
     </style>
 </head>
@@ -299,13 +298,11 @@
             } else {
                 if (activeTier) document.getElementById(activeCardId).classList.remove('active');
                 activeTier = tier;
-                document.getElementById(cardId).classList.add('add');
                 document.getElementById(cardId).classList.add('active');
             }
             render();
         }
 
-        // Modified to handle both plain text values and dynamic text tags inside SVGs seamlessly
         function animateValue(id, start, end, isCurrency = false) {
             const obj = document.getElementById(id);
             if (!obj) return;
@@ -376,7 +373,6 @@
                 return true;
             });
             
-            // Grand totals include raw configurations (unfiltered items) for pure cross-referencing ledger depth
             const globalTotal = filtered.reduce((sum, r) => sum + (parseFloat(r.revenue) || 0), 0);
             const agg = {};
             filtered.forEach(r => { 
@@ -445,7 +441,6 @@
         function updateVisuals() {
             const lb = document.getElementById('leaderboard');
             
-            // Remove "(No Name)" exclusively from rankings matrix views
             const filteredDoctorList = currentDoctorList.filter(d => d.name && d.name !== '(No Name)');
             const dataToDisplay = filteredDoctorList.slice(0, visibleCount);
             
@@ -462,7 +457,6 @@
                 </div>
             `).join('');
 
-            // Remove "(No Name)" exclusively from Emergency subset panels
             const filteredEmergencyList = emergencyVanguardList.filter(d => d.name && d.name !== '(No Name)');
 
             if (filteredEmergencyList.length > 0 && (activeTier === null || activeTier === 'emergency')) {
@@ -490,7 +484,6 @@
             if (filteredDoctorList.length > visibleCount) btnContainer.classList.remove('hidden');
             else btnContainer.classList.add('hidden');
 
-            // Remove "(No Name)" explicitly from Chart distribution views
             const chartData = activeTier === 'emergency' ? filteredEmergencyList : filteredDoctorList;
             const top10 = chartData.slice(0, 10);
             const chartColor = activeTier === 'emergency' ? '#f43f5e' : '#6366f1';
