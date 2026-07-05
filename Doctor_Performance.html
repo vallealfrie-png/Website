@@ -99,6 +99,9 @@
             border: 2px solid #f43f5e; box-shadow: 0 0 40px rgba(244, 63, 94, 0.25);
             border-radius: 12px; text-align: center; padding: 40px 24px;
         }
+
+        /* SVG Font Scalar Controls */
+        .responsive-svg-text { width: 100%; height: 42px; display: block; margin-top: 4px; }
     </style>
 </head>
 <body>
@@ -180,12 +183,16 @@
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-8">
             <div class="neon-card card-indigo p-6 flex flex-col items-center justify-center text-center">
                 <p class="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Aggregate Revenue</p>
-                <h2 id="globalRevenue" class="text-3xl font-black text-white tracking-tighter mt-2">₱0</h2>
+                <svg class="responsive-svg-text" viewBox="0 0 200 40" preserveAspectRatio="xMidYMid meet">
+                    <text id="globalRevenue" x="100" y="28" text-anchor="middle" font-weight="900" fill="#ffffff" font-family="'Inter', sans-serif" font-size="28" letter-spacing="-1">₱0</text>
+                </svg>
             </div>
             
             <div class="neon-card card-indigo p-6 flex flex-col items-center justify-center text-center">
                 <p class="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Active Headcount</p>
-                <h2 id="totalDoctors" class="text-3xl font-black text-white tracking-tighter mt-2">0</h2>
+                <svg class="responsive-svg-text" viewBox="0 0 200 40" preserveAspectRatio="xMidYMid meet">
+                    <text id="totalDoctors" x="100" y="28" text-anchor="middle" font-weight="900" fill="#ffffff" font-family="'Inter', sans-serif" font-size="28" letter-spacing="-1">0</text>
+                </svg>
             </div>
 
             <div class="neon-card card-emerald p-4 lg:col-span-2 flex items-center">
@@ -292,11 +299,13 @@
             } else {
                 if (activeTier) document.getElementById(activeCardId).classList.remove('active');
                 activeTier = tier;
+                document.getElementById(cardId).classList.add('add');
                 document.getElementById(cardId).classList.add('active');
             }
             render();
         }
 
+        // Modified to handle both plain text values and dynamic text tags inside SVGs seamlessly
         function animateValue(id, start, end, isCurrency = false) {
             const obj = document.getElementById(id);
             if (!obj) return;
@@ -305,7 +314,13 @@
                 if (!startTime) startTime = timestamp;
                 const progress = Math.min((timestamp - startTime) / 800, 1);
                 const current = Math.floor(progress * (end - start) + start);
-                obj.innerText = isCurrency ? `₱${current.toLocaleString()}` : current.toLocaleString();
+                const targetText = isCurrency ? `₱${current.toLocaleString()}` : current.toLocaleString();
+                
+                if (obj.tagName === 'text' || obj.tagName === 'TEXT') {
+                    obj.textContent = targetText;
+                } else {
+                    obj.innerText = targetText;
+                }
                 if (progress < 1) requestAnimationFrame(step);
             };
             requestAnimationFrame(step);
@@ -361,7 +376,7 @@
                 return true;
             });
             
-            // Note: globalTotal retains ALL raw rows (including '(No Name)') for flawless bookkeeping alignment
+            // Grand totals include raw configurations (unfiltered items) for pure cross-referencing ledger depth
             const globalTotal = filtered.reduce((sum, r) => sum + (parseFloat(r.revenue) || 0), 0);
             const agg = {};
             filtered.forEach(r => { 
@@ -430,7 +445,7 @@
         function updateVisuals() {
             const lb = document.getElementById('leaderboard');
             
-            // STRIP FROM LIST VISUALS ONLY
+            // Remove "(No Name)" exclusively from rankings matrix views
             const filteredDoctorList = currentDoctorList.filter(d => d.name && d.name !== '(No Name)');
             const dataToDisplay = filteredDoctorList.slice(0, visibleCount);
             
@@ -447,7 +462,7 @@
                 </div>
             `).join('');
 
-            // STRIP FROM EMERGENCY VANGUARD VISUALS ONLY
+            // Remove "(No Name)" exclusively from Emergency subset panels
             const filteredEmergencyList = emergencyVanguardList.filter(d => d.name && d.name !== '(No Name)');
 
             if (filteredEmergencyList.length > 0 && (activeTier === null || activeTier === 'emergency')) {
@@ -475,7 +490,7 @@
             if (filteredDoctorList.length > visibleCount) btnContainer.classList.remove('hidden');
             else btnContainer.classList.add('hidden');
 
-            // STRIP FROM BAR GRAPH VISUALS ONLY
+            // Remove "(No Name)" explicitly from Chart distribution views
             const chartData = activeTier === 'emergency' ? filteredEmergencyList : filteredDoctorList;
             const top10 = chartData.slice(0, 10);
             const chartColor = activeTier === 'emergency' ? '#f43f5e' : '#6366f1';
