@@ -348,7 +348,9 @@
             const isPaymentTypeFiltered = paymentMode !== 'all';
 
             let filtered = masterData.filter(d => {
-                // If either Patient Type or Payment Matrix filters are modified, drop NA entries instantly
+                // Instantly remove entries missing or matching "(No Name)"
+                if (!d.doctor || d.doctor === '(No Name)') return false;
+
                 if (isPatientTypeFiltered || isPaymentTypeFiltered) {
                     if (!checkedCheckboxes.includes(d.patient_type)) return false;
                     
@@ -356,7 +358,6 @@
                     if (paymentMode === 'tpp' && !['HMO', 'INSURANCE', 'INDUSTRIAL'].includes(d.type)) return false;
                 }
                 
-                // Keep NA entries alive across Month and Department filtering cycles
                 if (currentDept !== 'all' && d.department !== currentDept) return false;
                 if (selectedMonth !== 'all' && d.month !== selectedMonth) return false;
 
@@ -429,7 +430,8 @@
         let mainChart;
         function updateVisuals() {
             const lb = document.getElementById('leaderboard');
-            const dataToDisplay = currentDoctorList.slice(0, visibleCount);
+            const filteredDoctorList = currentDoctorList.filter(d => d.name && d.name !== '(No Name)');
+            const dataToDisplay = filteredDoctorList.slice(0, visibleCount);
             
             let html = dataToDisplay.map(d => `
                 <div class="flex justify-between border-b border-neutral-900 pb-3 items-center group">
@@ -444,13 +446,15 @@
                 </div>
             `).join('');
 
-            if (emergencyVanguardList.length > 0 && (activeTier === null || activeTier === 'emergency')) {
+            const filteredEmergencyList = emergencyVanguardList.filter(d => d.name && d.name !== '(No Name)');
+
+            if (filteredEmergencyList.length > 0 && (activeTier === null || activeTier === 'emergency')) {
                 html += `
                     <div class="mt-10 mb-4 border-l-2 border-rose-500 pl-4 py-1 bg-rose-500/5">
                         <h4 class="text-[10px] font-black text-rose-500 uppercase tracking-[0.3em]">Emergency Vanguard</h4>
                     </div>
                 `;
-                html += emergencyVanguardList.map(d => `
+                html += filteredEmergencyList.map(d => `
                     <div class="flex justify-between border-b border-neutral-900 pb-3 items-center group opacity-80 hover:opacity-100">
                         <div class="flex flex-col truncate pr-4">
                             <span class="text-neutral-400 font-bold uppercase truncate flex items-center">
@@ -466,10 +470,10 @@
             lb.innerHTML = html;
 
             const btnContainer = document.getElementById('loadMoreContainer');
-            if (currentDoctorList.length > visibleCount) btnContainer.classList.remove('hidden');
+            if (filteredDoctorList.length > visibleCount) btnContainer.classList.remove('hidden');
             else btnContainer.classList.add('hidden');
 
-            const chartData = activeTier === 'emergency' ? emergencyVanguardList : currentDoctorList;
+            const chartData = activeTier === 'emergency' ? filteredEmergencyList : filteredDoctorList;
             const top10 = chartData.slice(0, 10);
             const chartColor = activeTier === 'emergency' ? '#f43f5e' : '#6366f1';
 
