@@ -348,9 +348,6 @@
             const isPaymentTypeFiltered = paymentMode !== 'all';
 
             let filtered = masterData.filter(d => {
-                // Instantly remove entries missing or matching "(No Name)"
-                if (!d.doctor || d.doctor === '(No Name)') return false;
-
                 if (isPatientTypeFiltered || isPaymentTypeFiltered) {
                     if (!checkedCheckboxes.includes(d.patient_type)) return false;
                     
@@ -364,15 +361,17 @@
                 return true;
             });
             
+            // Note: globalTotal retains ALL raw rows (including '(No Name)') for flawless bookkeeping alignment
             const globalTotal = filtered.reduce((sum, r) => sum + (parseFloat(r.revenue) || 0), 0);
             const agg = {};
             filtered.forEach(r => { 
-                if (!agg[r.doctor]) {
+                const docName = r.doctor || 'Unknown';
+                if (!agg[docName]) {
                     let spec = r.specialization;
                     if (spec === 'NA' || !spec) spec = 'Other Income';
-                    agg[r.doctor] = { revenue: 0, specialization: spec };
+                    agg[docName] = { revenue: 0, specialization: spec };
                 }
-                agg[r.doctor].revenue += (parseFloat(r.revenue) || 0); 
+                agg[docName].revenue += (parseFloat(r.revenue) || 0); 
             });
 
             let allDoctors = Object.keys(agg).map(name => ({ 
@@ -430,6 +429,8 @@
         let mainChart;
         function updateVisuals() {
             const lb = document.getElementById('leaderboard');
+            
+            // STRIP FROM LIST VISUALS ONLY
             const filteredDoctorList = currentDoctorList.filter(d => d.name && d.name !== '(No Name)');
             const dataToDisplay = filteredDoctorList.slice(0, visibleCount);
             
@@ -446,6 +447,7 @@
                 </div>
             `).join('');
 
+            // STRIP FROM EMERGENCY VANGUARD VISUALS ONLY
             const filteredEmergencyList = emergencyVanguardList.filter(d => d.name && d.name !== '(No Name)');
 
             if (filteredEmergencyList.length > 0 && (activeTier === null || activeTier === 'emergency')) {
@@ -473,6 +475,7 @@
             if (filteredDoctorList.length > visibleCount) btnContainer.classList.remove('hidden');
             else btnContainer.classList.add('hidden');
 
+            // STRIP FROM BAR GRAPH VISUALS ONLY
             const chartData = activeTier === 'emergency' ? filteredEmergencyList : filteredDoctorList;
             const top10 = chartData.slice(0, 10);
             const chartColor = activeTier === 'emergency' ? '#f43f5e' : '#6366f1';
