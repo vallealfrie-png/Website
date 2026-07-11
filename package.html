@@ -151,8 +151,8 @@
         async function init() {
             let rows = [], p = 0;
             while (true) {
-                // Pointed straight to your clean filtered active_dataset view!
-                const { data, error } = await sb.from('active_dataset')
+                // Pointed straight to your core source 'database' table to bypass structural anomalies
+                const { data, error } = await sb.from('database')
                     .select('*')
                     .order('date', { ascending: true })
                     .range(p * 1000, (p + 1) * 1000 - 1);
@@ -163,21 +163,23 @@
                 if (data.length < 1000) break;
             }
 
-            masterData = rows.map(r => {
-                const dateStr = r.date || "2026-01-01"; 
-                const parts = dateStr.split('T')[0].split('-'); 
-                const year = parseInt(parts[0], 10);
-                const month = parseInt(parts[1], 10) - 1; 
-                const day = parseInt(parts[2], 10);
+            masterData = rows
+                .filter(r => r.date && r.amount !== null && r.amount !== undefined) // Hard guard logic to eliminate ghost metrics
+                .map(r => {
+                    const dateStr = r.date; 
+                    const parts = dateStr.split('T')[0].split('-'); 
+                    const year = parseInt(parts[0], 10);
+                    const month = parseInt(parts[1], 10) - 1; 
+                    const day = parseInt(parts[2], 10);
 
-                return { 
-                    ...r, 
-                    y: year, 
-                    m: month, 
-                    day: day, 
-                    amt: parseFloat(String(r.amount).replace(/[^0-9.-]+/g,"")) || 0 
-                };
-            });
+                    return { 
+                        ...r, 
+                        y: year, 
+                        m: month, 
+                        day: day, 
+                        amt: parseFloat(String(r.amount).replace(/[^0-9.-]+/g,"")) || 0 
+                    };
+                });
 
             const validYears = masterData.map(d => d.y).filter(y => y <= 2026);
             maxYear = validYears.length > 0 ? Math.max(...validYears) : 2026;
