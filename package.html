@@ -42,7 +42,7 @@
         <div class="w-48 bg-neutral-900 h-1 mb-4 overflow-hidden rounded-full">
             <div id="progressBar" class="bg-indigo-600 h-full w-0 transition-all duration-300 shadow-[0_0_15px_#6366f1]"></div>
         </div>
-        <p class="text-[10px] font-bold tracking-[0.3em] text-white uppercase animate-pulse">Synchronizing Active Dataset</p>
+        <p class="text-[10px] font-bold tracking-[0.3em] text-white uppercase animate-pulse">Synchronizing 2026 Dataset</p>
     </div>
 
     <nav class="border-b border-neutral-900 bg-black/80 backdrop-blur-md px-8 py-4 flex flex-wrap justify-between items-center sticky top-0 z-50">
@@ -66,12 +66,12 @@
     <main class="p-6 max-w-[1600px] mx-auto space-y-6">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div class="neon-card card-indigo p-6">
-                <p id="labelYear3" class="text-[9px] font-bold text-indigo-400 uppercase tracking-widest">Current Period</p>
+                <p class="text-[9px] font-bold text-indigo-400 uppercase tracking-widest">Current Period</p>
                 <h2 id="valYear3" class="text-4xl font-black mt-2 text-white glow-text-white">₱0</h2>
                 <p id="cenYear3" class="text-white text-lg font-bold mt-1">---</p>
             </div>
             <div class="neon-card card-slate p-6">
-                <p id="labelYear2" class="text-[9px] font-bold text-neutral-400 uppercase tracking-widest">Previous Period</p>
+                <p class="text-[9px] font-bold text-neutral-400 uppercase tracking-widest">Previous Period</p>
                 <h2 id="valYear2" class="text-3xl font-black mt-2 text-neutral-200">₱0</h2>
                 <p id="cenYear2" class="text-white text-lg font-bold mt-1">---</p>
             </div>
@@ -119,10 +119,12 @@
         const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         const neonPalette = ['#6366f1', '#10b981', '#f59e0b', '#f43f5e', '#8b5cf6', '#06b6d4'];
 
+        // Register the datalabels plugin globally so Chart.js can find it
         Chart.register(ChartDataLabels);
 
-        let masterData = [], charts = {}, maxYear, latestActiveMonth = 11;
+        let masterData = [], charts = {}, maxYear, activeMonths = [];
 
+        // Count Animation Engine
         function animateNumber(id, target, prefix = '', suffix = '') {
             const el = document.getElementById(id);
             if (!el) return;
@@ -134,6 +136,8 @@
             function update(now) {
                 const elapsed = now - startTime;
                 const progress = Math.min(elapsed / duration, 1);
+                
+                // EaseOutQuad smoothing
                 const ease = progress * (2 - progress);
                 const current = Math.round(start + (target - start) * ease);
 
@@ -151,7 +155,6 @@
         async function init() {
             let rows = [], p = 0;
             while (true) {
-                // Pointed straight to your core source 'database' table to bypass structural anomalies
                 const { data, error } = await sb.from('database')
                     .select('*')
                     .order('date', { ascending: true })
@@ -163,34 +166,25 @@
                 if (data.length < 1000) break;
             }
 
-            masterData = rows
-                .filter(r => r.date && r.amount !== null && r.amount !== undefined) // Hard guard logic to eliminate ghost metrics
-                .map(r => {
-                    const dateStr = r.date; 
-                    const parts = dateStr.split('T')[0].split('-'); 
-                    const year = parseInt(parts[0], 10);
-                    const month = parseInt(parts[1], 10) - 1; 
-                    const day = parseInt(parts[2], 10);
+            masterData = rows.map(r => {
+                const dateStr = r.date || "2026-01-01"; 
+                
+                const parts = dateStr.split('T')[0].split('-'); 
+                const year = parseInt(parts[0], 10);
+                const month = parseInt(parts[1], 10) - 1; 
+                const day = parseInt(parts[2], 10);
 
-                    return { 
-                        ...r, 
-                        y: year, 
-                        m: month, 
-                        day: day, 
-                        amt: parseFloat(String(r.amount).replace(/[^0-9.-]+/g,"")) || 0 
-                    };
-                });
+                return { 
+                    ...r, 
+                    y: year, 
+                    m: month, 
+                    day: day, 
+                    amt: parseFloat(String(r.amount).replace(/[^0-9.-]+/g,"")) || 0 
+                };
+            });
 
-            const validYears = masterData.map(d => d.y).filter(y => y <= 2026);
-            maxYear = validYears.length > 0 ? Math.max(...validYears) : 2026;
-
-            // Dynamically scan the real operational limit of 2026 data
-            const currentYearData = masterData.filter(d => d.y === maxYear && d.amt > 0);
-            latestActiveMonth = currentYearData.length > 0 ? Math.max(...currentYearData.map(d => d.m)) : 11;
-
-            document.getElementById('labelYear3').textContent = `${maxYear} PERIOD`;
-            document.getElementById('labelYear2').textContent = `${maxYear - 1} MATCHED PERIOD`;
-
+            maxYear = Math.max(...masterData.map(d => d.y));
+            activeMonths = [...new Set(masterData.filter(d => d.y === maxYear).map(d => d.m))].sort((a,b)=>a-b);
             const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
             document.getElementById('monthSlicer').innerHTML = `<option value="all">Cumulative Comparison</option>` + months.map((m,i)=>`<option value="${i}">${m}</option>`).join('');
             
@@ -214,15 +208,8 @@
 
         function updateMetrics(mVal, data) {
             const years = [maxYear - 2, maxYear - 1, maxYear];
-            
             const stats = years.map(yr => {
-                let sub;
-                if (mVal === "all") {
-                    // Targets 2025 and 2024 to lock directly into 2026's max active month limit
-                    sub = data.filter(d => d.y === yr && d.m <= latestActiveMonth);
-                } else {
-                    sub = data.filter(d => d.y === yr && d.m === parseInt(mVal, 10));
-                }
+                const sub = mVal === "all" ? data.filter(d => d.y === yr && activeMonths.includes(d.m)) : data.filter(d => d.y === yr && d.m === parseInt(mVal));
                 return { yr, r: sub.reduce((s,d)=>s+d.amt,0), n: sub.length };
             });
             
@@ -245,6 +232,7 @@
 
             if (mVal === "all") {
                 labels = allMonths;
+                const latestActiveMonth = activeMonths.length > 0 ? Math.max(...activeMonths) : 11;
                 
                 labels.forEach((_, i) => {
                     if (i <= latestActiveMonth) {
@@ -254,7 +242,6 @@
                         curSet.push({ r: null, n: null });
                     }
                     
-                    // Main line graph trends still paint the complete historic line trajectory for 2025
                     const p = data.filter(d => d.y === (maxYear - 1) && d.m === i);
                     preSet.push({ r: p.reduce((s,d)=>s+d.amt,0), n: p.length });
                 });
@@ -350,8 +337,9 @@
                     plugins: { 
                         legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 9, weight: '900' }, color: '#ffffff', padding: 10 } }, 
                         title: { display: !!title, text: title.toUpperCase(), color: '#ffffff', font: { size: 11, weight: '900' }, padding: 15 },
+                        // Data labels configurations
                         datalabels: {
-                            display: isPieOrDoughnut, 
+                            display: isPieOrDoughnut, // Only activate data numbers inside layout slices
                             color: '#ffffff',
                             font: { size: 10, weight: '900' },
                             textShadowColor: 'rgba(0, 0, 0, 0.8)',
