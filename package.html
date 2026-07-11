@@ -42,7 +42,7 @@
         <div class="w-48 bg-neutral-900 h-1 mb-4 overflow-hidden rounded-full">
             <div id="progressBar" class="bg-indigo-600 h-full w-0 transition-all duration-300 shadow-[0_0_15px_#6366f1]"></div>
         </div>
-        <p class="text-[10px] font-bold tracking-[0.3em] text-white uppercase animate-pulse">Synchronizing Dataset</p>
+        <p class="text-[10px] font-bold tracking-[0.3em] text-white uppercase animate-pulse">Synchronizing 2026 Dataset</p>
     </div>
 
     <nav class="border-b border-neutral-900 bg-black/80 backdrop-blur-md px-8 py-4 flex flex-wrap justify-between items-center sticky top-0 z-50">
@@ -119,6 +119,7 @@
         const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         const neonPalette = ['#6366f1', '#10b981', '#f59e0b', '#f43f5e', '#8b5cf6', '#06b6d4'];
 
+        // Register the datalabels plugin globally so Chart.js can find it
         Chart.register(ChartDataLabels);
 
         let masterData = [], charts = {}, maxYear, activeMonths = [];
@@ -136,6 +137,7 @@
                 const elapsed = now - startTime;
                 const progress = Math.min(elapsed / duration, 1);
                 
+                // EaseOutQuad smoothing
                 const ease = progress * (2 - progress);
                 const current = Math.round(start + (target - start) * ease);
 
@@ -166,6 +168,7 @@
 
             masterData = rows.map(r => {
                 const dateStr = r.date || "2026-01-01"; 
+                
                 const parts = dateStr.split('T')[0].split('-'); 
                 const year = parseInt(parts[0], 10);
                 const month = parseInt(parts[1], 10) - 1; 
@@ -182,7 +185,6 @@
 
             maxYear = Math.max(...masterData.map(d => d.y));
             activeMonths = [...new Set(masterData.filter(d => d.y === maxYear).map(d => d.m))].sort((a,b)=>a-b);
-            
             const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
             document.getElementById('monthSlicer').innerHTML = `<option value="all">Cumulative Comparison</option>` + months.map((m,i)=>`<option value="${i}">${m}</option>`).join('');
             
@@ -194,13 +196,10 @@
             render();
         }
 
-        // Cascading core flow processing
         function render() {
             const mVal = document.getElementById('monthSlicer').value;
             const cVal = document.getElementById('catSlicer').value;
-            
             const filtered = masterData.filter(d => (cVal === 'all' || d.category === cVal));
-            
             updateMetrics(mVal, filtered);
             updateTrends(mVal, filtered);
             updateLists(mVal, filtered);
@@ -209,31 +208,20 @@
 
         function updateMetrics(mVal, data) {
             const years = [maxYear - 2, maxYear - 1, maxYear];
-            
             const stats = years.map(yr => {
-                let sub;
-                if (mVal === "all") {
-                    sub = data.filter(d => d.y === yr && activeMonths.includes(d.m));
-                } else {
-                    sub = data.filter(d => d.y === yr && d.m === parseInt(mVal, 10));
-                }
-                return { yr, r: sub.reduce((s, d) => s + d.amt, 0), n: sub.length };
+                const sub = mVal === "all" ? data.filter(d => d.y === yr && activeMonths.includes(d.m)) : data.filter(d => d.y === yr && d.m === parseInt(mVal));
+                return { yr, r: sub.reduce((s,d)=>s+d.amt,0), n: sub.length };
             });
             
-            const currentPeriod = stats[2];
-            const previousPeriod = stats[1];
+            animateNumber('valYear3', stats[2].r, '₱');
+            animateNumber('cenYear3', stats[2].n, '', ' Patients');
+            animateNumber('valYear2', stats[1].r, '₱');
+            animateNumber('cenYear2', stats[1].n, '', ' Patients');
 
-            animateNumber('valYear3', currentPeriod.r, '₱');
-            animateNumber('cenYear3', currentPeriod.n, '', ' Patients');
-            animateNumber('valYear2', previousPeriod.r, '₱');
-            animateNumber('cenYear2', previousPeriod.n, '', ' Patients');
-
-            const diff = previousPeriod.r ? ((currentPeriod.r - previousPeriod.r) / previousPeriod.r * 100) : 0;
+            const diff = stats[1].r ? ((stats[2].r - stats[1].r) / stats[1].r * 100) : 0;
             const vEl = document.getElementById('varRev');
-            
             vEl.textContent = `${diff >= 0 ? '+' : ''}${diff.toFixed(1)}%`;
             vEl.className = `text-4xl font-black mt-1 ${diff >= 0 ? 'text-emerald-400 glow-text-white' : 'text-rose-400'}`;
-            
             drawSpark('sparkLineChart', stats.map(s => s.r));
             document.getElementById('sparkLabels').innerHTML = years.map(y => `<span>${y}</span>`).join('');
         }
@@ -258,7 +246,7 @@
                     preSet.push({ r: p.reduce((s,d)=>s+d.amt,0), n: p.length });
                 });
             } else {
-                const m = parseInt(mVal, 10);
+                const m = parseInt(mVal);
                 const days = new Date(maxYear, m + 1, 0).getDate();
                 
                 let maxDayWithData = 0;
@@ -294,7 +282,7 @@
         }
 
         function updateLists(mVal, data) {
-            const filtered = mVal === 'all' ? data.filter(d => d.y === maxYear) : data.filter(d => d.y === maxYear && d.m === parseInt(mVal, 10));
+            const filtered = mVal === 'all' ? data.filter(d => d.y === maxYear) : data.filter(d => d.y === maxYear && d.m === parseInt(mVal));
             const getGrp = (mode) => {
                 const d = {};
                 filtered.forEach(r => { const k = r.package_name || 'N/A'; d[k] = (d[k] || 0) + (mode === 'rev' ? r.amt : 1); });
@@ -349,8 +337,9 @@
                     plugins: { 
                         legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 9, weight: '900' }, color: '#ffffff', padding: 10 } }, 
                         title: { display: !!title, text: title.toUpperCase(), color: '#ffffff', font: { size: 11, weight: '900' }, padding: 15 },
+                        // Data labels configurations
                         datalabels: {
-                            display: isPieOrDoughnut, 
+                            display: isPieOrDoughnut, // Only activate data numbers inside layout slices
                             color: '#ffffff',
                             font: { size: 10, weight: '900' },
                             textShadowColor: 'rgba(0, 0, 0, 0.8)',
