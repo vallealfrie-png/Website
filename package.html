@@ -115,7 +115,6 @@
 
     <script>
         const SUPABASE_URL = 'https://edlheufkxcyuxontunvm.supabase.co';
-        // Fixed typo here: changed BV777ylA back to the correct BV77ylA
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkbGhldWZreGN5dXhvbnR1bnZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4NjA2ODAsImV4cCI6MjA4MzQzNjY4MH0.BV77ylA7W3H7qd-Y2ty0bZW2KYE3A87uN1rPI1gCZQo';
         const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         const neonPalette = ['#6366f1', '#10b981', '#f59e0b', '#f43f5e', '#8b5cf6', '#06b6d4'];
@@ -156,26 +155,28 @@
         };
         Chart.register(neonPulsePlugin);
 
-        // Native Progressive Left-to-Right Draw configuration for Chart.js
+        // Native pen-trace drawing effect configurations
         const progressiveRunningLineAnimation = {
-            x: {
-                type: 'number',
-                easing: 'linear',
-                duration: 800,
-                from: NaN,
-                delay(ctx) {
-                    if (ctx.type !== 'data' || ctx.mode !== 'default' || ctx.dataIndex === 0) return 0;
-                    return ctx.dataIndex * 40; 
-                }
-            },
-            y: {
-                type: 'number',
-                easing: 'linear',
-                duration: 800,
-                from: NaN,
-                delay(ctx) {
-                    if (ctx.type !== 'data' || ctx.mode !== 'default' || ctx.dataIndex === 0) return 0;
-                    return ctx.dataIndex * 40;
+            animations: {
+                x: {
+                    type: 'number',
+                    easing: 'linear',
+                    duration: 50,
+                    from: NaN, 
+                    delay(ctx) {
+                        if (ctx.type !== 'data' || ctx.mode !== 'default') return 0;
+                        return ctx.dataIndex * 50;
+                    }
+                },
+                y: {
+                    type: 'number',
+                    easing: 'linear',
+                    duration: 50,
+                    from: NaN,
+                    delay(ctx) {
+                        if (ctx.type !== 'data' || ctx.mode !== 'default') return 0;
+                        return ctx.dataIndex * 50;
+                    }
                 }
             }
         };
@@ -428,7 +429,11 @@
             const grp = (k) => {
                 const o = {}; 
                 timeFiltered.forEach(d => { 
-                    const v = d[k] || 'Unknown'; 
+                    let v = d[k] || 'Unknown'; 
+                    // Normalize HMO, INSURANCE, and INDUSTRIAL into TPP category grouping
+                    if (k === 'type' && ['HMO', 'INSURANCE', 'INDUSTRIAL'].includes(v.toUpperCase())) {
+                        v = 'TPP';
+                    }
                     o[v] = (o[v] || 0) + d.patientsCount; 
                 });
                 const s = Object.entries(o).sort((a,b)=>b[1]-a[1]).slice(0, 6);
