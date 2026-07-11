@@ -119,7 +119,6 @@
         const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         const neonPalette = ['#6366f1', '#10b981', '#f59e0b', '#f43f5e', '#8b5cf6', '#06b6d4'];
 
-        // Map textual month values to indices
         const monthsMap = { 'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5, 'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11 };
         const monthsArr = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -127,7 +126,6 @@
 
         let masterData = [], charts = {}, maxYear = 2026, activeMonths = [];
 
-        // Count Animation Engine
         function animateNumber(id, target, prefix = '', suffix = '') {
             const el = document.getElementById(id);
             if (!el) return;
@@ -157,7 +155,6 @@
         async function init() {
             let rows = [], p = 0;
             while (true) {
-                // Connected directly to your new table: 'databases'
                 const { data, error } = await sb.from('databases')
                     .select('*')
                     .range(p * 1000, (p + 1) * 1000 - 1);
@@ -168,7 +165,6 @@
                 if (data.length < 1000) break;
             }
 
-            // Remap properties safely matching your explicit database columns
             masterData = rows.map(r => {
                 const monthText = r.month || 'Jan';
                 return { 
@@ -180,12 +176,10 @@
                 };
             });
 
-            // Evaluate data ranges dynamically
             maxYear = Math.max(...masterData.map(d => d.y), 2026);
             activeMonths = [...new Set(masterData.filter(d => d.y === maxYear).map(d => d.m))].sort((a,b)=>a-b);
             if (activeMonths.length === 0) activeMonths = [0,1,2,3,4,5,6,7,8,9,10,11];
 
-            // Render filter controls
             document.getElementById('monthSlicer').innerHTML = `<option value="all">Cumulative Comparison</option>` + monthsArr.map((m,i)=>`<option value="${i}">${m}</option>`).join('');
             
             const catEl = document.getElementById('catSlicer');
@@ -200,17 +194,16 @@
             const mVal = document.getElementById('monthSlicer').value;
             const cVal = document.getElementById('catSlicer').value;
             
-            // Connected categories filter logic
             const filtered = masterData.filter(d => (cVal === 'all' || d.category === cVal));
             
             updateMetrics(mVal, filtered);
             updateTrends(mVal, filtered);
             updateLists(mVal, filtered);
-            updateDemos(mVal, filtered); // Connected demographics to monthly logic updates
+            updateDemos(mVal, filtered); 
         }
 
         function updateMetrics(mVal, data) {
-            const years = [maxYear - 2, maxYear - 1, maxYear]; // [2024, 2025, 2026]
+            const years = [maxYear - 2, maxYear - 1, maxYear]; 
             
             const stats = years.map(yr => {
                 const sub = mVal === "all" 
@@ -224,7 +217,6 @@
                 };
             });
             
-            // Scorecard references mapped to 2026 (stats[2]) and 2025 (stats[1])
             animateNumber('valYear3', stats[2].r, '₱');
             animateNumber('cenYear3', stats[2].n, '', ' Patients');
             animateNumber('valYear2', stats[1].r, '₱');
@@ -235,43 +227,87 @@
             vEl.textContent = `${diff >= 0 ? '+' : ''}${diff.toFixed(1)}%`;
             vEl.className = `text-4xl font-black mt-1 ${diff >= 0 ? 'text-emerald-400 glow-text-white' : 'text-rose-400'}`;
             
-            // Sparkline linked directly to the trend timelines
             drawSpark('sparkLineChart', stats.map(s => s.r));
             document.getElementById('sparkLabels').innerHTML = years.map(y => `<span>${y}</span>`).join('');
         }
 
         function updateTrends(mVal, data) {
-            let labels = [], curSet = [], preSet = [];
+            let curSet = [], preSet = [];
+            const selectedMonthIdx = mVal === "all" ? null : parseInt(mVal);
 
-            if (mVal === "all") {
-                labels = monthsArr;
-                labels.forEach((_, i) => {
-                    const c = data.filter(d => d.y === maxYear && d.m === i);
-                    curSet.push({ r: c.reduce((s,d)=>s+d.amt,0), n: c.reduce((s,d)=>s+d.patientsCount,0) });
-                    
-                    const p = data.filter(d => d.y === (maxYear - 1) && d.m === i);
-                    preSet.push({ r: p.reduce((s,d)=>s+d.amt,0), n: p.reduce((s,d)=>s+d.patientsCount,0) });
+            // Keep the chart axes clean from Jan to Dec regardless of slicer selections
+            monthsArr.forEach((_, i) => {
+                // Fetch current year metrics
+                const c = data.filter(d => d.y === maxYear && d.m === i);
+                curSet.push({ 
+                    r: c.reduce((s,d)=>s+d.amt,0), 
+                    n: c.reduce((s,d)=>s+d.patientsCount,0),
+                    hasData: c.length > 0
                 });
-            } else {
-                const m = parseInt(mVal);
-                labels = [monthsArr[m]];
                 
-                const c = data.filter(d => d.y === maxYear && d.m === m);
-                curSet.push({ r: c.reduce((s,d)=>s+d.amt,0), n: c.reduce((s,d)=>s+d.patientsCount,0) });
-                
-                const p = data.filter(d => d.y === (maxYear - 1) && d.m === m);
-                preSet.push({ r: p.reduce((s,d)=>s+d.amt,0), n: p.reduce((s,d)=>s+d.patientsCount,0) });
+                // Fetch previous year metrics 
+                const p = data.filter(d => d.y === (maxYear - 1) && d.m === i);
+                preSet.push({ 
+                    r: p.reduce((s,d)=>s+d.amt,0), 
+                    n: p.reduce((s,d)=>s+d.patientsCount,0) 
+                });
+            });
+
+            // Find the last month index in the current year dataset that actually contains records
+            let lastActiveIndex = -1;
+            for (let i = 11; i >= 0; i--) {
+                if (curSet[i].hasData) {
+                    lastActiveIndex = i;
+                    break;
+                }
             }
 
-            // Matrix generation mapping line charts directly back to month/year metrics
-            draw('revChart', 'line', labels, [
-                { label: `${maxYear} Revenue`, data: curSet.map(v=>v.r), borderColor: '#6366f1', tension: 0.4 }, 
-                { label: `${maxYear-1} Revenue`, data: preSet.map(v=>v.r), borderColor: '#ffffff', borderDash:[5,5], borderWidth: 1, tension: 0.4 }
+            // Truncate current year arrays past the last tracked data coordinate so it does not plunge to 0
+            let currentYearRevenueData = curSet.map((v, idx) => (idx <= lastActiveIndex) ? v.r : null);
+            let currentYearCensusData = curSet.map((v, idx) => (idx <= lastActiveIndex) ? v.n : null);
+
+            // If a specific month dropdown is picked, slice visibility window to that specific month anchor
+            if (selectedMonthIdx !== null) {
+                currentYearRevenueData = curSet.map((v, idx) => (idx === selectedMonthIdx && v.hasData) ? v.r : null);
+                currentYearCensusData = curSet.map((v, idx) => (idx === selectedMonthIdx && v.hasData) ? v.n : null);
+            }
+
+            // Render Revenue Chart Matrix
+            draw('revChart', 'line', monthsArr, [
+                { 
+                    label: `${maxYear} Revenue`, 
+                    data: currentYearRevenueData, 
+                    borderColor: '#6366f1', 
+                    tension: 0.4,
+                    spanGaps: false 
+                }, 
+                { 
+                    label: `${maxYear-1} Revenue`, 
+                    data: preSet.map(v=>v.r), 
+                    borderColor: '#ffffff', 
+                    borderDash:[5,5], 
+                    borderWidth: 1, 
+                    tension: 0.4 
+                }
             ], 'Revenue Matrix');
             
-            draw('cenChart', 'line', labels, [
-                { label: `${maxYear} Census`, data: curSet.map(v=>v.n), borderColor: '#10b981', tension: 0.4 }, 
-                { label: `${maxYear-1} Census`, data: preSet.map(v=>v.n), borderColor: '#ffffff', borderDash:[5,5], borderWidth: 1, tension: 0.4 }
+            // Render Census Chart Matrix
+            draw('cenChart', 'line', monthsArr, [
+                { 
+                    label: `${maxYear} Census`, 
+                    data: currentYearCensusData, 
+                    borderColor: '#10b981', 
+                    tension: 0.4,
+                    spanGaps: false 
+                }, 
+                { 
+                    label: `${maxYear-1} Census`, 
+                    data: preSet.map(v=>v.n), 
+                    borderColor: '#ffffff', 
+                    borderDash:[5,5], 
+                    borderWidth: 1, 
+                    tension: 0.4 
+                }
             ], 'Census Matrix');
         }
 
@@ -294,7 +330,6 @@
         }
 
         function updateDemos(mVal, data) {
-            // Isolates active filter variables downstream to demographic graphs
             const timeFiltered = mVal === 'all' ? data.filter(d => d.y === maxYear) : data.filter(d => d.y === maxYear && d.m === parseInt(mVal));
             
             const grp = (k) => {
