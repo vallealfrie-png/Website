@@ -235,9 +235,7 @@
             let curSet = [], preSet = [];
             const selectedMonthIdx = mVal === "all" ? null : parseInt(mVal);
 
-            // Keep the chart axes clean from Jan to Dec regardless of slicer selections
             monthsArr.forEach((_, i) => {
-                // Fetch current year metrics
                 const c = data.filter(d => d.y === maxYear && d.m === i);
                 curSet.push({ 
                     r: c.reduce((s,d)=>s+d.amt,0), 
@@ -245,7 +243,6 @@
                     hasData: c.length > 0
                 });
                 
-                // Fetch previous year metrics 
                 const p = data.filter(d => d.y === (maxYear - 1) && d.m === i);
                 preSet.push({ 
                     r: p.reduce((s,d)=>s+d.amt,0), 
@@ -253,7 +250,6 @@
                 });
             });
 
-            // Find the last month index in the current year dataset that actually contains records
             let lastActiveIndex = -1;
             for (let i = 11; i >= 0; i--) {
                 if (curSet[i].hasData) {
@@ -262,24 +258,45 @@
                 }
             }
 
-            // Truncate current year arrays past the last tracked data coordinate so it does not plunge to 0
-            let currentYearRevenueData = curSet.map((v, idx) => (idx <= lastActiveIndex) ? v.r : null);
-            let currentYearCensusData = curSet.map((v, idx) => (idx <= lastActiveIndex) ? v.n : null);
+            // Map data arrays cleanly while keeping trend points connected
+            let revenue2026 = curSet.map((v, idx) => (idx <= lastActiveIndex) ? v.r : null);
+            let census2026 = curSet.map((v, idx) => (idx <= lastActiveIndex) ? v.n : null);
 
-            // If a specific month dropdown is picked, slice visibility window to that specific month anchor
-            if (selectedMonthIdx !== null) {
-                currentYearRevenueData = curSet.map((v, idx) => (idx === selectedMonthIdx && v.hasData) ? v.r : null);
-                currentYearCensusData = curSet.map((v, idx) => (idx === selectedMonthIdx && v.hasData) ? v.n : null);
-            }
+            // Generate contextual styles to draw visual focus to the targeted month node
+            const generatePointConfig = (baseColor) => {
+                let radiuses = [], hoverRadiuses = [], borderColors = [], borderWidths = [];
+                monthsArr.forEach((_, idx) => {
+                    if (selectedMonthIdx !== null && idx === selectedMonthIdx) {
+                        radiuses.push(9); // Large indicator dot
+                        hoverRadiuses.push(12);
+                        borderColors.push('#ffffff'); // Contrast border ring
+                        borderWidths.push(3);
+                    } else {
+                        radiuses.push(0); // Hide rest of the individual points until hovered
+                        hoverRadiuses.push(6);
+                        borderColors.push(baseColor);
+                        borderWidths.push(1);
+                    }
+                });
+                return { radiuses, hoverRadiuses, borderColors, borderWidths };
+            };
+
+            const revConfig = generatePointConfig('#6366f1');
+            const cenConfig = generatePointConfig('#10b981');
 
             // Render Revenue Chart Matrix
             draw('revChart', 'line', monthsArr, [
                 { 
                     label: `${maxYear} Revenue`, 
-                    data: currentYearRevenueData, 
+                    data: revenue2026, 
                     borderColor: '#6366f1', 
                     tension: 0.4,
-                    spanGaps: false 
+                    spanGaps: false,
+                    pointRadius: revConfig.radiuses,
+                    pointHoverRadius: revConfig.hoverRadiuses,
+                    pointBorderColor: revConfig.borderColors,
+                    pointBorderWidth: revConfig.borderWidths,
+                    pointBackgroundColor: '#6366f1'
                 }, 
                 { 
                     label: `${maxYear-1} Revenue`, 
@@ -287,7 +304,8 @@
                     borderColor: '#ffffff', 
                     borderDash:[5,5], 
                     borderWidth: 1, 
-                    tension: 0.4 
+                    tension: 0.4,
+                    pointRadius: 0
                 }
             ], 'Revenue Matrix');
             
@@ -295,10 +313,15 @@
             draw('cenChart', 'line', monthsArr, [
                 { 
                     label: `${maxYear} Census`, 
-                    data: currentYearCensusData, 
+                    data: census2026, 
                     borderColor: '#10b981', 
                     tension: 0.4,
-                    spanGaps: false 
+                    spanGaps: false,
+                    pointRadius: cenConfig.radiuses,
+                    pointHoverRadius: cenConfig.hoverRadiuses,
+                    pointBorderColor: cenConfig.borderColors,
+                    pointBorderWidth: cenConfig.borderWidths,
+                    pointBackgroundColor: '#10b981'
                 }, 
                 { 
                     label: `${maxYear-1} Census`, 
@@ -306,7 +329,8 @@
                     borderColor: '#ffffff', 
                     borderDash:[5,5], 
                     borderWidth: 1, 
-                    tension: 0.4 
+                    tension: 0.4,
+                    pointRadius: 0
                 }
             ], 'Census Matrix');
         }
