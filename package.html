@@ -115,7 +115,7 @@
 
     <script>
         const SUPABASE_URL = 'https://edlheufkxcyuxontunvm.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkbGhldWZreGN5dXhvbnR1bnZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4NjA2ODAsImV4cCI6MjA4MzQzNjY4MH0.BV77ylA7W3H7qd-Y2ty0bZW2KYE3A87uN1rPI1gCZQo';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkbGhldWZreGN5dXhvbnR1bnZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4NjA2ODAsImV4cCI6MjA4MzQzNjY4MH0.BV777ylA7W3H7qd-Y2ty0bZW2KYE3A87uN1rPI1gCZQo';
         const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         const neonPalette = ['#6366f1', '#10b981', '#f59e0b', '#f43f5e', '#8b5cf6', '#06b6d4'];
 
@@ -125,30 +125,60 @@
         Chart.register(ChartDataLabels);
 
         let masterData = [], charts = {}, maxYear = 2026, activeMonths = [];
+        let pulseRadius = 0; // Live value handled by engine frame loop
 
-        // Global progressive line draw configuration
-        const drawTimelineAnimation = {
-            x: {
-                type: 'number',
-                easing: 'linear',
-                duration: 900,
-                from: NaN,
-                delay(ctx) {
-                    if (ctx.type !== 'data' || ctx.mode !== 'default' || ctx.dataIndex === 0) return 0;
-                    return ctx.dataIndex * 40;
-                }
-            },
-            y: {
-                type: 'number',
-                easing: 'linear',
-                duration: 900,
-                from: NaN,
-                delay(ctx) {
-                    if (ctx.type !== 'data' || ctx.mode !== 'default' || ctx.dataIndex === 0) return 0;
-                    return ctx.dataIndex * 40;
-                }
+        // Custom Neon Radar Pulse plugin for Chart.js
+        const neonPulsePlugin = {
+            id: 'neonPulse',
+            afterDatasetsDraw(chart) {
+                const activeMonth = document.getElementById('monthSlicer').value;
+                if (activeMonth === 'all') return;
+                
+                const monthIdx = parseInt(activeMonth);
+                const ctx = chart.ctx;
+                
+                // Track down the 2026 first dataset layout positioning coordinates
+                const meta = chart.getDatasetMeta(0);
+                if (!meta || !meta.data[monthIdx] || meta.hidden) return;
+                
+                const point = meta.data[monthIdx];
+                const x = point.x;
+                const y = point.y;
+                
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(x, y, 6 + pulseRadius, 0, 2 * Math.PI);
+                ctx.strokeStyle = chart.id === 'revChart' ? 'rgba(99, 102, 241, ' + (1 - pulseRadius/15) + ')' : 'rgba(16, 185, 129, ' + (1 - pulseRadius/15) + ')';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                ctx.restore();
             }
         };
+        Chart.register(neonPulsePlugin);
+
+        // Constant global draw frame rendering properties
+        const progressiveRunningLineAnimation = {
+            line: {
+                to: 1,
+                from: 0,
+                duration: 1500,
+                easing: 'easeInOutQuart',
+                loop: false
+            }
+        };
+
+        // Live engine pulse frame tick logic loop
+        function runPulseLoop() {
+            pulseRadius += 0.25;
+            if (pulseRadius > 15) pulseRadius = 0;
+            
+            // Re-render trend elements to make pulse perfectly fluid
+            if (charts['revChart']) charts['revChart'].draw();
+            if (charts['cenChart']) charts['cenChart'].draw();
+            
+            requestAnimationFrame(runPulseLoop);
+        }
+        requestAnimationFrame(runPulseLoop);
 
         function animateNumber(id, target, prefix = '', suffix = '') {
             const el = document.getElementById(id);
@@ -284,17 +314,16 @@
             let revenue2026 = curSet.map((v, idx) => (idx <= lastActiveIndex) ? v.r : null);
             let census2026 = curSet.map((v, idx) => (idx <= lastActiveIndex) ? v.n : null);
 
-            // Generates configurations that retain standard dots, while adding a pulsing flash to selected indexes
             const generatePointConfig = (baseColor) => {
                 let radiuses = [], hoverRadiuses = [], borderColors = [], borderWidths = [];
                 monthsArr.forEach((_, idx) => {
                     if (selectedMonthIdx !== null && idx === selectedMonthIdx) {
-                        radiuses.push(9); // Pulse focus node
-                        hoverRadiuses.push(12);
+                        radiuses.push(7); // High-contrast core dot
+                        hoverRadiuses.push(9);
                         borderColors.push('#ffffff'); 
-                        borderWidths.push(3);
+                        borderWidths.push(2);
                     } else {
-                        radiuses.push(4); // Keep standard anchors active on line plots
+                        radiuses.push(4); // Persistent default layout points
                         hoverRadiuses.push(6);
                         borderColors.push(baseColor);
                         borderWidths.push(1);
@@ -328,8 +357,9 @@
                     borderWidth: 1, 
                     tension: 0.4,
                     pointRadius: 4,
-                    pointBackgroundColor: '#ffffff',
-                    pointBorderColor: '#ffffff'
+                    pointBackgroundColor: '#0f0f0f',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 1
                 }
             ], 'Revenue Matrix');
             
@@ -355,8 +385,9 @@
                     borderWidth: 1, 
                     tension: 0.4,
                     pointRadius: 4,
-                    pointBackgroundColor: '#ffffff',
-                    pointBorderColor: '#ffffff'
+                    pointBackgroundColor: '#0f0f0f',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 1
                 }
             ], 'Census Matrix');
         }
@@ -410,7 +441,7 @@
                 },
                 options: { 
                     responsive: true, maintainAspectRatio: false, 
-                    animation: drawTimelineAnimation, // Progressive Leading line animation applied
+                    animation: progressiveRunningLineAnimation, 
                     plugins: { legend: { display: false }, datalabels: { display: false } }, 
                     scales: { x: { display: false }, y: { display: false } } 
                 }
@@ -426,7 +457,7 @@
                 type, data: { labels, datasets },
                 options: { 
                     responsive: true, maintainAspectRatio: false,
-                    animation: !isPieOrDoughnut ? drawTimelineAnimation : {}, // Path tracker applied to main trend lines
+                    animation: !isPieOrDoughnut ? progressiveRunningLineAnimation : {}, 
                     plugins: { 
                         legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 9, weight: '900' }, color: '#ffffff', padding: 10 } }, 
                         title: { display: !!title, text: title.toUpperCase(), color: '#ffffff', font: { size: 11, weight: '900' }, padding: 15 },
