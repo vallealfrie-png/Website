@@ -125,73 +125,30 @@
         Chart.register(ChartDataLabels);
 
         let masterData = [], charts = {}, maxYear = 2026, activeMonths = [];
-        let pulseRadius = 0; 
 
-        // Neon Pulse Radar Plugin
-        const neonPulsePlugin = {
-            id: 'neonPulse',
-            afterDatasetsDraw(chart) {
-                const activeMonth = document.getElementById('monthSlicer').value;
-                if (activeMonth === 'all') return;
-                
-                const monthIdx = parseInt(activeMonth);
-                const ctx = chart.ctx;
-                
-                const meta = chart.getDatasetMeta(0);
-                if (!meta || !meta.data[monthIdx] || meta.hidden) return;
-                
-                const point = meta.data[monthIdx];
-                const x = point.x;
-                const y = point.y;
-                
-                ctx.save();
-                ctx.beginPath();
-                ctx.arc(x, y, 6 + pulseRadius, 0, 2 * Math.PI);
-                ctx.strokeStyle = chart.id === 'revChart' ? 'rgba(99, 102, 241, ' + (1 - pulseRadius/15) + ')' : 'rgba(16, 185, 129, ' + (1 - pulseRadius/15) + ')';
-                ctx.lineWidth = 2;
-                ctx.stroke();
-                ctx.restore();
-            }
-        };
-        Chart.register(neonPulsePlugin);
-
-        // Native pen-trace drawing effect configurations
-        const progressiveRunningLineAnimation = {
-            animations: {
-                x: {
-                    type: 'number',
-                    easing: 'linear',
-                    duration: 50,
-                    from: NaN, 
-                    delay(ctx) {
-                        if (ctx.type !== 'data' || ctx.mode !== 'default') return 0;
-                        return ctx.dataIndex * 50;
-                    }
-                },
-                y: {
-                    type: 'number',
-                    easing: 'linear',
-                    duration: 50,
-                    from: NaN,
-                    delay(ctx) {
-                        if (ctx.type !== 'data' || ctx.mode !== 'default') return 0;
-                        return ctx.dataIndex * 50;
-                    }
+        // Global progressive line draw configuration
+        const drawTimelineAnimation = {
+            x: {
+                type: 'number',
+                easing: 'linear',
+                duration: 900,
+                from: NaN,
+                delay(ctx) {
+                    if (ctx.type !== 'data' || ctx.mode !== 'default' || ctx.dataIndex === 0) return 0;
+                    return ctx.dataIndex * 40;
+                }
+            },
+            y: {
+                type: 'number',
+                easing: 'linear',
+                duration: 900,
+                from: NaN,
+                delay(ctx) {
+                    if (ctx.type !== 'data' || ctx.mode !== 'default' || ctx.dataIndex === 0) return 0;
+                    return ctx.dataIndex * 40;
                 }
             }
         };
-
-        // Live engine pulse loop frame updates
-        function runPulseLoop() {
-            pulseRadius += 0.25;
-            if (pulseRadius > 15) pulseRadius = 0;
-            
-            if (charts['revChart']) charts['revChart'].draw();
-            if (charts['cenChart']) charts['cenChart'].draw();
-            
-            requestAnimationFrame(runPulseLoop);
-        }
-        requestAnimationFrame(runPulseLoop);
 
         function animateNumber(id, target, prefix = '', suffix = '') {
             const el = document.getElementById(id);
@@ -327,24 +284,16 @@
             let revenue2026 = curSet.map((v, idx) => (idx <= lastActiveIndex) ? v.r : null);
             let census2026 = curSet.map((v, idx) => (idx <= lastActiveIndex) ? v.n : null);
 
-            // Fixed logic: If a month is selected, hide other points (radius 0). If default state (all), show all points (radius 4)
             const generatePointConfig = (baseColor) => {
                 let radiuses = [], hoverRadiuses = [], borderColors = [], borderWidths = [];
                 monthsArr.forEach((_, idx) => {
-                    if (selectedMonthIdx !== null) {
-                        if (idx === selectedMonthIdx) {
-                            radiuses.push(7); 
-                            hoverRadiuses.push(9);
-                            borderColors.push('#ffffff'); 
-                            borderWidths.push(2);
-                        } else {
-                            radiuses.push(0); // Hide non-selected nodes
-                            hoverRadiuses.push(4);
-                            borderColors.push(baseColor);
-                            borderWidths.push(1);
-                        }
+                    if (selectedMonthIdx !== null && idx === selectedMonthIdx) {
+                        radiuses.push(9); 
+                        hoverRadiuses.push(12);
+                        borderColors.push('#ffffff'); 
+                        borderWidths.push(3);
                     } else {
-                        radiuses.push(4); // Keep circles visible globally on default view
+                        radiuses.push(4); 
                         hoverRadiuses.push(6);
                         borderColors.push(baseColor);
                         borderWidths.push(1);
@@ -355,9 +304,6 @@
 
             const revConfig = generatePointConfig('#6366f1');
             const cenConfig = generatePointConfig('#10b981');
-            
-            // Previous year points visibility tracking matching current view state rules
-            const prevYearRadius = selectedMonthIdx !== null ? 0 : 4;
 
             // Render Revenue Chart Matrix
             draw('revChart', 'line', monthsArr, [
@@ -380,10 +326,9 @@
                     borderDash:[5,5], 
                     borderWidth: 1, 
                     tension: 0.4,
-                    pointRadius: prevYearRadius,
-                    pointBackgroundColor: '#0f0f0f',
-                    pointBorderColor: '#ffffff',
-                    pointBorderWidth: 1
+                    pointRadius: 4,
+                    pointBackgroundColor: '#ffffff',
+                    pointBorderColor: '#ffffff'
                 }
             ], 'Revenue Matrix');
             
@@ -408,10 +353,9 @@
                     borderDash:[5,5], 
                     borderWidth: 1, 
                     tension: 0.4,
-                    pointRadius: prevYearRadius,
-                    pointBackgroundColor: '#0f0f0f',
-                    pointBorderColor: '#ffffff',
-                    pointBorderWidth: 1
+                    pointRadius: 4,
+                    pointBackgroundColor: '#ffffff',
+                    pointBorderColor: '#ffffff'
                 }
             ], 'Census Matrix');
         }
@@ -464,11 +408,11 @@
                 type: 'line', 
                 data: { 
                     labels: ['2024','2025','2026'], 
-                    datasets: [{ data, borderColor: '#f59e0b', borderWidth: 2, pointRadius: 0, hoverRadius: 0, tension: 0.4, backgroundColor: 'transparent' }] 
+                    datasets: [{ data, borderColor: '#f59e0b', borderWidth: 2, pointRadius: 4, tension: 0.4, backgroundColor: 'transparent' }] 
                 },
                 options: { 
                     responsive: true, maintainAspectRatio: false, 
-                    animation: progressiveRunningLineAnimation, 
+                    animation: drawTimelineAnimation, 
                     plugins: { legend: { display: false }, datalabels: { display: false } }, 
                     scales: { x: { display: false }, y: { display: false } } 
                 }
@@ -484,7 +428,8 @@
                 type, data: { labels, datasets },
                 options: { 
                     responsive: true, maintainAspectRatio: false,
-                    animation: !isPieOrDoughnut ? progressiveRunningLineAnimation : {}, 
+                    // FIX: strictly bind custom x/y delayed tracking timeline rules to line charts only
+                    animation: type === 'line' ? drawTimelineAnimation : {}, 
                     plugins: { 
                         legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 9, weight: '900' }, color: '#ffffff', padding: 10 } }, 
                         title: { display: !!title, text: title.toUpperCase(), color: '#ffffff', font: { size: 11, weight: '900' }, padding: 15 },
