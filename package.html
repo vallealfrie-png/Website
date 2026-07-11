@@ -42,7 +42,7 @@
         <div class="w-48 bg-neutral-900 h-1 mb-4 overflow-hidden rounded-full">
             <div id="progressBar" class="bg-indigo-600 h-full w-0 transition-all duration-300 shadow-[0_0_15px_#6366f1]"></div>
         </div>
-        <p class="text-[10px] font-bold tracking-[0.3em] text-white uppercase animate-pulse">Synchronizing 2026 Dataset</p>
+        <p class="text-[10px] font-bold tracking-[0.3em] text-white uppercase animate-pulse">Synchronizing Dataset</p>
     </div>
 
     <nav class="border-b border-neutral-900 bg-black/80 backdrop-blur-md px-8 py-4 flex flex-wrap justify-between items-center sticky top-0 z-50">
@@ -66,12 +66,12 @@
     <main class="p-6 max-w-[1600px] mx-auto space-y-6">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div class="neon-card card-indigo p-6">
-                <p class="text-[9px] font-bold text-indigo-400 uppercase tracking-widest">Current Period</p>
+                <p class="text-[9px] font-bold text-indigo-400 uppercase tracking-widest">Current Period (2026)</p>
                 <h2 id="valYear3" class="text-4xl font-black mt-2 text-white glow-text-white">₱0</h2>
                 <p id="cenYear3" class="text-white text-lg font-bold mt-1">---</p>
             </div>
             <div class="neon-card card-slate p-6">
-                <p class="text-[9px] font-bold text-neutral-400 uppercase tracking-widest">Previous Period</p>
+                <p class="text-[9px] font-bold text-neutral-400 uppercase tracking-widest">Previous Period (2025)</p>
                 <h2 id="valYear2" class="text-3xl font-black mt-2 text-neutral-200">₱0</h2>
                 <p id="cenYear2" class="text-white text-lg font-bold mt-1">---</p>
             </div>
@@ -119,10 +119,13 @@
         const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         const neonPalette = ['#6366f1', '#10b981', '#f59e0b', '#f43f5e', '#8b5cf6', '#06b6d4'];
 
-        // Register the datalabels plugin globally so Chart.js can find it
+        // Map textual month values to indices
+        const monthsMap = { 'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5, 'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11 };
+        const monthsArr = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
         Chart.register(ChartDataLabels);
 
-        let masterData = [], charts = {}, maxYear, activeMonths = [];
+        let masterData = [], charts = {}, maxYear = 2026, activeMonths = [];
 
         // Count Animation Engine
         function animateNumber(id, target, prefix = '', suffix = '') {
@@ -137,7 +140,6 @@
                 const elapsed = now - startTime;
                 const progress = Math.min(elapsed / duration, 1);
                 
-                // EaseOutQuad smoothing
                 const ease = progress * (2 - progress);
                 const current = Math.round(start + (target - start) * ease);
 
@@ -155,38 +157,36 @@
         async function init() {
             let rows = [], p = 0;
             while (true) {
-                const { data, error } = await sb.from('database')
+                // Connected directly to your new table: 'databases'
+                const { data, error } = await sb.from('databases')
                     .select('*')
-                    .order('date', { ascending: true })
                     .range(p * 1000, (p + 1) * 1000 - 1);
                 
                 if (error || !data || data.length === 0) break;
                 rows = [...rows, ...data]; p++;
-                document.getElementById('progressBar').style.width = `${Math.min((rows.length / 61400) * 100, 100)}%`;
+                document.getElementById('progressBar').style.width = `${Math.min((rows.length / 5000) * 100, 100)}%`;
                 if (data.length < 1000) break;
             }
 
+            // Remap properties safely matching your explicit database columns
             masterData = rows.map(r => {
-                const dateStr = r.date || "2026-01-01"; 
-                
-                const parts = dateStr.split('T')[0].split('-'); 
-                const year = parseInt(parts[0], 10);
-                const month = parseInt(parts[1], 10) - 1; 
-                const day = parseInt(parts[2], 10);
-
+                const monthText = r.month || 'Jan';
                 return { 
                     ...r, 
-                    y: year, 
-                    m: month, 
-                    day: day, 
-                    amt: parseFloat(String(r.amount).replace(/[^0-9.-]+/g,"")) || 0 
+                    y: parseInt(r.year) || 2026, 
+                    m: monthsMap[monthText] !== undefined ? monthsMap[monthText] : 0, 
+                    amt: parseFloat(r.revenue) || 0,
+                    patientsCount: parseInt(r.census) || 0
                 };
             });
 
-            maxYear = Math.max(...masterData.map(d => d.y));
+            // Evaluate data ranges dynamically
+            maxYear = Math.max(...masterData.map(d => d.y), 2026);
             activeMonths = [...new Set(masterData.filter(d => d.y === maxYear).map(d => d.m))].sort((a,b)=>a-b);
-            const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-            document.getElementById('monthSlicer').innerHTML = `<option value="all">Cumulative Comparison</option>` + months.map((m,i)=>`<option value="${i}">${m}</option>`).join('');
+            if (activeMonths.length === 0) activeMonths = [0,1,2,3,4,5,6,7,8,9,10,11];
+
+            // Render filter controls
+            document.getElementById('monthSlicer').innerHTML = `<option value="all">Cumulative Comparison</option>` + monthsArr.map((m,i)=>`<option value="${i}">${m}</option>`).join('');
             
             const catEl = document.getElementById('catSlicer');
             [...new Set(masterData.map(d=>d.category))].filter(Boolean).sort().forEach(c => catEl.innerHTML += `<option value="${c}">${c}</option>`);
@@ -199,20 +199,32 @@
         function render() {
             const mVal = document.getElementById('monthSlicer').value;
             const cVal = document.getElementById('catSlicer').value;
+            
+            // Connected categories filter logic
             const filtered = masterData.filter(d => (cVal === 'all' || d.category === cVal));
+            
             updateMetrics(mVal, filtered);
             updateTrends(mVal, filtered);
             updateLists(mVal, filtered);
-            updateDemos(filtered);
+            updateDemos(mVal, filtered); // Connected demographics to monthly logic updates
         }
 
         function updateMetrics(mVal, data) {
-            const years = [maxYear - 2, maxYear - 1, maxYear];
+            const years = [maxYear - 2, maxYear - 1, maxYear]; // [2024, 2025, 2026]
+            
             const stats = years.map(yr => {
-                const sub = mVal === "all" ? data.filter(d => d.y === yr && activeMonths.includes(d.m)) : data.filter(d => d.y === yr && d.m === parseInt(mVal));
-                return { yr, r: sub.reduce((s,d)=>s+d.amt,0), n: sub.length };
+                const sub = mVal === "all" 
+                    ? data.filter(d => d.y === yr && activeMonths.includes(d.m)) 
+                    : data.filter(d => d.y === yr && d.m === parseInt(mVal));
+                
+                return { 
+                    yr, 
+                    r: sub.reduce((s,d)=>s+d.amt,0), 
+                    n: sub.reduce((s,d)=>s+d.patientsCount,0) 
+                };
             });
             
+            // Scorecard references mapped to 2026 (stats[2]) and 2025 (stats[1])
             animateNumber('valYear3', stats[2].r, '₱');
             animateNumber('cenYear3', stats[2].n, '', ' Patients');
             animateNumber('valYear2', stats[1].r, '₱');
@@ -222,62 +234,44 @@
             const vEl = document.getElementById('varRev');
             vEl.textContent = `${diff >= 0 ? '+' : ''}${diff.toFixed(1)}%`;
             vEl.className = `text-4xl font-black mt-1 ${diff >= 0 ? 'text-emerald-400 glow-text-white' : 'text-rose-400'}`;
+            
+            // Sparkline linked directly to the trend timelines
             drawSpark('sparkLineChart', stats.map(s => s.r));
             document.getElementById('sparkLabels').innerHTML = years.map(y => `<span>${y}</span>`).join('');
         }
 
         function updateTrends(mVal, data) {
             let labels = [], curSet = [], preSet = [];
-            const allMonths = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
             if (mVal === "all") {
-                labels = allMonths;
-                const latestActiveMonth = activeMonths.length > 0 ? Math.max(...activeMonths) : 11;
-                
+                labels = monthsArr;
                 labels.forEach((_, i) => {
-                    if (i <= latestActiveMonth) {
-                        const c = data.filter(d => d.y === maxYear && d.m === i);
-                        curSet.push({ r: c.reduce((s,d)=>s+d.amt,0), n: c.length });
-                    } else {
-                        curSet.push({ r: null, n: null });
-                    }
+                    const c = data.filter(d => d.y === maxYear && d.m === i);
+                    curSet.push({ r: c.reduce((s,d)=>s+d.amt,0), n: c.reduce((s,d)=>s+d.patientsCount,0) });
                     
                     const p = data.filter(d => d.y === (maxYear - 1) && d.m === i);
-                    preSet.push({ r: p.reduce((s,d)=>s+d.amt,0), n: p.length });
+                    preSet.push({ r: p.reduce((s,d)=>s+d.amt,0), n: p.reduce((s,d)=>s+d.patientsCount,0) });
                 });
             } else {
                 const m = parseInt(mVal);
-                const days = new Date(maxYear, m + 1, 0).getDate();
+                labels = [monthsArr[m]];
                 
-                let maxDayWithData = 0;
-                for(let i=1; i<=days; i++) {
-                    if(data.some(d => d.y === maxYear && d.m === m && d.day === i)) {
-                        maxDayWithData = i;
-                    }
-                }
-                if(maxDayWithData === 0) maxDayWithData = days;
-
-                for(let i=1; i<=days; i++) {
-                    labels.push(i);
-                    
-                    if (i <= maxDayWithData) {
-                        const c = data.filter(d => d.y === maxYear && d.m === m && d.day === i);
-                        curSet.push({ r: c.reduce((s,d)=>s+d.amt,0), n: c.length });
-                    } else {
-                        curSet.push({ r: null, n: null });
-                    }
-                    
-                    const p = data.filter(d => d.y === (maxYear - 1) && d.m === m && d.day === i);
-                    preSet.push({ r: p.reduce((s,d)=>s+d.amt,0), n: p.length });
-                }
+                const c = data.filter(d => d.y === maxYear && d.m === m);
+                curSet.push({ r: c.reduce((s,d)=>s+d.amt,0), n: c.reduce((s,d)=>s+d.patientsCount,0) });
+                
+                const p = data.filter(d => d.y === (maxYear - 1) && d.m === m);
+                preSet.push({ r: p.reduce((s,d)=>s+d.amt,0), n: p.reduce((s,d)=>s+d.patientsCount,0) });
             }
+
+            // Matrix generation mapping line charts directly back to month/year metrics
             draw('revChart', 'line', labels, [
-                { label: `${maxYear}`, data: curSet.map(v=>v.r), borderColor: '#6366f1', tension: 0.4, spanGaps: false }, 
-                { label: `${maxYear-1}`, data: preSet.map(v=>v.r), borderColor: '#ffffff', borderDash:[5,5], borderWidth: 1, tension: 0.4 }
+                { label: `${maxYear} Revenue`, data: curSet.map(v=>v.r), borderColor: '#6366f1', tension: 0.4 }, 
+                { label: `${maxYear-1} Revenue`, data: preSet.map(v=>v.r), borderColor: '#ffffff', borderDash:[5,5], borderWidth: 1, tension: 0.4 }
             ], 'Revenue Matrix');
+            
             draw('cenChart', 'line', labels, [
-                { label: `${maxYear}`, data: curSet.map(v=>v.n), borderColor: '#10b981', tension: 0.4, spanGaps: false }, 
-                { label: `${maxYear-1}`, data: preSet.map(v=>v.n), borderColor: '#ffffff', borderDash:[5,5], borderWidth: 1, tension: 0.4 }
+                { label: `${maxYear} Census`, data: curSet.map(v=>v.n), borderColor: '#10b981', tension: 0.4 }, 
+                { label: `${maxYear-1} Census`, data: preSet.map(v=>v.n), borderColor: '#ffffff', borderDash:[5,5], borderWidth: 1, tension: 0.4 }
             ], 'Census Matrix');
         }
 
@@ -285,7 +279,7 @@
             const filtered = mVal === 'all' ? data.filter(d => d.y === maxYear) : data.filter(d => d.y === maxYear && d.m === parseInt(mVal));
             const getGrp = (mode) => {
                 const d = {};
-                filtered.forEach(r => { const k = r.package_name || 'N/A'; d[k] = (d[k] || 0) + (mode === 'rev' ? r.amt : 1); });
+                filtered.forEach(r => { const k = r.package_name || 'N/A'; d[k] = (d[k] || 0) + (mode === 'rev' ? r.amt : r.patientsCount); });
                 return Object.entries(d).sort((a,b)=>b[1]-a[1]).slice(0, 10);
             }
             const build = (id, list, pre) => {
@@ -299,12 +293,20 @@
             build('topCenList', getGrp('cen'), '');
         }
 
-        function updateDemos(data) {
+        function updateDemos(mVal, data) {
+            // Isolates active filter variables downstream to demographic graphs
+            const timeFiltered = mVal === 'all' ? data.filter(d => d.y === maxYear) : data.filter(d => d.y === maxYear && d.m === parseInt(mVal));
+            
             const grp = (k) => {
-                const o = {}; data.forEach(d => { const v = d[k] || 'Unknown'; o[v] = (o[v] || 0) + 1; });
+                const o = {}; 
+                timeFiltered.forEach(d => { 
+                    const v = d[k] || 'Unknown'; 
+                    o[v] = (o[v] || 0) + d.patientsCount; 
+                });
                 const s = Object.entries(o).sort((a,b)=>b[1]-a[1]).slice(0, 6);
                 return { k: s.map(x=>x[0]), v: s.map(x=>x[1]) };
             };
+            
             const l = grp('location'), g = grp('gender'), a = grp('age_bracket'), t = grp('type');
             
             draw('locChart', 'bar', l.k, [{ label: 'Patients', data: l.v, backgroundColor: neonPalette, borderRadius: 5 }], 'Geographic Clusters');
@@ -337,9 +339,8 @@
                     plugins: { 
                         legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 9, weight: '900' }, color: '#ffffff', padding: 10 } }, 
                         title: { display: !!title, text: title.toUpperCase(), color: '#ffffff', font: { size: 11, weight: '900' }, padding: 15 },
-                        // Data labels configurations
                         datalabels: {
-                            display: isPieOrDoughnut, // Only activate data numbers inside layout slices
+                            display: isPieOrDoughnut, 
                             color: '#ffffff',
                             font: { size: 10, weight: '900' },
                             textShadowColor: 'rgba(0, 0, 0, 0.8)',
