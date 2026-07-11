@@ -327,16 +327,24 @@
             let revenue2026 = curSet.map((v, idx) => (idx <= lastActiveIndex) ? v.r : null);
             let census2026 = curSet.map((v, idx) => (idx <= lastActiveIndex) ? v.n : null);
 
+            // Fixed logic: If a month is selected, hide other points (radius 0). If default state (all), show all points (radius 4)
             const generatePointConfig = (baseColor) => {
                 let radiuses = [], hoverRadiuses = [], borderColors = [], borderWidths = [];
                 monthsArr.forEach((_, idx) => {
-                    if (selectedMonthIdx !== null && idx === selectedMonthIdx) {
-                        radiuses.push(7); 
-                        hoverRadiuses.push(9);
-                        borderColors.push('#ffffff'); 
-                        borderWidths.push(2);
+                    if (selectedMonthIdx !== null) {
+                        if (idx === selectedMonthIdx) {
+                            radiuses.push(7); 
+                            hoverRadiuses.push(9);
+                            borderColors.push('#ffffff'); 
+                            borderWidths.push(2);
+                        } else {
+                            radiuses.push(0); // Hide non-selected nodes
+                            hoverRadiuses.push(4);
+                            borderColors.push(baseColor);
+                            borderWidths.push(1);
+                        }
                     } else {
-                        radiuses.push(4); 
+                        radiuses.push(4); // Keep circles visible globally on default view
                         hoverRadiuses.push(6);
                         borderColors.push(baseColor);
                         borderWidths.push(1);
@@ -347,6 +355,9 @@
 
             const revConfig = generatePointConfig('#6366f1');
             const cenConfig = generatePointConfig('#10b981');
+            
+            // Previous year points visibility tracking matching current view state rules
+            const prevYearRadius = selectedMonthIdx !== null ? 0 : 4;
 
             // Render Revenue Chart Matrix
             draw('revChart', 'line', monthsArr, [
@@ -369,7 +380,7 @@
                     borderDash:[5,5], 
                     borderWidth: 1, 
                     tension: 0.4,
-                    pointRadius: 4,
+                    pointRadius: prevYearRadius,
                     pointBackgroundColor: '#0f0f0f',
                     pointBorderColor: '#ffffff',
                     pointBorderWidth: 1
@@ -397,7 +408,7 @@
                     borderDash:[5,5], 
                     borderWidth: 1, 
                     tension: 0.4,
-                    pointRadius: 4,
+                    pointRadius: prevYearRadius,
                     pointBackgroundColor: '#0f0f0f',
                     pointBorderColor: '#ffffff',
                     pointBorderWidth: 1
@@ -430,7 +441,6 @@
                 const o = {}; 
                 timeFiltered.forEach(d => { 
                     let v = d[k] || 'Unknown'; 
-                    // Normalize HMO, INSURANCE, and INDUSTRIAL into TPP category grouping
                     if (k === 'type' && ['HMO', 'INSURANCE', 'INDUSTRIAL'].includes(v.toUpperCase())) {
                         v = 'TPP';
                     }
@@ -454,7 +464,7 @@
                 type: 'line', 
                 data: { 
                     labels: ['2024','2025','2026'], 
-                    datasets: [{ data, borderColor: '#f59e0b', borderWidth: 2, pointRadius: 4, tension: 0.4, backgroundColor: 'transparent' }] 
+                    datasets: [{ data, borderColor: '#f59e0b', borderWidth: 2, pointRadius: 0, hoverRadius: 0, tension: 0.4, backgroundColor: 'transparent' }] 
                 },
                 options: { 
                     responsive: true, maintainAspectRatio: false, 
