@@ -115,7 +115,8 @@
 
     <script>
         const SUPABASE_URL = 'https://edlheufkxcyuxontunvm.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkbGhldWZreGN5dXhvbnR1bnZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4NjA2ODAsImV4cCI6MjA4MzQzNjY4MH0.BV777ylA7W3H7qd-Y2ty0bZW2KYE3A87uN1rPI1gCZQo';
+        // Fixed typo here: changed BV777ylA back to the correct BV77ylA
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVkbGhldWZreGN5dXhvbnR1bnZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4NjA2ODAsImV4cCI6MjA4MzQzNjY4MH0.BV77ylA7W3H7qd-Y2ty0bZW2KYE3A87uN1rPI1gCZQo';
         const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         const neonPalette = ['#6366f1', '#10b981', '#f59e0b', '#f43f5e', '#8b5cf6', '#06b6d4'];
 
@@ -125,9 +126,9 @@
         Chart.register(ChartDataLabels);
 
         let masterData = [], charts = {}, maxYear = 2026, activeMonths = [];
-        let pulseRadius = 0; // Live value handled by engine frame loop
+        let pulseRadius = 0; 
 
-        // Custom Neon Radar Pulse plugin for Chart.js
+        // Neon Pulse Radar Plugin
         const neonPulsePlugin = {
             id: 'neonPulse',
             afterDatasetsDraw(chart) {
@@ -137,7 +138,6 @@
                 const monthIdx = parseInt(activeMonth);
                 const ctx = chart.ctx;
                 
-                // Track down the 2026 first dataset layout positioning coordinates
                 const meta = chart.getDatasetMeta(0);
                 if (!meta || !meta.data[monthIdx] || meta.hidden) return;
                 
@@ -156,23 +156,35 @@
         };
         Chart.register(neonPulsePlugin);
 
-        // Constant global draw frame rendering properties
+        // Native Progressive Left-to-Right Draw configuration for Chart.js
         const progressiveRunningLineAnimation = {
-            line: {
-                to: 1,
-                from: 0,
-                duration: 1500,
-                easing: 'easeInOutQuart',
-                loop: false
+            x: {
+                type: 'number',
+                easing: 'linear',
+                duration: 800,
+                from: NaN,
+                delay(ctx) {
+                    if (ctx.type !== 'data' || ctx.mode !== 'default' || ctx.dataIndex === 0) return 0;
+                    return ctx.dataIndex * 40; 
+                }
+            },
+            y: {
+                type: 'number',
+                easing: 'linear',
+                duration: 800,
+                from: NaN,
+                delay(ctx) {
+                    if (ctx.type !== 'data' || ctx.mode !== 'default' || ctx.dataIndex === 0) return 0;
+                    return ctx.dataIndex * 40;
+                }
             }
         };
 
-        // Live engine pulse frame tick logic loop
+        // Live engine pulse loop frame updates
         function runPulseLoop() {
             pulseRadius += 0.25;
             if (pulseRadius > 15) pulseRadius = 0;
             
-            // Re-render trend elements to make pulse perfectly fluid
             if (charts['revChart']) charts['revChart'].draw();
             if (charts['cenChart']) charts['cenChart'].draw();
             
@@ -318,12 +330,12 @@
                 let radiuses = [], hoverRadiuses = [], borderColors = [], borderWidths = [];
                 monthsArr.forEach((_, idx) => {
                     if (selectedMonthIdx !== null && idx === selectedMonthIdx) {
-                        radiuses.push(7); // High-contrast core dot
+                        radiuses.push(7); 
                         hoverRadiuses.push(9);
                         borderColors.push('#ffffff'); 
                         borderWidths.push(2);
                     } else {
-                        radiuses.push(4); // Persistent default layout points
+                        radiuses.push(4); 
                         hoverRadiuses.push(6);
                         borderColors.push(baseColor);
                         borderWidths.push(1);
