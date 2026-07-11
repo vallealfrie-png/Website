@@ -126,6 +126,30 @@
 
         let masterData = [], charts = {}, maxYear = 2026, activeMonths = [];
 
+        // Global progressive line draw configuration
+        const drawTimelineAnimation = {
+            x: {
+                type: 'number',
+                easing: 'linear',
+                duration: 900,
+                from: NaN,
+                delay(ctx) {
+                    if (ctx.type !== 'data' || ctx.mode !== 'default' || ctx.dataIndex === 0) return 0;
+                    return ctx.dataIndex * 40;
+                }
+            },
+            y: {
+                type: 'number',
+                easing: 'linear',
+                duration: 900,
+                from: NaN,
+                delay(ctx) {
+                    if (ctx.type !== 'data' || ctx.mode !== 'default' || ctx.dataIndex === 0) return 0;
+                    return ctx.dataIndex * 40;
+                }
+            }
+        };
+
         function animateNumber(id, target, prefix = '', suffix = '') {
             const el = document.getElementById(id);
             if (!el) return;
@@ -137,7 +161,6 @@
             function update(now) {
                 const elapsed = now - startTime;
                 const progress = Math.min(elapsed / duration, 1);
-                
                 const ease = progress * (2 - progress);
                 const current = Math.round(start + (target - start) * ease);
 
@@ -258,21 +281,20 @@
                 }
             }
 
-            // Map data arrays cleanly while keeping trend points connected
             let revenue2026 = curSet.map((v, idx) => (idx <= lastActiveIndex) ? v.r : null);
             let census2026 = curSet.map((v, idx) => (idx <= lastActiveIndex) ? v.n : null);
 
-            // Generate contextual styles to draw visual focus to the targeted month node
+            // Generates configurations that retain standard dots, while adding a pulsing flash to selected indexes
             const generatePointConfig = (baseColor) => {
                 let radiuses = [], hoverRadiuses = [], borderColors = [], borderWidths = [];
                 monthsArr.forEach((_, idx) => {
                     if (selectedMonthIdx !== null && idx === selectedMonthIdx) {
-                        radiuses.push(9); // Large indicator dot
+                        radiuses.push(9); // Pulse focus node
                         hoverRadiuses.push(12);
-                        borderColors.push('#ffffff'); // Contrast border ring
+                        borderColors.push('#ffffff'); 
                         borderWidths.push(3);
                     } else {
-                        radiuses.push(0); // Hide rest of the individual points until hovered
+                        radiuses.push(4); // Keep standard anchors active on line plots
                         hoverRadiuses.push(6);
                         borderColors.push(baseColor);
                         borderWidths.push(1);
@@ -305,7 +327,9 @@
                     borderDash:[5,5], 
                     borderWidth: 1, 
                     tension: 0.4,
-                    pointRadius: 0
+                    pointRadius: 4,
+                    pointBackgroundColor: '#ffffff',
+                    pointBorderColor: '#ffffff'
                 }
             ], 'Revenue Matrix');
             
@@ -330,7 +354,9 @@
                     borderDash:[5,5], 
                     borderWidth: 1, 
                     tension: 0.4,
-                    pointRadius: 0
+                    pointRadius: 4,
+                    pointBackgroundColor: '#ffffff',
+                    pointBorderColor: '#ffffff'
                 }
             ], 'Census Matrix');
         }
@@ -377,9 +403,14 @@
         function drawSpark(id, data) {
             if (charts[id]) charts[id].destroy();
             charts[id] = new Chart(document.getElementById(id), {
-                type: 'line', data: { labels: ['','',''], datasets: [{ data, borderColor: '#f59e0b', borderWidth: 2, pointRadius: 4, tension: 0.4 }] },
+                type: 'line', 
+                data: { 
+                    labels: ['2024','2025','2026'], 
+                    datasets: [{ data, borderColor: '#f59e0b', borderWidth: 2, pointRadius: 4, tension: 0.4, backgroundColor: 'transparent' }] 
+                },
                 options: { 
                     responsive: true, maintainAspectRatio: false, 
+                    animation: drawTimelineAnimation, // Progressive Leading line animation applied
                     plugins: { legend: { display: false }, datalabels: { display: false } }, 
                     scales: { x: { display: false }, y: { display: false } } 
                 }
@@ -395,6 +426,7 @@
                 type, data: { labels, datasets },
                 options: { 
                     responsive: true, maintainAspectRatio: false,
+                    animation: !isPieOrDoughnut ? drawTimelineAnimation : {}, // Path tracker applied to main trend lines
                     plugins: { 
                         legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 9, weight: '900' }, color: '#ffffff', padding: 10 } }, 
                         title: { display: !!title, text: title.toUpperCase(), color: '#ffffff', font: { size: 11, weight: '900' }, padding: 15 },
