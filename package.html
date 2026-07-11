@@ -184,7 +184,8 @@
             });
 
             maxYear = Math.max(...masterData.map(d => d.y));
-            activeMonths = [...new Set(masterData.filter(d => d.y === maxYear).map(d => d.m))].sort((a,b)=>a-b);
+            // Only flag active months if they actually contain valid transactions
+            activeMonths = [...new Set(masterData.filter(d => d.y === maxYear && d.amt > 0).map(d => d.m))].sort((a,b)=>a-b);
             const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
             document.getElementById('monthSlicer').innerHTML = `<option value="all">Cumulative Comparison</option>` + months.map((m,i)=>`<option value="${i}">${m}</option>`).join('');
             
@@ -208,8 +209,21 @@
 
         function updateMetrics(mVal, data) {
             const years = [maxYear - 2, maxYear - 1, maxYear];
+            
+            // Dynamically evaluate what the absolute maximum tracking month point is for 2026
+            const currentYearData = data.filter(d => d.y === maxYear && d.amt > 0);
+            const latestActiveMonth = currentYearData.length > 0 
+                ? Math.max(...currentYearData.map(d => d.m)) 
+                : 11; // Fallback to Dec if completely dry
+
             const stats = years.map(yr => {
-                const sub = mVal === "all" ? data.filter(d => d.y === yr && activeMonths.includes(d.m)) : data.filter(d => d.y === yr && d.m === parseInt(mVal));
+                let sub;
+                if (mVal === "all") {
+                    // True YTD Capping: restrains previous years matching 2026's active ceiling (e.g. May)
+                    sub = data.filter(d => d.y === yr && d.m <= latestActiveMonth);
+                } else {
+                    sub = data.filter(d => d.y === yr && d.m === parseInt(mVal, 10));
+                }
                 return { yr, r: sub.reduce((s,d)=>s+d.amt,0), n: sub.length };
             });
             
