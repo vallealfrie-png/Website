@@ -220,10 +220,15 @@
 
         function updateMetrics(mVal, data) {
             const years = [maxYear - 2, maxYear - 1, maxYear];
+            
+            // Find the latest month in 2026 (maxYear) that has actual transaction data (amt > 0)
+            const activeMonthsCurrentYear = masterData.filter(d => d.y === maxYear && d.amt > 0).map(d => d.m);
+            const latestMonthOfLatestYear = activeMonthsCurrentYear.length > 0 ? Math.max(...activeMonthsCurrentYear) : 11;
+
             const stats = years.map(yr => {
                 const sub = mVal === "all" 
-                    ? data.filter(d => d.y === yr && activeMonths.includes(d.m)) 
-                    : data.filter(d => d.y === yr && d.m === parseInt(mVal));
+                    ? data.filter(d => d.y === yr && d.m <= latestMonthOfLatestYear) 
+                    : data.filter(d => d.y === yr && d.m === parseInt(mVal, 10));
                 return { yr, r: sub.reduce((s,d)=>s+d.amt,0), n: sub.length };
             });
             
