@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Package Availment - Dashboard</title>
+    <title>Package Availment - Highcharts Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <!-- Highcharts core & essential modules -->
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/accessibility.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -34,6 +35,9 @@
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
         .glow-text-white { color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+        
+        /* Highcharts Container Reset styling */
+        .hc-container { width: 100%; height: 100%; background: transparent; }
     </style>
 </head>
 <body class="font-sans antialiased">
@@ -64,32 +68,37 @@
     </nav>
 
     <main class="p-6 max-w-[1600px] mx-auto space-y-6">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div class="neon-card card-indigo p-6">
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div class="neon-card card-indigo p-5">
                 <p class="text-[9px] font-bold text-indigo-400 uppercase tracking-widest">Current Period (2026)</p>
-                <h2 id="valYear3" class="text-4xl font-black mt-2 text-white glow-text-white">₱0</h2>
-                <p id="cenYear3" class="text-white text-lg font-bold mt-1">---</p>
+                <h2 id="valYear3" class="text-3xl font-black mt-2 text-white glow-text-white">₱0</h2>
+                <p id="cenYear3" class="text-white text-xs font-bold mt-1">---</p>
             </div>
-            <div class="neon-card card-slate p-6">
+            <div class="neon-card card-slate p-5">
                 <p class="text-[9px] font-bold text-neutral-400 uppercase tracking-widest">Previous Period (2025)</p>
-                <h2 id="valYear2" class="text-3xl font-black mt-2 text-neutral-200">₱0</h2>
-                <p id="cenYear2" class="text-white text-lg font-bold mt-1">---</p>
+                <h2 id="valYear2" class="text-2xl font-black mt-2 text-neutral-200">₱0</h2>
+                <p id="cenYear2" class="text-white text-xs font-bold mt-1">---</p>
             </div>
-            <div class="neon-card card-amber p-6 flex flex-col justify-between">
+            <div class="neon-card card-rose p-5">
+                <p class="text-[9px] font-bold text-rose-400 uppercase tracking-widest">Package Contribution</p>
+                <h2 id="sharePct" class="text-3xl font-black mt-2 text-white glow-text-white">0.0%</h2>
+                <p id="shareContext" class="text-neutral-400 text-[9px] font-bold mt-1">Of Overall Revenue</p>
+            </div>
+            <div class="neon-card card-amber p-5 flex flex-col justify-between">
                 <p class="text-[9px] font-bold text-amber-400 uppercase tracking-widest">3-Year Trend</p>
-                <div class="h-[60px]"><canvas id="sparkLineChart"></canvas></div>
-                <div id="sparkLabels" class="flex justify-between text-[9px] text-white font-black mt-1"></div>
+                <div class="h-[45px]" id="sparkLineChart"></div>
+                <div id="sparkLabels" class="flex justify-between text-[8px] text-white font-black mt-1"></div>
             </div>
-            <div class="neon-card card-emerald p-6">
+            <div class="neon-card card-emerald p-5">
                 <p class="text-[9px] font-bold text-emerald-400 uppercase tracking-widest">YoY Momentum</p>
-                <h2 id="varRev" class="text-4xl font-black mt-1">0%</h2>
-                <p id="varContext" class="text-white text-[10px] font-black uppercase mt-1">Matched Period</p>
+                <h2 id="varRev" class="text-3xl font-black mt-1">0%</h2>
+                <p id="varContext" class="text-white text-[9px] font-black uppercase mt-1">Matched Period</p>
             </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div class="neon-card card-indigo p-6 h-[350px]"><canvas id="revChart"></canvas></div>
-            <div class="neon-card card-emerald p-6 h-[350px]"><canvas id="cenChart"></canvas></div>
+            <div class="neon-card card-indigo p-6 h-[350px]"><div id="revChart" class="hc-container"></div></div>
+            <div class="neon-card card-emerald p-6 h-[350px]"><div id="cenChart" class="hc-container"></div></div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -102,14 +111,14 @@
                 <div id="topCenList" class="p-4 space-y-2 max-h-[410px] overflow-y-auto custom-scrollbar"></div>
             </div>
             <div class="neon-card card-rose p-6 h-[480px]">
-                <canvas id="locChart"></canvas>
+                <div id="locChart" class="hc-container"></div>
             </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div class="neon-card card-slate p-6 h-[290px]"><canvas id="typeChart"></canvas></div>
-            <div class="neon-card card-amber p-6 h-[290px]"><canvas id="genChart"></canvas></div>
-            <div class="neon-card card-indigo p-6 h-[290px]"><canvas id="ageChart"></canvas></div>
+            <div class="neon-card card-slate p-6 h-[290px]"><div id="typeChart" class="hc-container"></div></div>
+            <div class="neon-card card-amber p-6 h-[290px]"><div id="genChart" class="hc-container"></div></div>
+            <div class="neon-card card-indigo p-6 h-[290px]"><div id="ageChart" class="hc-container"></div></div>
         </div>
     </main>
 
@@ -122,39 +131,19 @@
         const monthsMap = { 'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5, 'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11 };
         const monthsArr = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-        Chart.register(ChartDataLabels);
+        // Set structural Theme configurations for Highcharts globally
+        Highcharts.setOptions({
+            chart: { style: { fontFamily: 'inherit' }, backgroundColor: 'transparent' },
+            title: { text: null },
+            credits: { enabled: false }
+        });
 
-        let masterData = [], charts = {}, maxYear = 2026, activeMonths = [];
+        let masterData = [], overallRevenueData = [], maxYear = 2026, activeMonths = [];
 
-        // Global progressive line draw configuration
-        const drawTimelineAnimation = {
-            x: {
-                type: 'number',
-                easing: 'linear',
-                duration: 900,
-                from: NaN,
-                delay(ctx) {
-                    if (ctx.type !== 'data' || ctx.mode !== 'default' || ctx.dataIndex === 0) return 0;
-                    return ctx.dataIndex * 40;
-                }
-            },
-            y: {
-                type: 'number',
-                easing: 'linear',
-                duration: 900,
-                from: NaN,
-                delay(ctx) {
-                    if (ctx.type !== 'data' || ctx.mode !== 'default' || ctx.dataIndex === 0) return 0;
-                    return ctx.dataIndex * 40;
-                }
-            }
-        };
-
-        function animateNumber(id, target, prefix = '', suffix = '') {
+        function animateNumber(id, target, prefix = '', suffix = '', decimals = 0) {
             const el = document.getElementById(id);
             if (!el) return;
-            
-            const start = parseInt(el.textContent.replace(/[^0-9.-]+/g, "")) || 0;
+            const start = parseFloat(el.textContent.replace(/[^0-9.-]+/g, "")) || 0;
             const duration = 800; 
             const startTime = performance.now();
 
@@ -162,15 +151,10 @@
                 const elapsed = now - startTime;
                 const progress = Math.min(elapsed / duration, 1);
                 const ease = progress * (2 - progress);
-                const current = Math.round(start + (target - start) * ease);
-
-                el.textContent = `${prefix}${current.toLocaleString()}${suffix}`;
-
-                if (progress < 1) {
-                    requestAnimationFrame(update);
-                } else {
-                    el.textContent = `${prefix}${Math.round(target).toLocaleString()}${suffix}`;
-                }
+                const current = start + (target - start) * ease;
+                el.textContent = `${prefix}${current.toLocaleString(undefined, {minimumFractionDigits: decimals, maximumFractionDigits: decimals})}${suffix}`;
+                if (progress < 1) requestAnimationFrame(update);
+                else el.textContent = `${prefix}${target.toLocaleString(undefined, {minimumFractionDigits: decimals, maximumFractionDigits: decimals})}${suffix}`;
             }
             requestAnimationFrame(update);
         }
@@ -178,15 +162,21 @@
         async function init() {
             let rows = [], p = 0;
             while (true) {
-                const { data, error } = await sb.from('databases')
-                    .select('*')
-                    .range(p * 1000, (p + 1) * 1000 - 1);
-                
+                const { data, error } = await sb.from('databases').select('*').range(p * 1000, (p + 1) * 1000 - 1);
                 if (error || !data || data.length === 0) break;
                 rows = [...rows, ...data]; p++;
-                document.getElementById('progressBar').style.width = `${Math.min((rows.length / 5000) * 100, 100)}%`;
+                document.getElementById('progressBar').style.width = `${Math.min((rows.length / 6000) * 100, 85)}%`;
                 if (data.length < 1000) break;
             }
+
+            const { data: overRev, error: err2 } = await sb.from('overall_revenue').select('*');
+            if (!err2 && overRev) {
+                overallRevenueData = overRev.map(r => ({
+                    m: monthsMap[r.month] !== undefined ? monthsMap[r.month] : 0,
+                    amt: parseFloat(r.revenue) || 0
+                }));
+            }
+            document.getElementById('progressBar').style.width = '100%';
 
             masterData = rows.map(r => {
                 const monthText = r.month || 'Jan';
@@ -216,7 +206,6 @@
         function render() {
             const mVal = document.getElementById('monthSlicer').value;
             const cVal = document.getElementById('catSlicer').value;
-            
             const filtered = masterData.filter(d => (cVal === 'all' || d.category === cVal));
             
             updateMetrics(mVal, filtered);
@@ -227,17 +216,11 @@
 
         function updateMetrics(mVal, data) {
             const years = [maxYear - 2, maxYear - 1, maxYear]; 
-            
             const stats = years.map(yr => {
                 const sub = mVal === "all" 
                     ? data.filter(d => d.y === yr && activeMonths.includes(d.m)) 
                     : data.filter(d => d.y === yr && d.m === parseInt(mVal));
-                
-                return { 
-                    yr, 
-                    r: sub.reduce((s,d)=>s+d.amt,0), 
-                    n: sub.reduce((s,d)=>s+d.patientsCount,0) 
-                };
+                return { yr, r: sub.reduce((s,d)=>s+d.amt,0), n: sub.reduce((s,d)=>s+d.patientsCount,0) };
             });
             
             animateNumber('valYear3', stats[2].r, '₱');
@@ -245,10 +228,18 @@
             animateNumber('valYear2', stats[1].r, '₱');
             animateNumber('cenYear2', stats[1].n, '', ' Patients');
 
+            const targetedMonths = mVal === "all" ? activeMonths : [parseInt(mVal)];
+            const totalOverallRev = overallRevenueData
+                .filter(o => targetedMonths.includes(o.m))
+                .reduce((s, o) => s + o.amt, 0);
+
+            const contributionPct = totalOverallRev > 0 ? (stats[2].r / totalOverallRev) * 100 : 0;
+            animateNumber('sharePct', contributionPct, '', '%', 1);
+
             const diff = stats[1].r ? ((stats[2].r - stats[1].r) / stats[1].r * 100) : 0;
             const vEl = document.getElementById('varRev');
             vEl.textContent = `${diff >= 0 ? '+' : ''}${diff.toFixed(1)}%`;
-            vEl.className = `text-4xl font-black mt-1 ${diff >= 0 ? 'text-emerald-400 glow-text-white' : 'text-rose-400'}`;
+            vEl.className = `text-3xl font-black mt-1 ${diff >= 0 ? 'text-emerald-400 glow-text-white' : 'text-rose-400'}`;
             
             drawSpark('sparkLineChart', stats.map(s => s.r));
             document.getElementById('sparkLabels').innerHTML = years.map(y => `<span>${y}</span>`).join('');
@@ -260,104 +251,54 @@
 
             monthsArr.forEach((_, i) => {
                 const c = data.filter(d => d.y === maxYear && d.m === i);
-                curSet.push({ 
-                    r: c.reduce((s,d)=>s+d.amt,0), 
-                    n: c.reduce((s,d)=>s+d.patientsCount,0),
-                    hasData: c.length > 0
-                });
-                
+                curSet.push({ r: c.reduce((s,d)=>s+d.amt,0), n: c.reduce((s,d)=>s+d.patientsCount,0), hasData: c.length > 0 });
                 const p = data.filter(d => d.y === (maxYear - 1) && d.m === i);
-                preSet.push({ 
-                    r: p.reduce((s,d)=>s+d.amt,0), 
-                    n: p.reduce((s,d)=>s+d.patientsCount,0) 
-                });
+                preSet.push({ r: p.reduce((s,d)=>s+d.amt,0), n: p.reduce((s,d)=>s+d.patientsCount,0) });
             });
 
             let lastActiveIndex = -1;
-            for (let i = 11; i >= 0; i--) {
-                if (curSet[i].hasData) {
-                    lastActiveIndex = i;
-                    break;
-                }
-            }
+            for (let i = 11; i >= 0; i--) { if (curSet[i].hasData) { lastActiveIndex = i; break; } }
 
             let revenue2026 = curSet.map((v, idx) => (idx <= lastActiveIndex) ? v.r : null);
             let census2026 = curSet.map((v, idx) => (idx <= lastActiveIndex) ? v.n : null);
 
-            const generatePointConfig = (baseColor) => {
-                let radiuses = [], hoverRadiuses = [], borderColors = [], borderWidths = [];
-                monthsArr.forEach((_, idx) => {
-                    if (selectedMonthIdx !== null && idx === selectedMonthIdx) {
-                        radiuses.push(9); 
-                        hoverRadiuses.push(12);
-                        borderColors.push('#ffffff'); 
-                        borderWidths.push(3);
-                    } else {
-                        radiuses.push(4); 
-                        hoverRadiuses.push(6);
-                        borderColors.push(baseColor);
-                        borderWidths.push(1);
-                    }
-                });
-                return { radiuses, hoverRadiuses, borderColors, borderWidths };
+            // Configure special focal points matching the filtered month matrix
+            const getMarkerConfig = (color, isPre = false) => {
+                if (isPre) return { enabled: false };
+                return {
+                    enabled: true, radius: 4, fillTheme: color,
+                    states: { hover: { radius: 6 } }
+                };
             };
 
-            const revConfig = generatePointConfig('#6366f1');
-            const cenConfig = generatePointConfig('#10b981');
+            // Highcharts Line Matrix Configuration (NO Labels on lines)
+            Highcharts.chart('revChart', {
+                chart: { type: 'spline' },
+                title: { text: 'REVENUE MATRIX', style: { color: '#ffffff', fontSize: '11px', fontWeight: '900' } },
+                xAxis: { categories: monthsArr, labels: { style: { color: '#ffffff', fontWeight: 'bold', fontSize: '8px' } }, crosshair: true },
+                yAxis: { gridLineColor: '#1a1a1a', title: { text: null }, labels: { style: { color: '#ffffff', fontWeight: 'bold', fontSize: '8px' } } },
+                tooltip: { shared: true, useHTML: true, backgroundColor: '#111', style: { color: '#fff' } },
+                plotOptions: { spline: { dataLabels: { enabled: false } } }, // Explicitly disabled
+                legend: { itemStyle: { color: '#ffffff', fontSize: '9px', fontWeight: '900' } },
+                series: [
+                    { name: `${maxYear} Revenue`, data: revenue2026, color: '#6366f1', marker: getMarkerConfig('#6366f1') },
+                    { name: `${maxYear-1} Revenue`, data: preSet.map(v=>v.r), color: '#ffffff', dashStyle: 'Dash', lineWidth: 1, marker: getMarkerConfig('#fff', true) }
+                ]
+            });
 
-            // Render Revenue Chart Matrix
-            draw('revChart', 'line', monthsArr, [
-                { 
-                    label: `${maxYear} Revenue`, 
-                    data: revenue2026, 
-                    borderColor: '#6366f1', 
-                    tension: 0.4,
-                    spanGaps: false,
-                    pointRadius: revConfig.radiuses,
-                    pointHoverRadius: revConfig.hoverRadiuses,
-                    pointBorderColor: revConfig.borderColors,
-                    pointBorderWidth: revConfig.borderWidths,
-                    pointBackgroundColor: '#6366f1'
-                }, 
-                { 
-                    label: `${maxYear-1} Revenue`, 
-                    data: preSet.map(v=>v.r), 
-                    borderColor: '#ffffff', 
-                    borderDash:[5,5], 
-                    borderWidth: 1, 
-                    tension: 0.4,
-                    pointRadius: 4,
-                    pointBackgroundColor: '#ffffff',
-                    pointBorderColor: '#ffffff'
-                }
-            ], 'Revenue Matrix');
-            
-            // Render Census Chart Matrix
-            draw('cenChart', 'line', monthsArr, [
-                { 
-                    label: `${maxYear} Census`, 
-                    data: census2026, 
-                    borderColor: '#10b981', 
-                    tension: 0.4,
-                    spanGaps: false,
-                    pointRadius: cenConfig.radiuses,
-                    pointHoverRadius: cenConfig.hoverRadiuses,
-                    pointBorderColor: cenConfig.borderColors,
-                    pointBorderWidth: cenConfig.borderWidths,
-                    pointBackgroundColor: '#10b981'
-                }, 
-                { 
-                    label: `${maxYear-1} Census`, 
-                    data: preSet.map(v=>v.n), 
-                    borderColor: '#ffffff', 
-                    borderDash:[5,5], 
-                    borderWidth: 1, 
-                    tension: 0.4,
-                    pointRadius: 4,
-                    pointBackgroundColor: '#ffffff',
-                    pointBorderColor: '#ffffff'
-                }
-            ], 'Census Matrix');
+            Highcharts.chart('cenChart', {
+                chart: { type: 'spline' },
+                title: { text: 'CENSUS MATRIX', style: { color: '#ffffff', fontSize: '11px', fontWeight: '900' } },
+                xAxis: { categories: monthsArr, labels: { style: { color: '#ffffff', fontWeight: 'bold', fontSize: '8px' } }, crosshair: true },
+                yAxis: { gridLineColor: '#1a1a1a', title: { text: null }, labels: { style: { color: '#ffffff', fontWeight: 'bold', fontSize: '8px' } } },
+                tooltip: { shared: true, useHTML: true, backgroundColor: '#111', style: { color: '#fff' } },
+                plotOptions: { spline: { dataLabels: { enabled: false } } }, // Explicitly disabled
+                legend: { itemStyle: { color: '#ffffff', fontSize: '9px', fontWeight: '900' } },
+                series: [
+                    { name: `${maxYear} Census`, data: census2026, color: '#10b981', marker: getMarkerConfig('#10b981') },
+                    { name: `${maxYear-1} Census`, data: preSet.map(v=>v.n), color: '#ffffff', dashStyle: 'Dash', lineWidth: 1, marker: getMarkerConfig('#fff', true) }
+                ]
+            });
         }
 
         function updateLists(mVal, data) {
@@ -380,82 +321,91 @@
 
         function updateDemos(mVal, data) {
             const timeFiltered = mVal === 'all' ? data.filter(d => d.y === maxYear) : data.filter(d => d.y === maxYear && d.m === parseInt(mVal));
-            
             const grp = (k) => {
                 const o = {}; 
                 timeFiltered.forEach(d => { 
                     let v = d[k] || 'Unknown'; 
-                    if (k === 'type' && ['HMO', 'INSURANCE', 'INDUSTRIAL'].includes(v.toUpperCase())) {
-                        v = 'TPP';
-                    }
+                    if (k === 'type' && ['HMO', 'INSURANCE', 'INDUSTRIAL'].includes(v.toUpperCase())) v = 'TPP';
                     o[v] = (o[v] || 0) + d.patientsCount; 
                 });
-                const s = Object.entries(o).sort((a,b)=>b[1]-a[1]).slice(0, 6);
-                return { k: s.map(x=>x[0]), v: s.map(x=>x[1]) };
+                return Object.entries(o).sort((a,b)=>b[1]-a[1]).slice(0, 6);
             };
-            
+
             const l = grp('location'), g = grp('gender'), a = grp('age_bracket'), t = grp('type');
             
-            draw('locChart', 'bar', l.k, [{ label: 'Patients', data: l.v, backgroundColor: neonPalette, borderRadius: 5 }], 'Geographic Clusters');
-            draw('genChart', 'doughnut', g.k, [{ data: g.v, backgroundColor: neonPalette, borderWidth: 0 }], 'Gender Split');
-            draw('ageChart', 'doughnut', a.k, [{ data: a.v, backgroundColor: neonPalette, borderWidth: 0 }], 'Age Distribution');
-            draw('typeChart', 'pie', t.k, [{ data: t.v, backgroundColor: neonPalette, borderWidth: 0 }], 'Registration Type');
+            // 1. Geographic Clusters (Bar Matrix) - LABELS ENABLED
+            Highcharts.chart('locChart', {
+                chart: { type: 'column' },
+                title: { text: 'GEOGRAPHIC CLUSTERS', style: { color: '#ffffff', fontSize: '11px', fontWeight: '900' } },
+                xAxis: { categories: l.map(x=>x[0]), labels: { style: { color: '#ffffff', fontSize: '8px', fontWeight: 'bold' } } },
+                yAxis: { gridLineColor: '#1a1a1a', title: { text: null }, labels: { style: { color: '#ffffff', fontSize: '8px' } } },
+                legend: { enabled: false },
+                colors: neonPalette,
+                plotOptions: {
+                    column: {
+                        colorByPoint: true, borderRadius: 5, borderCw: 0,
+                        dataLabels: { enabled: true, color: '#ffffff', style: { fontSize: '10px', fontWeight: '900' } }
+                    }
+                },
+                series: [{ name: 'Patients', data: l.map(x=>x[1]) }]
+            });
+
+            // 2. Gender Split (Doughnut Matrix) - LABELS ENABLED
+            Highcharts.chart('genChart', {
+                chart: { type: 'pie' },
+                title: { text: 'GENDER SPLIT', style: { color: '#ffffff', fontSize: '11px', fontWeight: '900' } },
+                colors: neonPalette,
+                plotOptions: {
+                    pie: {
+                        innerSize: '60%', borderCw: 0,
+                        dataLabels: { enabled: true, format: '{point.percentage:.1f}%', color: '#ffffff', style: { fontSize: '10px', fontWeight: '900' }, distance: -25 }
+                    }
+                },
+                legend: { itemStyle: { color: '#ffffff', fontSize: '9px', fontWeight: '900' } },
+                series: [{ name: 'Patients', data: g.map(x=>({name: x[0], y: x[1]})) }]
+            });
+
+            // 3. Age Distribution (Doughnut Matrix) - LABELS ENABLED
+            Highcharts.chart('ageChart', {
+                chart: { type: 'pie' },
+                title: { text: 'AGE DISTRIBUTION', style: { color: '#ffffff', fontSize: '11px', fontWeight: '900' } },
+                colors: neonPalette,
+                plotOptions: {
+                    pie: {
+                        innerSize: '60%', borderCw: 0,
+                        dataLabels: { enabled: true, format: '{point.percentage:.1f}%', color: '#ffffff', style: { fontSize: '10px', fontWeight: '900' }, distance: -25 }
+                    }
+                },
+                legend: { itemStyle: { color: '#ffffff', fontSize: '9px', fontWeight: '900' } },
+                series: [{ name: 'Patients', data: a.map(x=>({name: x[0], y: x[1]})) }]
+            });
+
+            // 4. Registration Type (Pie Matrix) - LABELS ENABLED
+            Highcharts.chart('typeChart', {
+                chart: { type: 'pie' },
+                title: { text: 'REGISTRATION TYPE', style: { color: '#ffffff', fontSize: '11px', fontWeight: '900' } },
+                colors: neonPalette,
+                plotOptions: {
+                    pie: {
+                        borderCw: 0,
+                        dataLabels: { enabled: true, format: '{point.percentage:.1f}%', color: '#ffffff', style: { fontSize: '10px', fontWeight: '900' }, distance: -25 }
+                    }
+                },
+                legend: { itemStyle: { color: '#ffffff', fontSize: '9px', fontWeight: '900' } },
+                series: [{ name: 'Patients', data: t.map(x=>({name: x[0], y: x[1]})) }]
+            });
         }
 
         function drawSpark(id, data) {
-            if (charts[id]) charts[id].destroy();
-            charts[id] = new Chart(document.getElementById(id), {
-                type: 'line', 
-                data: { 
-                    labels: ['2024','2025','2026'], 
-                    datasets: [{ data, borderColor: '#f59e0b', borderWidth: 2, pointRadius: 4, tension: 0.4, backgroundColor: 'transparent' }] 
-                },
-                options: { 
-                    responsive: true, maintainAspectRatio: false, 
-                    animation: drawTimelineAnimation, 
-                    plugins: { legend: { display: false }, datalabels: { display: false } }, 
-                    scales: { x: { display: false }, y: { display: false } } 
-                }
+            Highcharts.chart(id, {
+                chart: { type: 'line', margin: [0, 0, 0, 0], height: 45 },
+                title: { text: null }, xAxis: { visible: false }, yAxis: { visible: false },
+                legend: { enabled: false }, tooltip: { enabled: false },
+                plotOptions: { line: { marker: { enabled: true, radius: 3 }, dataLabels: { enabled: false } } },
+                series: [{ data: data, color: '#f59e0b', lineWidth: 2 }]
             });
         }
 
-        function draw(id, type, labels, datasets, title) {
-            if (charts[id]) charts[id].destroy();
-            
-            const isPieOrDoughnut = (type === 'pie' || type === 'doughnut');
-
-            charts[id] = new Chart(document.getElementById(id), {
-                type, data: { labels, datasets },
-                options: { 
-                    responsive: true, maintainAspectRatio: false,
-                    // FIX: strictly bind custom x/y delayed tracking timeline rules to line charts only
-                    animation: type === 'line' ? drawTimelineAnimation : {}, 
-                    plugins: { 
-                        legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 9, weight: '900' }, color: '#ffffff', padding: 10 } }, 
-                        title: { display: !!title, text: title.toUpperCase(), color: '#ffffff', font: { size: 11, weight: '900' }, padding: 15 },
-                        datalabels: {
-                            display: isPieOrDoughnut, 
-                            color: '#ffffff',
-                            font: { size: 10, weight: '900' },
-                            textShadowColor: 'rgba(0, 0, 0, 0.8)',
-                            textShadowBlur: 4,
-                            formatter: (value, ctx) => {
-                                let sum = 0;
-                                let dataArr = ctx.chart.data.datasets[0].data;
-                                dataArr.forEach(data => { sum += data; });
-                                if (sum === 0) return '';
-                                let percentage = (value * 100 / sum).toFixed(1) + "%";
-                                return percentage;
-                            }
-                        }
-                    },
-                    scales: !isPieOrDoughnut ? { 
-                        y: { grid: { color: '#1a1a1a' }, ticks: { font: { size: 8, weight: 'bold' }, color: '#ffffff' } }, 
-                        x: { grid: { display: false }, ticks: { font: { size: 8, weight: 'bold' }, color: '#ffffff' } } 
-                    } : {}
-                }
-            });
-        }
         init();
     </script>
 </body>
