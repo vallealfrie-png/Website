@@ -79,7 +79,6 @@
             <div class="bg-gray-950 neon-emerald rounded-2xl p-5 transition-all duration-300 hover:scale-[1.01] flex flex-col justify-between min-h-[120px]">
                 <p class="text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-2 flex-shrink-0">2026 Revenue</p>
                 <div class="w-full">
-                    <!-- Clamped size automatically prevents numeric line drops/cuts across desktop/mobile viewports -->
                     <h3 id="score2026" class="text-[clamp(1.5rem,5vw,2.25rem)] font-extrabold tracking-tight text-[#228b22] drop-shadow-[0_0_12px_rgba(16,185,129,0.35)] leading-none inline-block w-max max-w-full text-left whitespace-nowrap">₱0</h3>
                 </div>
             </div>
@@ -236,7 +235,7 @@
             const p3 = { x: width - 8,     y: height - 6 - ((val26 - minVal) / range) * (height - 12) };
 
             let progress = 0;
-            const speed = 0.03; 
+            const speed = 0.008; // Slower line trace animation rate
             const lineColor = val26 >= val25 ? '#10b981' : '#f43f5e';
 
             function getStraightLineXY(t) {
@@ -253,24 +252,25 @@
 
                 ctx.clearRect(0, 0, width, height);
 
+                // Main data points rendered bigger (radius 4 instead of 2)
                 ctx.fillStyle = '#4b5563';
                 [p1, p2, p3].forEach(p => {
-                    ctx.beginPath(); ctx.arc(p.x, p.y, 2, 0, 2 * Math.PI); ctx.fill();
+                    ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, 2 * Math.PI); ctx.fill();
                 });
 
                 ctx.beginPath();
                 ctx.moveTo(p1.x, p1.y);
                 
-                const stepCount = Math.floor(progress * 30);
+                const stepCount = Math.floor(progress * 60); // Fine granularity step for micro-ticks
                 for (let i = 0; i <= stepCount; i++) {
-                    const currentXY = getStraightLineXY((i / 30) * progress);
+                    const currentXY = getStraightLineXY((i / 60) * progress);
                     ctx.lineTo(currentXY.x, currentXY.y);
                 }
                 const tailXY = getStraightLineXY(progress);
                 ctx.lineTo(tailXY.x, tailXY.y);
 
                 ctx.strokeStyle = lineColor;
-                ctx.lineWidth = 2;
+                ctx.lineWidth = 2.5;
                 ctx.lineJoin = 'miter';
                 ctx.stroke();
 
