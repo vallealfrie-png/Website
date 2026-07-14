@@ -17,7 +17,7 @@
             color: #f3f4f6; 
         }
         
-        /* Distinct Neon Border Utilities */
+        /* Neon Border Profiling */
         .neon-emerald { border: 1px solid rgba(16, 185, 129, 0.2); box-shadow: 0 0 15px rgba(16, 185, 129, 0.1); }
         .neon-indigo { border: 1px solid rgba(99, 102, 241, 0.2); box-shadow: 0 0 15px rgba(99, 102, 241, 0.1); }
         .neon-blue-card { border: 1px solid rgba(59, 130, 246, 0.2); box-shadow: 0 0 15px rgba(59, 130, 246, 0.1); }
@@ -68,32 +68,48 @@
         </div>
 
         <!-- Metric KPI Board -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div class="bg-gray-950 neon-blue-card rounded-2xl p-5 transition-all duration-300 hover:scale-[1.01]">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <!-- 2024 Card -->
+            <div class="bg-gray-950 neon-blue-card rounded-2xl p-4 transition-all duration-300 hover:scale-[1.01]">
                 <div class="flex items-center justify-between mb-1">
-                    <p class="text-[10px] font-bold text-blue-400/80 uppercase tracking-widest">2024 Actual Revenue</p>
+                    <p class="text-[9px] font-bold text-blue-400/80 uppercase tracking-widest">2024 Revenue</p>
                     <span id="applesBadge24" class="text-[8px] bg-blue-950 text-blue-300 border border-blue-800 px-1.5 py-0.5 rounded font-bold tracking-tight"></span>
                 </div>
-                <h3 id="score2024" class="text-2xl font-extrabold tracking-tight text-white">₱0</h3>
+                <h3 id="score2024" class="text-xl font-extrabold tracking-tight text-white">₱0</h3>
             </div>
-            <div class="bg-gray-950 neon-indigo rounded-2xl p-5 transition-all duration-300 hover:scale-[1.01]">
+            
+            <!-- 2025 Card -->
+            <div class="bg-gray-950 neon-indigo rounded-2xl p-4 transition-all duration-300 hover:scale-[1.01]">
                 <div class="flex items-center justify-between mb-1">
-                    <p class="text-[10px] font-bold text-indigo-400/80 uppercase tracking-widest">2025 Actual Revenue</p>
+                    <p class="text-[9px] font-bold text-indigo-400/80 uppercase tracking-widest">2025 Revenue</p>
                     <span id="applesToApplesBadge" class="text-[8px] bg-indigo-950 text-indigo-300 border border-indigo-800 px-1.5 py-0.5 rounded font-bold tracking-tight"></span>
                 </div>
-                <h3 id="score2025" class="text-2xl font-extrabold tracking-tight text-white">₱0</h3>
+                <h3 id="score2025" class="text-xl font-extrabold tracking-tight text-white">₱0</h3>
             </div>
-            <div class="bg-gray-950 neon-emerald rounded-2xl p-5 transition-all duration-300 hover:scale-[1.01]">
-                <p class="text-[10px] font-bold text-emerald-500/80 uppercase tracking-widest mb-1">2026 Actual Revenue</p>
-                <h3 id="score2026" class="text-2xl font-extrabold tracking-tight text-[#228b22]">₱0</h3>
+            
+            <!-- 2026 Card -->
+            <div class="bg-gray-950 neon-emerald rounded-2xl p-4 transition-all duration-300 hover:scale-[1.01]">
+                <p class="text-[9px] font-bold text-emerald-500/80 uppercase tracking-widest mb-1">2026 Revenue</p>
+                <h3 id="score2026" class="text-xl font-extrabold tracking-tight text-[#228b22]">₱0</h3>
             </div>
-            <div id="growthCard" class="bg-gray-950 neon-amber rounded-2xl p-5 transition-all duration-300 hover:scale-[1.01] flex justify-between items-center">
-                <div>
-                    <p class="text-[10px] font-bold text-amber-500/80 uppercase tracking-widest mb-1">YoY Growth ('25 vs '26)</p>
-                    <h3 id="growthValue" class="text-2xl font-extrabold tracking-tight text-white">0%</h3>
+            
+            <!-- YoY Growth Card -->
+            <div class="bg-gray-950 neon-amber rounded-2xl p-4 transition-all duration-300 hover:scale-[1.01]">
+                <p class="text-[9px] font-bold text-amber-500/80 uppercase tracking-widest mb-1">YoY Growth ('25 vs '26)</p>
+                <div class="flex items-baseline space-x-2">
+                    <h3 id="growthValue" class="text-xl font-extrabold tracking-tight text-white">0%</h3>
+                    <span id="growthArrow" class="text-xs font-black"></span>
                 </div>
-                <div class="relative w-28 h-12 flex items-center justify-end">
-                    <canvas id="runningSparkline" width="110" height="44" class="w-[110px] h-[44px]"></canvas>
+            </div>
+
+            <!-- New 3-Year Trend Scorecard -->
+            <div class="bg-gray-950 border border-gray-800 rounded-2xl p-4 transition-all duration-300 hover:scale-[1.01] flex justify-between items-center">
+                <div>
+                    <p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">3-Yr Trend</p>
+                    <span class="text-[10px] font-bold text-gray-500 tracking-wider">24 → 25 → 26</span>
+                </div>
+                <div class="relative w-24 h-10 flex items-center justify-end">
+                    <canvas id="trendSparkline" width="96" height="40" class="w-[96px] h-[40px]"></canvas>
                 </div>
             </div>
         </div>
@@ -170,8 +186,8 @@
             return parseFloat(val.toString().replace(/[₱, ]/g, '')) || 0;
         };
 
-        function draw3PointLeadingSparkline(val24, val25, val26) {
-            const canvas = document.getElementById('runningSparkline');
+        function draw3PointTrend(val24, val25, val26) {
+            const canvas = document.getElementById('trendSparkline');
             if (!canvas) return;
             const ctx = canvas.getContext('2d');
             
@@ -184,37 +200,36 @@
             const maxVal = Math.max(val24, val25, val26);
             const range = (maxVal - minVal) === 0 ? 1 : (maxVal - minVal);
 
-            // Normalized coordinates mapping for 3 continuous vectors
-            const p1 = { x: 8,            y: height - 8 - ((val24 - minVal) / range) * (height - 16) };
-            const p2 = { x: width / 2,     y: height - 8 - ((val25 - minVal) / range) * (height - 16) };
-            const p3 = { x: width - 12,    y: height - 8 - ((val26 - minVal) / range) * (height - 16) };
+            // Coordinates for 3 vectors
+            const p1 = { x: 6,            y: height - 6 - ((val24 - minVal) / range) * (height - 12) };
+            const p2 = { x: width / 2,     y: height - 6 - ((val25 - minVal) / range) * (height - 12) };
+            const p3 = { x: width - 10,    y: height - 6 - ((val26 - minVal) / range) * (height - 12) };
 
             let progress = 0;
-            const speed = 0.015; 
-            const isGoingUp = val26 >= val25;
-            const lineColor = isGoingUp ? '#228b22' : '#f43f5e';
-            const glowColor = isGoingUp ? 'rgba(34, 139, 34, 0.3)' : 'rgba(244, 63, 94, 0.3)';
+            const speed = 0.02; 
+            const isLineUp = val26 >= val25;
+            const lineColor = isLineUp ? '#10b981' : '#f43f5e';
+            const glowColor = isLineUp ? 'rgba(16, 185, 129, 0.25)' : 'rgba(244, 63, 94, 0.25)';
 
-            // Quadratic bezier calculation for seamless multi-point stream line transitions
             function getBezierXY(t) {
                 if (t <= 0.5) {
                     const localT = t * 2;
                     const mt = 1 - localT;
-                    // Segment 1 Control curve path
                     const cpX = p1.x + (p2.x - p1.x) * 0.5;
                     const cpY = p1.y;
-                    const x = mt * mt * p1.x + 2 * mt * localT * cpX + localT * localT * p2.x;
-                    const y = mt * mt * p1.y + 2 * mt * localT * cpY + localT * localT * p2.y;
-                    return { x, y };
+                    return {
+                        x: mt * mt * p1.x + 2 * mt * localT * cpX + localT * localT * p2.x,
+                        y: mt * mt * p1.y + 2 * mt * localT * cpY + localT * localT * p2.y
+                    };
                 } else {
                     const localT = (t - 0.5) * 2;
                     const mt = 1 - localT;
-                    // Segment 2 Control curve path
                     const cpX = p2.x + (p3.x - p2.x) * 0.5;
                     const cpY = p2.y;
-                    const x = mt * mt * p2.x + 2 * mt * localT * cpX + localT * localT * p3.x;
-                    const y = mt * mt * p2.y + 2 * mt * localT * cpY + localT * localT * p3.y;
-                    return { x, y };
+                    return {
+                        x: mt * mt * p2.x + 2 * mt * localT * cpX + localT * localT * p3.x,
+                        y: mt * mt * p2.y + 2 * mt * localT * cpY + localT * localT * p3.y
+                    };
                 }
             }
 
@@ -224,37 +239,37 @@
 
                 ctx.clearRect(0, 0, width, height);
 
-                // Draw background tracking point indicators
+                // Background nodes
                 ctx.fillStyle = '#4b5563';
                 ctx.beginPath(); ctx.arc(p1.x, p1.y, 2, 0, 2 * Math.PI); ctx.fill();
                 ctx.beginPath(); ctx.arc(p2.x, p2.y, 2, 0, 2 * Math.PI); ctx.fill();
                 ctx.beginPath(); ctx.arc(p3.x, p3.y, 2, 0, 2 * Math.PI); ctx.fill();
 
-                // Build progressive line stream stroke path
+                // Build line stream stroke path
                 ctx.beginPath();
                 ctx.moveTo(p1.x, p1.y);
                 
-                const steps = Math.floor(progress * 60);
+                const steps = Math.floor(progress * 50);
                 for (let i = 0; i <= steps; i++) {
-                    const t = (i / 60) * progress;
+                    const t = (i / 50) * progress;
                     const pt = getBezierXY(t);
                     ctx.lineTo(pt.x, pt.y);
                 }
                 const currentPt = getBezierXY(progress);
                 ctx.lineTo(currentPt.x, currentPt.y);
 
-                // Glow layout profile
+                // Ambient glow pipeline
                 ctx.strokeStyle = glowColor;
-                ctx.lineWidth = 5;
+                ctx.lineWidth = 4;
                 ctx.lineCap = 'round';
                 ctx.stroke();
 
-                // Core dynamic profile vector path line
+                // Core vector path line
                 ctx.strokeStyle = lineColor;
-                ctx.lineWidth = 2;
+                ctx.lineWidth = 1.75;
                 ctx.stroke();
 
-                // Trailing pointer logic calculation head
+                // Direction terminal index indicator tracking head
                 ctx.save();
                 ctx.translate(currentPt.x, currentPt.y);
                 if (progress > 0.95) {
@@ -263,14 +278,14 @@
                     ctx.rotate(angle);
                     ctx.beginPath();
                     ctx.moveTo(2, 0);
-                    ctx.lineTo(-5, -4);
-                    ctx.lineTo(-5, 4);
+                    ctx.lineTo(-4, -3);
+                    ctx.lineTo(-4, 3);
                     ctx.closePath();
                     ctx.fillStyle = lineColor;
                     ctx.fill();
                 } else {
                     ctx.beginPath();
-                    ctx.arc(0, 0, 3, 0, 2 * Math.PI);
+                    ctx.arc(0, 0, 2.5, 0, 2 * Math.PI);
                     ctx.fillStyle = lineColor;
                     ctx.fill();
                 }
@@ -295,16 +310,7 @@
                 if (isCurrency) {
                     obj.innerHTML = '₱' + value.toLocaleString();
                 } else {
-                    obj.innerHTML = (value >= 0 ? '+' : '') + value + '%';
-                    const cardEl = document.getElementById('growthCard');
-
-                    if (value >= 0) {
-                        obj.className = "text-2xl font-extrabold tracking-tight text-[#228b22]";
-                        if(cardEl) cardEl.className = "bg-gray-950 neon-emerald rounded-2xl p-5 transition-all duration-300 hover:scale-[1.01] flex justify-between items-center";
-                    } else {
-                        obj.className = "text-2xl font-extrabold tracking-tight text-[#f43f5e]";
-                        if(cardEl) cardEl.className = "bg-gray-950 neon-rose rounded-2xl p-5 transition-all duration-300 hover:scale-[1.01] flex justify-between items-center";
-                    }
+                    obj.innerHTML = value + '%';
                 }
                 
                 if (progress < 1) window.requestAnimationFrame(step);
@@ -458,7 +464,7 @@
             rawData = rawData.map(d => ({...d, month: (d.month || "").trim()}));
             let deptData = selectedDept === 'ALL' ? rawData : rawData.filter(d => d.department === selectedDept);
 
-            // DYNAMIC APPLES-TO-APPLES DETECTION FOR ALL HISTORICAL PEERS
+            // DYNAMIC APPLES-TO-APPLES DETECTION FOR HISTORICAL PEERS
             const monthsWith2026Data = [...new Set(
                 deptData.filter(d => d.year == 2026 && parseVal(d.revenue) > 0).map(d => d.month)
             )];
@@ -467,7 +473,7 @@
             const max2026MonthIndex = activeIndices.length > 0 ? Math.max(...activeIndices) : -1;
             const validComparisonMonths = max2026MonthIndex !== -1 ? MONTH_ORDER.slice(0, max2026MonthIndex + 1) : [];
 
-            // Update calculation badges across card heads
+            // Sync structural contextual indicators across heads
             const badge25 = document.getElementById('applesToApplesBadge');
             const badge24 = document.getElementById('applesBadge24');
             const statusLabel = selectedMonth !== 'ALL' ? selectedMonth : (validComparisonMonths.length > 0 ? `YTD (Jan-${validComparisonMonths[validComparisonMonths.length - 1]})` : "No Data");
@@ -503,8 +509,20 @@
             animateValue('revText', 0, curRev, 1000);
             animateValue('targetText', 0, curTarget, 1000);
 
-            // Execute 3-Point Leading Line Animation on Canvas
-            draw3PointLeadingSparkline(oldRev2024, oldRev, curRev);
+            // Independent YoY Growth Arrow Allocation Profile
+            const arrowEl = document.getElementById('growthArrow');
+            if (arrowEl) {
+                if (growth >= 0) {
+                    arrowEl.innerHTML = "▲";
+                    arrowEl.className = "text-xs font-black text-[#228b22]";
+                } else {
+                    arrowEl.innerHTML = "▼";
+                    arrowEl.className = "text-xs font-black text-[#f43f5e]";
+                }
+            }
+
+            // Run isolated canvas animation stream line layout
+            draw3PointTrend(oldRev2024, oldRev, curRev);
 
             const varianceEl = document.getElementById('varianceText');
             if (varianceEl) {
