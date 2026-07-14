@@ -28,6 +28,12 @@
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #374151; border-radius: 2px; }
+
+        /* Force option background colors on browser engines to avoid white dropdown flashes */
+        select option {
+            background-color: #030712 !important;
+            color: #e5e7eb !important;
+        }
     </style>
 </head>
 <body class="min-h-screen pb-16">
@@ -52,59 +58,61 @@
         
         <!-- Controls Section -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div class="bg-gray-900/60 border border-gray-800 rounded-xl px-4 py-2">
+            <div class="bg-gray-950 border border-gray-800 rounded-xl px-4 py-2 focus-within:border-emerald-500/50 transition-colors">
                 <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider">Timeline</label>
-                <select id="monthSelect" class="w-full bg-transparent text-sm font-bold text-gray-200 outline-none cursor-pointer py-0.5">
-                    <option class="bg-gray-950" value="ALL">Year-to-Date (Dynamic Threshold)</option>
+                <select id="monthSelect" class="w-full bg-transparent text-sm font-bold text-gray-200 outline-none cursor-pointer py-0.5 focus:ring-0 appearance-none">
+                    <option value="ALL">Year-to-Date (Dynamic Threshold)</option>
                 </select>
             </div>
-            <div class="bg-gray-900/60 border border-gray-800 rounded-xl px-4 py-2">
+            <div class="bg-gray-950 border border-gray-800 rounded-xl px-4 py-2 focus-within:border-indigo-500/50 transition-colors">
                 <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider">Scope</label>
-                <select id="deptSelect" class="w-full bg-transparent text-sm font-bold text-gray-200 outline-none cursor-pointer py-0.5">
-                    <option class="bg-gray-950" value="ALL">Consolidated Hospital</option>
+                <select id="deptSelect" class="w-full bg-transparent text-sm font-bold text-gray-200 outline-none cursor-pointer py-0.5 focus:ring-0 appearance-none">
+                    <option value="ALL">Consolidated Hospital</option>
                 </select>
             </div>
         </div>
 
         <!-- Metric KPI Board -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <!-- 2026 Card First - High Emphasis Typography styling -->
-            <div class="bg-gray-950 neon-emerald rounded-2xl p-5 transition-all duration-300 hover:scale-[1.01] flex flex-col justify-between min-h-[120px]">
-                <p class="text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-1.5">2026 Revenue</p>
-                <h3 id="score2026" class="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#228b22] drop-shadow-[0_0_12px_rgba(16,185,129,0.35)]">₱0</h3>
+            <!-- 2026 Card First - Overflow Protected Layout Structure -->
+            <div class="bg-gray-950 neon-emerald rounded-2xl p-5 transition-all duration-300 hover:scale-[1.01] flex flex-col justify-between min-h-[120px] overflow-hidden">
+                <p class="text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-1.5 flex-shrink-0">2026 Revenue</p>
+                <div class="w-full min-w-0 overflow-hidden">
+                    <h3 id="score2026" class="text-3xl sm:text-4xl lg:text-3xl xl:text-4xl font-extrabold tracking-tight text-[#228b22] drop-shadow-[0_0_12px_rgba(16,185,129,0.35)] truncate break-all leading-tight">₱0</h3>
+                </div>
             </div>
             
             <!-- 2025 Card with collapsible 2024 baseline metric inside -->
-            <div class="bg-gray-950 neon-indigo rounded-2xl p-5 transition-all duration-300 hover:scale-[1.01] flex flex-col justify-between min-h-[120px]">
-                <div>
-                    <div class="flex items-center justify-between mb-1">
-                        <p class="text-[10px] font-bold text-indigo-400/80 uppercase tracking-widest">2025 Revenue</p>
-                        <span id="applesToApplesBadge" class="text-[8px] bg-indigo-950 text-indigo-300 border border-indigo-800 px-1.5 py-0.5 rounded font-bold tracking-tight"></span>
+            <div class="bg-gray-950 neon-indigo rounded-2xl p-5 transition-all duration-300 hover:scale-[1.01] flex flex-col justify-between min-h-[120px] overflow-hidden">
+                <div class="w-full min-w-0">
+                    <div class="flex items-center justify-between mb-1 gap-2">
+                        <p class="text-[10px] font-bold text-indigo-400/80 uppercase tracking-widest truncate">2025 Revenue</p>
+                        <span id="applesToApplesBadge" class="text-[8px] bg-indigo-950 text-indigo-300 border border-indigo-800 px-1.5 py-0.5 rounded font-bold tracking-tight flex-shrink-0"></span>
                     </div>
-                    <h3 id="score2025" class="text-xl font-extrabold tracking-tight text-white">₱0</h3>
+                    <h3 id="score2025" class="text-xl font-extrabold tracking-tight text-white truncate">₱0</h3>
                 </div>
                 
                 <!-- Toggle Container for 2024 Data via Small Downward Triangle Dropdown -->
-                <div class="mt-2 border-t border-gray-900/60 pt-2">
+                <div class="mt-2 border-t border-gray-900/60 pt-2 flex-shrink-0">
                     <button onclick="toggle2024Data()" class="flex items-center space-x-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 hover:text-indigo-400 transition-colors focus:outline-none">
                         <span id="toggleTriangle" class="inline-block transform transition-transform duration-200 text-[8px]">▼</span>
                         <span>Prior Benchmarks</span>
                     </button>
                     <div id="hidden2024Panel" class="hidden mt-1.5 pl-2 border-l border-indigo-500/40">
-                        <div class="flex justify-between items-center">
-                            <span class="text-[9px] font-medium text-gray-500 uppercase tracking-wider">2024 Baseline:</span>
-                            <span id="score2024" class="text-xs font-bold text-indigo-300">₱0</span>
+                        <div class="flex justify-between items-center gap-2">
+                            <span class="text-[9px] font-medium text-gray-500 uppercase tracking-wider flex-shrink-0">2024 Baseline:</span>
+                            <span id="score2024" class="text-xs font-bold text-indigo-300 truncate">₱0</span>
                         </div>
                     </div>
                 </div>
             </div>
             
             <!-- YoY Growth Card -->
-            <div class="bg-gray-950 neon-amber rounded-2xl p-5 transition-all duration-300 hover:scale-[1.01] flex flex-col justify-between min-h-[120px]">
-                <p class="text-[10px] font-bold text-amber-500/80 uppercase tracking-widest mb-1">YoY Growth ('25 vs '26)</p>
-                <div class="flex items-baseline space-x-2">
-                    <h3 id="growthValue" class="text-2xl font-extrabold tracking-tight text-white">0%</h3>
-                    <span id="growthArrow" class="text-sm font-black"></span>
+            <div class="bg-gray-950 neon-amber rounded-2xl p-5 transition-all duration-300 hover:scale-[1.01] flex flex-col justify-between min-h-[120px] overflow-hidden">
+                <p class="text-[10px] font-bold text-amber-500/80 uppercase tracking-widest mb-1 flex-shrink-0">YoY Growth ('25 vs '26)</p>
+                <div class="flex items-baseline space-x-2 min-w-0">
+                    <h3 id="growthValue" class="text-2xl font-extrabold tracking-tight text-white truncate">0%</h3>
+                    <span id="growthArrow" class="text-sm font-black flex-shrink-0"></span>
                 </div>
             </div>
 
