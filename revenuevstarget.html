@@ -32,6 +32,7 @@
 </head>
 <body class="min-h-screen pb-16">
 
+    <!-- Navbar -->
     <nav class="border-b border-gray-800 bg-gray-950/70 backdrop-blur-md sticky top-0 z-50 px-8 py-4 mb-8">
         <div class="max-w-7xl mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-4">
@@ -49,6 +50,7 @@
 
     <div class="max-w-7xl mx-auto px-6 space-y-6">
         
+        <!-- Controls Section -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div class="bg-gray-900/60 border border-gray-800 rounded-xl px-4 py-2">
                 <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider">Timeline</label>
@@ -64,13 +66,17 @@
             </div>
         </div>
 
+        <!-- Metric KPI Board -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="bg-gray-950 neon-emerald rounded-2xl p-6 transition-all duration-300 hover:scale-[1.01]">
                 <p class="text-[10px] font-bold text-emerald-500/80 uppercase tracking-widest mb-1">2026 Actual Revenue</p>
                 <h3 id="score2026" class="text-3xl font-extrabold tracking-tight text-[#228b22]">₱0</h3>
             </div>
             <div class="bg-gray-950 neon-indigo rounded-2xl p-6 transition-all duration-300 hover:scale-[1.01]">
-                <p class="text-[10px] font-bold text-indigo-400/80 uppercase tracking-widest mb-1">2025 Actual Revenue</p>
+                <div class="flex items-center justify-between mb-1">
+                    <p class="text-[10px] font-bold text-indigo-400/80 uppercase tracking-widest">2025 Actual Revenue</p>
+                    <span id="applesToApplesBadge" class="text-[9px] bg-indigo-950 text-indigo-300 border border-indigo-800 px-1.5 py-0.5 rounded font-bold tracking-tight"></span>
+                </div>
                 <h3 id="score2025" class="text-3xl font-extrabold tracking-tight text-white">₱0</h3>
             </div>
             <div id="growthCard" class="bg-gray-950 neon-amber rounded-2xl p-6 transition-all duration-300 hover:scale-[1.01] flex justify-between items-center">
@@ -84,6 +90,7 @@
             </div>
         </div>
 
+        <!-- Gauge and Target Listing -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div class="bg-gray-950 neon-purple rounded-2xl p-6 flex flex-col justify-between">
                 <div class="flex items-center justify-between gap-2 w-full border-b border-gray-900 pb-4 mb-4">
@@ -117,6 +124,7 @@
             </div>
         </div>
 
+        <!-- Historical Stream & Deficit Board -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="bg-gray-950 neon-blue lg:col-span-2 rounded-2xl p-6">
                 <div id="comparisonContainer" class="h-[360px]"></div>
@@ -132,6 +140,7 @@
             </div>
         </div>
 
+        <!-- YoY Growth Analytics Stream -->
         <div class="grid grid-cols-1 gap-6">
             <div class="bg-gray-950 neon-amber rounded-2xl p-6">
                 <div id="growthStreamContainer" class="h-[360px]"></div>
@@ -255,13 +264,7 @@
                 const value = Math.round(progress * (end - start) + start);
                 
                 if (isCurrency) {
-                    if (id === 'score2026') {
-                        obj.innerHTML = '₱' + value.toLocaleString();
-                    } else if (id === 'score2025') {
-                        obj.innerHTML = '₱' + value.toLocaleString();
-                    } else {
-                        obj.innerHTML = '₱' + value.toLocaleString();
-                    }
+                    obj.innerHTML = '₱' + value.toLocaleString();
                 } else {
                     obj.innerHTML = (value >= 0 ? '+' : '') + value + '%';
                     const cardEl = document.getElementById('growthCard');
@@ -347,7 +350,6 @@
                 credits: { enabled: false }
             });
 
-            // NEW: Initialize Year-over-Year Growth Spline Stream
             growthStreamChart = Highcharts.chart('growthStreamContainer', {
                 chart: { backgroundColor: 'transparent' },
                 title: { text: 'Year-over-Year (YoY) Growth Analytics Stream', style: { color: '#9ca3af', fontSize: '13px', fontWeight: '700', letterSpacing: '0.05em' } },
@@ -426,11 +428,48 @@
 
             rawData = rawData.map(d => ({...d, month: (d.month || "").trim()}));
             let deptData = selectedDept === 'ALL' ? rawData : rawData.filter(d => d.department === selectedDept);
+
+            // DYNAMIC APPLES-TO-APPLES DETECTION
+            // 1. Identify which months in 2026 actually contain revenue samples
+            const monthsWith2026Data = [...new Set(
+                deptData.filter(d => d.year == 2026 && parseVal(d.revenue) > 0).map(d => d.month)
+            )];
+
+            // 2. Map those months to indices to locate the furthest active calendar point
+            const activeIndices = monthsWith2026Data.map(m => MONTH_ORDER.findIndex(mo => m.startsWith(mo))).filter(idx => idx !== -1);
+            const max2026MonthIndex = activeIndices.length > 0 ? Math.max(...activeIndices) : -1;
+            
+            // 3. Create a clean array list of standard allowed months matching the current 2026 scope
+            const validComparisonMonths = max2026MonthIndex !== -1 ? MONTH_ORDER.slice(0, max2026MonthIndex + 1) : [];
+
+            // Update UI components showing calculation scope
+            const badge = document.getElementById('applesToApplesBadge');
+            if (badge) {
+                if (selectedMonth !== 'ALL') {
+                    badge.innerHTML = selectedMonth;
+                } else if (validComparisonMonths.length > 0) {
+                    badge.innerHTML = `YTD (Jan - ${validComparisonMonths[validComparisonMonths.length - 1]})`;
+                } else {
+                    badge.innerHTML = "No 2026 Data";
+                }
+            }
+
+            // Apply normal dashboard view scoping metrics
             let metricsData = selectedMonth === 'ALL' ? deptData : deptData.filter(d => d.month === selectedMonth);
 
             const curRev = metricsData.filter(d => d.year == 2026).reduce((s, r) => s + parseVal(r.revenue), 0);
             const curTarget = metricsData.filter(d => d.year == 2026).reduce((s, r) => s + parseVal(r.target), 0);
-            const oldRev = metricsData.filter(d => d.year == 2025).reduce((s, r) => s + parseVal(r.revenue), 0);
+            
+            // DYNAMIC 2025 SCOREBOARD ASSIGNMENT
+            let oldRev = 0;
+            if (selectedMonth !== 'ALL') {
+                // If single month is chosen in drop down, compare just that specific month
+                oldRev = metricsData.filter(d => d.year == 2025).reduce((s, r) => s + parseVal(r.revenue), 0);
+            } else {
+                // Dynamic Filter: Only sum 2025 months that exist inside our matching 2026 window profile
+                oldRev = deptData.filter(d => d.year == 2025 && validComparisonMonths.some(vm => d.month.startsWith(vm)))
+                                 .reduce((s, r) => s + parseVal(r.revenue), 0);
+            }
             
             const realAchieve = curTarget > 0 ? Math.round((curRev / curTarget) * 100) : 0;
             const growth = oldRev > 0 ? Math.round(((curRev - oldRev) / oldRev) * 100) : 0;
@@ -491,7 +530,6 @@
             const targetList2026 = availableMonths.map(m => deptData.filter(d => d.year == 2026 && d.month == m).reduce((s, r) => s + parseVal(r.target), 0));
             const revList2025 = availableMonths.map(m => deptData.filter(d => d.year == 2025 && d.month == m).reduce((s, r) => s + parseVal(r.revenue), 0));
 
-            // Calculate percentage growth list for the spline timeline line
             const monthlyGrowthRates = revList2026.map((rev26, idx) => {
                 const rev25 = revList2025[idx];
                 return rev25 > 0 ? Math.round(((rev26 - rev25) / rev25) * 100) : 0;
@@ -508,11 +546,9 @@
                 };
             });
 
-            // Update traditional Target chart
             comparisonChart.series[0].setData(dynamicColoredBars, false);
             comparisonChart.series[1].setData(targetList2026, true);
 
-            // Update new YoY Growth Analytics stream chart
             growthStreamChart.series[0].setData(revList2025, false);
             growthStreamChart.series[1].setData(revList2026, false);
             growthStreamChart.series[2].setData(monthlyGrowthRates, true);
