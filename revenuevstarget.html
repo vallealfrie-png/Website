@@ -56,7 +56,7 @@
             <div class="bg-gray-900/60 border border-gray-800 rounded-xl px-4 py-2">
                 <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider">Timeline</label>
                 <select id="monthSelect" class="w-full bg-transparent text-sm font-bold text-gray-200 outline-none cursor-pointer py-0.5">
-                    <option class="bg-gray-950" value="ALL">Year-to-Date (All Months)</option>
+                    <option class="bg-gray-950" value="ALL">Year-to-Date (Dynamic Threshold)</option>
                 </select>
             </div>
             <div class="bg-gray-900/60 border border-gray-800 rounded-xl px-4 py-2">
@@ -219,7 +219,6 @@
             const maxVal = Math.max(val24, val25, val26);
             const range = (maxVal - minVal) === 0 ? 1 : (maxVal - minVal);
 
-            // Straightline discrete vector coordinates
             const p1 = { x: 6,            y: height - 6 - ((val24 - minVal) / range) * (height - 12) };
             const p2 = { x: width / 2,     y: height - 6 - ((val25 - minVal) / range) * (height - 12) };
             const p3 = { x: width - 10,    y: height - 6 - ((val26 - minVal) / range) * (height - 12) };
@@ -230,7 +229,6 @@
             const lineColor = isLineUp ? '#10b981' : '#f43f5e';
             const glowColor = isLineUp ? 'rgba(16, 185, 129, 0.25)' : 'rgba(244, 63, 94, 0.25)';
 
-            // Clean direct straight segment interpolation
             function getStraightXY(t) {
                 if (t <= 0.5) {
                     const localT = t * 2;
@@ -253,13 +251,11 @@
 
                 ctx.clearRect(0, 0, width, height);
 
-                // Target node points
                 ctx.fillStyle = '#4b5563';
                 ctx.beginPath(); ctx.arc(p1.x, p1.y, 2, 0, 2 * Math.PI); ctx.fill();
                 ctx.beginPath(); ctx.arc(p2.x, p2.y, 2, 0, 2 * Math.PI); ctx.fill();
                 ctx.beginPath(); ctx.arc(p3.x, p3.y, 2, 0, 2 * Math.PI); ctx.fill();
 
-                // Straight linear layout paths
                 ctx.beginPath();
                 ctx.moveTo(p1.x, p1.y);
                 
@@ -272,7 +268,6 @@
                 const currentPt = getStraightXY(progress);
                 ctx.lineTo(currentPt.x, currentPt.y);
 
-                // Style strokes
                 ctx.strokeStyle = glowColor;
                 ctx.lineWidth = 4;
                 ctx.lineCap = 'miter';
@@ -282,7 +277,6 @@
                 ctx.lineWidth = 1.75;
                 ctx.stroke();
 
-                // Tip terminal vector index tracking logic
                 ctx.save();
                 ctx.translate(currentPt.x, currentPt.y);
                 if (progress > 0.95) {
@@ -477,6 +471,7 @@
             rawData = rawData.map(d => ({...d, month: (d.month || "").trim()}));
             let deptData = selectedDept === 'ALL' ? rawData : rawData.filter(d => d.department === selectedDept);
 
+            // DYNAMIC 2026 MONTH MAX BOUNDARY CALCULATION
             const monthsWith2026Data = [...new Set(
                 deptData.filter(d => d.year == 2026 && parseVal(d.revenue) > 0).map(d => d.month)
             )];
@@ -529,7 +524,6 @@
                 }
             }
 
-            // Run updated Segmented Straightline Canvas Sparkline
             drawStraightTrend(oldRev2024, oldRev, curRev);
 
             const varianceEl = document.getElementById('varianceText');
@@ -561,19 +555,26 @@
             gaugeChart.yAxis[0].update({ plotBands: [{ from: 0, to: 100, color: gaugeColor, thickness: 40 }] }, false);
             gaugeChart.series[0].points[0].update({ y: pointerValue, realValue: realAchieve }, true, { duration: 1000 });
 
-            const availableMonths = [...new Set(rawData.map(d => d.month))]
+            // ENFORCE DYNAMIC 2026 MAXIMUM THRESHOLD FOR CHART CATEGORIES
+            const dynamicChartCategories = [...new Set(rawData.map(d => d.month))]
                 .sort((a, b) => {
                     const idxA = MONTH_ORDER.findIndex(m => a.startsWith(m));
                     const idxB = MONTH_ORDER.findIndex(m => b.startsWith(m));
                     return idxA - idxB;
+                })
+                .filter(m => {
+                    // If viewing single month filter, show that month only. If YTD, cap chart at 2026 data threshold boundary.
+                    if (selectedMonth !== 'ALL') return m === selectedMonth;
+                    const checkIdx = MONTH_ORDER.findIndex(mo => m.startsWith(mo));
+                    return checkIdx !== -1 && checkIdx <= max2026MonthIndex;
                 });
             
-            comparisonChart.update({ xAxis: { categories: availableMonths } }, false);
-            growthStreamChart.update({ xAxis: { categories: availableMonths } }, false);
+            comparisonChart.update({ xAxis: { categories: dynamicChartCategories } }, false);
+            growthStreamChart.update({ xAxis: { categories: dynamicChartCategories } }, false);
             
-            const revList2026 = availableMonths.map(m => deptData.filter(d => d.year == 2026 && d.month == m).reduce((s, r) => s + parseVal(r.revenue), 0));
-            const targetList2026 = availableMonths.map(m => deptData.filter(d => d.year == 2026 && d.month == m).reduce((s, r) => s + parseVal(r.target), 0));
-            const revList2025 = availableMonths.map(m => deptData.filter(d => d.year == 2025 && d.month == m).reduce((s, r) => s + parseVal(r.revenue), 0));
+            const revList2026 = dynamicChartCategories.map(m => deptData.filter(d => d.year == 2026 && d.month == m).reduce((s, r) => s + parseVal(r.revenue), 0));
+            const targetList2026 = dynamicChartCategories.map(m => deptData.filter(d => d.year == 2026 && d.month == m).reduce((s, r) => s + parseVal(r.target), 0));
+            const revList2025 = dynamicChartCategories.map(m => deptData.filter(d => d.year == 2025 && d.month == m).reduce((s, r) => s + parseVal(r.revenue), 0));
 
             const monthlyGrowthRates = revList2026.map((rev26, idx) => {
                 const rev25 = revList2025[idx];
@@ -645,7 +646,7 @@
 
         window.onload = async () => {
             initCharts();
-            const { data } = await supabaseClient.from('revenue_targets').select('department, month').limit(2000);
+            const { data } = await supabaseClient.from('revenue_targets').select('department, month, year, revenue').limit(2000);
             if (!data) return;
 
             const uniqueDepts = [...new Set(data.map(item => item.department))].sort();
@@ -655,7 +656,8 @@
                 document.getElementById('deptSelect').appendChild(opt);
             });
 
-            const uniqueMonths = [...new Set(data.map(item => (item.month || "").trim()))]
+            // EXTRACT UNIQUE MONTHS FROM 2026 ACTIVE DATASETS ONLY FOR CONTROL INJECTION
+            const uniqueMonths = [...new Set(data.filter(d => d.year == 2026 && parseVal(d.revenue) > 0).map(item => (item.month || "").trim()))]
                 .sort((a, b) => {
                     const idxA = MONTH_ORDER.findIndex(m => a.startsWith(m));
                     const idxB = MONTH_ORDER.findIndex(m => b.startsWith(m));
