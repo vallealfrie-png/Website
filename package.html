@@ -61,9 +61,10 @@
                 <a href="website.html" class="text-[10px] font-black uppercase tracking-widest text-neutral-500 hover:text-white transition-colors">Home</a>
             </div>
         </div>
-        <div class="flex gap-2">
+        <div class="flex gap-2 items-center">
             <select id="monthSlicer" class="rounded-lg px-4 py-2 text-xs font-bold outline-none"></select>
             <select id="catSlicer" class="rounded-lg px-4 py-2 text-xs font-bold outline-none"><option value="all">All Categories</option></select>
+            <button id="logoutBtn" class="bg-rose-950/60 hover:bg-rose-900 border border-rose-800/50 text-rose-300 text-xs font-bold px-3 py-2 rounded-lg transition-all">Sign Out</button>
         </div>
     </nav>
 
@@ -123,15 +124,45 @@
     </main>
 
     <script>
+        // --- 1. AUTHENTICATION SUPABASE INSTANCE (index.html Auth) ---
+        const CENTRAL_SUPABASE_URL = 'https://gqlmaxlabfdvansqjufd.supabase.co'; 
+        const CENTRAL_SUPABASE_ANON_KEY = 'sb_publishable_N8eDSEMyu7iLtDscgOrBKQ_xo_mUpzi';
+        const authClient = supabase.createClient(CENTRAL_SUPABASE_URL, CENTRAL_SUPABASE_ANON_KEY);
+
+        // --- 2. DATA DASHBOARD SUPABASE INSTANCE ---
         const SUPABASE_URL = 'https://edlheufkxcyuxontunvm.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_VVc3kgvHoRv2CIDK8D_jMw_zu8WJYwv';
         const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        const neonPalette = ['#6366f1', '#10b981', '#f59e0b', '#f43f5e', '#8b5cf6', '#06b6d4'];
 
+        // --- 3. HARD ENFORCED AUTHENTICATION GUARD ---
+        async function checkAuthentication() {
+            const { data: { session }, error } = await authClient.auth.getSession();
+            if (error || !session) {
+                // Instantly send unauthorized users back to login page
+                window.location.replace("index.html");
+                return false;
+            }
+            return true;
+        }
+
+        // Listen for active auth changes (e.g., token expiration, signing out from another tab)
+        authClient.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_OUT' || !session) {
+                window.location.replace("index.html");
+            }
+        });
+
+        // Sign out event handler
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            await authClient.auth.signOut();
+            window.location.replace("index.html");
+        });
+
+        // --- 4. DASHBOARD ENGINE ---
+        const neonPalette = ['#6366f1', '#10b981', '#f59e0b', '#f43f5e', '#8b5cf6', '#06b6d4'];
         const monthsMap = { 'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5, 'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11 };
         const monthsArr = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-        // Set structural Theme configurations for Highcharts globally
         Highcharts.setOptions({
             chart: { style: { fontFamily: 'inherit' }, backgroundColor: 'transparent' },
             title: { text: null },
@@ -247,8 +278,6 @@
 
         function updateTrends(mVal, data) {
             let curSet = [], preSet = [];
-            const selectedMonthIdx = mVal === "all" ? null : parseInt(mVal);
-
             monthsArr.forEach((_, i) => {
                 const c = data.filter(d => d.y === maxYear && d.m === i);
                 curSet.push({ r: c.reduce((s,d)=>s+d.amt,0), n: c.reduce((s,d)=>s+d.patientsCount,0), hasData: c.length > 0 });
@@ -262,7 +291,6 @@
             let revenue2026 = curSet.map((v, idx) => (idx <= lastActiveIndex) ? v.r : null);
             let census2026 = curSet.map((v, idx) => (idx <= lastActiveIndex) ? v.n : null);
 
-            // Configure special focal points matching the filtered month matrix
             const getMarkerConfig = (color, isPre = false) => {
                 if (isPre) return { enabled: false };
                 return {
@@ -271,14 +299,13 @@
                 };
             };
 
-            // Highcharts Line Matrix Configuration (NO Labels on lines)
             Highcharts.chart('revChart', {
                 chart: { type: 'spline' },
                 title: { text: 'REVENUE MATRIX', style: { color: '#ffffff', fontSize: '11px', fontWeight: '900' } },
                 xAxis: { categories: monthsArr, labels: { style: { color: '#ffffff', fontWeight: 'bold', fontSize: '8px' } }, crosshair: true },
                 yAxis: { gridLineColor: '#1a1a1a', title: { text: null }, labels: { style: { color: '#ffffff', fontWeight: 'bold', fontSize: '8px' } } },
                 tooltip: { shared: true, useHTML: true, backgroundColor: '#111', style: { color: '#fff' } },
-                plotOptions: { spline: { dataLabels: { enabled: false } } }, // Explicitly disabled
+                plotOptions: { spline: { dataLabels: { enabled: false } } },
                 legend: { itemStyle: { color: '#ffffff', fontSize: '9px', fontWeight: '900' } },
                 series: [
                     { name: `${maxYear} Revenue`, data: revenue2026, color: '#6366f1', marker: getMarkerConfig('#6366f1') },
@@ -292,7 +319,7 @@
                 xAxis: { categories: monthsArr, labels: { style: { color: '#ffffff', fontWeight: 'bold', fontSize: '8px' } }, crosshair: true },
                 yAxis: { gridLineColor: '#1a1a1a', title: { text: null }, labels: { style: { color: '#ffffff', fontWeight: 'bold', fontSize: '8px' } } },
                 tooltip: { shared: true, useHTML: true, backgroundColor: '#111', style: { color: '#fff' } },
-                plotOptions: { spline: { dataLabels: { enabled: false } } }, // Explicitly disabled
+                plotOptions: { spline: { dataLabels: { enabled: false } } },
                 legend: { itemStyle: { color: '#ffffff', fontSize: '9px', fontWeight: '900' } },
                 series: [
                     { name: `${maxYear} Census`, data: census2026, color: '#10b981', marker: getMarkerConfig('#10b981') },
@@ -333,7 +360,6 @@
 
             const l = grp('location'), g = grp('gender'), a = grp('age_bracket'), t = grp('type');
             
-            // 1. Geographic Clusters (Bar Matrix) - LABELS ENABLED
             Highcharts.chart('locChart', {
                 chart: { type: 'column' },
                 title: { text: 'GEOGRAPHIC CLUSTERS', style: { color: '#ffffff', fontSize: '11px', fontWeight: '900' } },
@@ -350,7 +376,6 @@
                 series: [{ name: 'Patients', data: l.map(x=>x[1]) }]
             });
 
-            // 2. Gender Split (Doughnut Matrix) - LABELS ENABLED
             Highcharts.chart('genChart', {
                 chart: { type: 'pie' },
                 title: { text: 'GENDER SPLIT', style: { color: '#ffffff', fontSize: '11px', fontWeight: '900' } },
@@ -365,7 +390,6 @@
                 series: [{ name: 'Patients', data: g.map(x=>({name: x[0], y: x[1]})) }]
             });
 
-            // 3. Age Distribution (Doughnut Matrix) - LABELS ENABLED
             Highcharts.chart('ageChart', {
                 chart: { type: 'pie' },
                 title: { text: 'AGE DISTRIBUTION', style: { color: '#ffffff', fontSize: '11px', fontWeight: '900' } },
@@ -380,7 +404,6 @@
                 series: [{ name: 'Patients', data: a.map(x=>({name: x[0], y: x[1]})) }]
             });
 
-            // 4. Registration Type (Pie Matrix) - LABELS ENABLED
             Highcharts.chart('typeChart', {
                 chart: { type: 'pie' },
                 title: { text: 'REGISTRATION TYPE', style: { color: '#ffffff', fontSize: '11px', fontWeight: '900' } },
@@ -406,7 +429,13 @@
             });
         }
 
-        init();
+        // --- EXECUTE AUTH CHECK BEFORE INITIALIZING DATA ---
+        (async () => {
+            const isAuthed = await checkAuthentication();
+            if (isAuthed) {
+                init();
+            }
+        })();
     </script>
 </body>
 </html>
