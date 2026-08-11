@@ -143,19 +143,14 @@
 
     <script>
     (() => {
-        // --- 1. AUTHENTICATION SUPABASE INSTANCE ---
-        const CENTRAL_SUPABASE_URL = 'https://gqlmaxlabfdvansqjufd.supabase.co'; 
-        const CENTRAL_SUPABASE_ANON_KEY = 'sb_publishable_N8eDSEMyu7iLtDscgOrBKQ_xo_mUpzi';
-        const authClient = supabase.createClient(CENTRAL_SUPABASE_URL, CENTRAL_SUPABASE_ANON_KEY);
+        // --- 1. UNIFIED SUPABASE INSTANCE (PROJECT A) ---
+        const SUPABASE_URL = 'https://gqlmaxlabfdvansqjufd.supabase.co'; 
+        const SUPABASE_ANON_KEY = 'sb_publishable_N8eDSEMyu7iLtDscgOrBKQ_xo_mUpzi';
+        const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // --- 2. DATA DASHBOARD SUPABASE INSTANCE ---
-        const SUPABASE_URL = 'https://edlheufkxcyuxontunvm.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_VVc3kgvHoRv2CIDK8D_jMw_zu8WJYwv';
-        const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        // --- 3. HARD ENFORCED AUTHENTICATION GUARD WITH WARNING OVERLAY ---
+        // --- 2. AUTHENTICATION GUARD ---
         async function checkAuthentication() {
-            const { data: { session }, error } = await authClient.auth.getSession();
+            const { data: { session }, error } = await sb.auth.getSession();
             if (error || !session) {
                 document.getElementById('loader').classList.add('hidden');
                 document.getElementById('deniedScreen').classList.remove('hidden');
@@ -165,7 +160,7 @@
             return true;
         }
 
-        authClient.auth.onAuthStateChange((event, session) => {
+        sb.auth.onAuthStateChange((event, session) => {
             if (event === 'SIGNED_OUT' || !session) {
                 document.getElementById('loader').classList.add('hidden');
                 document.getElementById('deniedScreen').classList.remove('hidden');
@@ -174,11 +169,11 @@
         });
 
         document.getElementById('logoutBtn').addEventListener('click', async () => {
-            await authClient.auth.signOut();
+            await sb.auth.signOut();
             window.location.replace("index.html");
         });
 
-        // --- 4. DASHBOARD ENGINE ---
+        // --- 3. DASHBOARD ENGINE ---
         const neonPalette = ['#6366f1', '#10b981', '#f59e0b', '#f43f5e', '#8b5cf6', '#06b6d4'];
         const monthsMap = { 'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5, 'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11 };
         const monthsArr = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
