@@ -215,6 +215,14 @@
                 if (data.length < 1000) break;
             }
 
+            // Fetch overall revenue from Project A
+            const { data: overRev, error: err2 } = await sb.from('overall_revenue').select('*');
+            if (!err2 && overRev) {
+                overallRevenueData = overRev.map(r => ({
+                    m: monthsMap[r.month] !== undefined ? monthsMap[r.month] : 0,
+                    amt: parseFloat(r.revenue) || 0
+                }));
+            }
             document.getElementById('progressBar').style.width = '100%';
 
             masterData = rows.map(r => {
@@ -227,9 +235,6 @@
                     patientsCount: parseInt(r.census) || 0
                 };
             });
-
-            // Derive overall monthly revenue directly from loaded data
-            overallRevenueData = masterData.map(r => ({ m: r.m, amt: r.amt }));
 
             maxYear = Math.max(...masterData.map(d => d.y), 2026);
             activeMonths = [...new Set(masterData.filter(d => d.y === maxYear).map(d => d.m))].sort((a,b)=>a-b);
