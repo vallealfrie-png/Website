@@ -6,10 +6,31 @@
     <title>Pricing Inquiry Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        .glow-text-white { color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+    </style>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-800 via-slate-900 to-black">
 
-    <div class="max-w-5xl mx-auto px-4 py-12">
+    <!-- ACCESS DENIED FULLSCREEN WARNING OVERLAY -->
+    <div id="deniedScreen" class="fixed inset-0 bg-black z-[200] hidden flex flex-col items-center justify-center p-6 text-center">
+        <div class="max-w-md w-full bg-slate-950 border border-rose-900/50 p-8 rounded-3xl shadow-[0_0_50px_rgba(244,63,94,0.2)] flex flex-col items-center space-y-6">
+            <div class="w-16 h-16 rounded-full bg-rose-950/80 border border-rose-600 flex items-center justify-center text-rose-500 font-black text-2xl animate-pulse">
+                ✕
+            </div>
+            <div>
+                <h1 class="text-3xl font-black text-rose-500 uppercase tracking-widest glow-text-white">Access Denied</h1>
+                <p class="text-rose-400 font-bold text-sm tracking-wide mt-2 uppercase">Unauthorized Access</p>
+            </div>
+            <p class="text-xs text-slate-400 font-medium">You do not have an active session to view this page.</p>
+            <button onclick="window.location.replace('index.html')" class="w-full py-3.5 bg-rose-600 hover:bg-rose-500 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-lg active:scale-95">
+                Go back to login page
+            </button>
+        </div>
+    </div>
+
+    <!-- MAIN DASHBOARD CONTENT -->
+    <div id="mainContent" class="max-w-5xl mx-auto px-4 py-12">
         
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-10 pb-6 border-b border-slate-800/60">
             <div class="text-center md:text-left order-2 md:order-1">
@@ -19,13 +40,16 @@
                 <p class="text-slate-400 mt-1 text-sm">Instant item lookup and real-time price verification.</p>
             </div>
             
-            <div class="flex justify-center md:justify-end order-1 md:order-2">
+            <div class="flex items-center gap-3 justify-center md:justify-end order-1 md:order-2">
                 <a href="website.html" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-800/60 hover:bg-slate-700/80 text-slate-300 hover:text-white rounded-xl border border-slate-700/50 transition-all duration-200 text-sm font-medium shadow-md hover:shadow-lg backdrop-blur-sm group">
                     <svg class="h-4 w-4 transform group-hover:-translate-x-0.5 transition-transform duration-150" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                     </svg>
                     Back to Home
                 </a>
+                <button id="logoutBtn" class="bg-rose-950/60 hover:bg-rose-900 border border-rose-800/50 text-rose-300 text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-md">
+                    Sign Out
+                </button>
             </div>
         </div>
 
@@ -73,20 +97,54 @@
     </div>
 
     <script>
+        // --- 1. AUTHENTICATION SUPABASE INSTANCE (Central Auth) ---
+        const CENTRAL_SUPABASE_URL = 'https://gqlmaxlabfdvansqjufd.supabase.co'; 
+        const CENTRAL_SUPABASE_ANON_KEY = 'sb_publishable_N8eDSEMyu7iLtDscgOrBKQ_xo_mUpzi';
+        const authClient = supabase.createClient(CENTRAL_SUPABASE_URL, CENTRAL_SUPABASE_ANON_KEY);
+
+        // --- 2. PRICING DATA SUPABASE INSTANCE ---
         const SUPABASE_URL = "https://zqnqkxpseeuyovtqezbc.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpxbnFreHBzZWV1eW92dHFlemJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3OTYyOTEsImV4cCI6MjA5MjM3MjI5MX0.uR9TcF4_J58cx7XsKx4BbAQcIeYBElgJpKglbMEyHQs";
-        
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+        // --- 3. HARD ENFORCED AUTHENTICATION GUARD ---
+        async function checkAuthentication() {
+            const { data: { session }, error } = await authClient.auth.getSession();
+            if (error || !session) {
+                // Hide dashboard and show access denied screen overlay
+                document.getElementById('mainContent').classList.add('hidden');
+                document.getElementById('deniedScreen').classList.remove('hidden');
+                document.getElementById('deniedScreen').classList.add('flex');
+                return false;
+            }
+            return true;
+        }
+
+        // Listen for live session drops or signouts in other tabs
+        authClient.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_OUT' || !session) {
+                document.getElementById('mainContent').classList.add('hidden');
+                document.getElementById('deniedScreen').classList.remove('hidden');
+                document.getElementById('deniedScreen').classList.add('flex');
+            }
+        });
+
+        // Logout handler
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            await authClient.auth.signOut();
+            window.location.replace("index.html");
+        });
+
+        // --- 4. DASHBOARD DOM & DATA LOGIC ---
         const searchInput = document.getElementById('searchInput');
         const resultsTableBody = document.getElementById('resultsTableBody');
         const loadingSpinner = document.getElementById('loadingSpinner');
         const statusMessage = document.getElementById('statusMessage');
 
-        // Global memory cache to hold all 1,309+ items after recursive fetching
+        // Global memory cache to hold all items after recursive fetching
         let allItemsCache = [];
 
-        // 1. Recursive Data Fetching Engine
+        // Recursive Data Fetching Engine
         async function fetchAllItemsRecursive(offset = 0, limit = 1000) {
             try {
                 const { data, error } = await supabaseClient
@@ -97,15 +155,12 @@
 
                 if (error) throw error;
 
-                // Append current batch to our complete collection
                 allItemsCache = allItemsCache.concat(data);
 
-                // If the response returned exactly our limit payload size, there's likely more data remaining
                 if (data.length === limit) {
                     return await fetchAllItemsRecursive(offset + limit, limit);
                 }
                 
-                // Finished fetching everything recursively! Enable UI inputs
                 initializeSearchUI();
 
             } catch (err) {
@@ -115,7 +170,6 @@
             }
         }
 
-        // 2. Setup Interface Post-Fetch
         function initializeSearchUI() {
             loadingSpinner.classList.add('hidden');
             searchInput.disabled = false;
@@ -126,7 +180,6 @@
             searchInput.focus();
         }
 
-        // 3. Client-Side Smart Filtering Engine
         function performLocalSearch(query) {
             const cleanQuery = query.trim().toLowerCase();
             
@@ -140,7 +193,6 @@
                 return;
             }
 
-            // High performance structural arrays parsing directly in runtime memory
             const matchedItems = allItemsCache.filter(item => {
                 const codeMatch = item.item_code ? String(item.item_code).toLowerCase().includes(cleanQuery) : false;
                 const nameMatch = item.item_name ? String(item.item_name).toLowerCase().includes(cleanQuery) : false;
@@ -150,7 +202,6 @@
             renderResults(matchedItems);
         }
 
-        // 4. Render Layout UI Utility
         function renderResults(items) {
             if (!items || items.length === 0) {
                 resultsTableBody.innerHTML = `
@@ -185,7 +236,6 @@
             }).join('');
         }
 
-        // Basic event input listener handling local queries in real time
         searchInput.addEventListener('input', (event) => {
             performLocalSearch(event.target.value);
         });
@@ -200,9 +250,12 @@
                 .replace(/'/g, '&#039;');
         }
 
-        // Kick off recursive pagination loop immediately on page load
-        window.addEventListener('DOMContentLoaded', () => {
-            fetchAllItemsRecursive();
+        // Verify session first before fetching database contents
+        window.addEventListener('DOMContentLoaded', async () => {
+            const isAuthed = await checkAuthentication();
+            if (isAuthed) {
+                fetchAllItemsRecursive();
+            }
         });
     </script>
 </body>
