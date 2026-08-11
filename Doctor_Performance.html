@@ -239,6 +239,7 @@
     </main>
 
     <script>
+    (() => {
         const SUPABASE_URL = 'https://gqlmaxlabfdvansqjufd.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_N8eDSEMyu7iLtDscgOrBKQ_xo_mUpzi';
         const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -281,14 +282,14 @@
             } catch (err) { console.error(err); }
         }
 
-        function togglePayment(mode) {
+        window.togglePayment = function(mode) {
             paymentMode = mode;
             document.getElementById('slider').className = 'switch-slider pos-' + mode;
             ['all', 'tpp', 'cash'].forEach(opt => document.getElementById('opt-' + opt).classList.toggle('active', opt === mode));
             render();
-        }
+        };
 
-        function toggleTierFilter(tier) {
+        window.toggleTierFilter = function(tier) {
             const cardId = tier === 'emergency' ? 'tier-emergency-card' : `tier-${tier}-card`;
             const activeCardId = activeTier === 'emergency' ? 'tier-emergency-card' : `tier-${activeTier}-card`;
 
@@ -301,7 +302,17 @@
                 document.getElementById(cardId).classList.add('active');
             }
             render();
-        }
+        };
+
+        window.handleDeptChange = function(dept, el) {
+            currentDept = dept;
+            document.querySelectorAll('.dept-btn').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+            render();
+        };
+
+        window.handleFilterUpdate = function() { render(); };
+        window.loadMoreDoctors = function() { visibleCount += 100; updateVisuals(); };
 
         function animateValue(id, start, end, isCurrency = false) {
             const obj = document.getElementById(id);
@@ -330,7 +341,7 @@
                 const btn = document.createElement('button');
                 btn.className = 'dept-btn';
                 btn.textContent = d;
-                btn.onclick = () => handleDeptChange(d, btn);
+                btn.onclick = () => window.handleDeptChange(d, btn);
                 list.appendChild(btn);
             });
             const months = [...new Set(masterData.map(d => d.month))].filter(Boolean);
@@ -341,15 +352,6 @@
                 monthSelect.appendChild(opt);
             });
         }
-
-        function handleDeptChange(dept, el) {
-            currentDept = dept;
-            document.querySelectorAll('.dept-btn').forEach(b => b.classList.remove('active'));
-            el.classList.add('active');
-            render();
-        }
-
-        function handleFilterUpdate() { render(); }
 
         function render() {
             visibleCount = 50; 
@@ -435,8 +437,6 @@
             updateVisuals();
         }
 
-        function loadMoreDoctors() { visibleCount += 100; updateVisuals(); }
-
         let mainChart;
         function updateVisuals() {
             const lb = document.getElementById('leaderboard');
@@ -505,7 +505,9 @@
                 }
             });
         }
+
         init();
+    })();
     </script>
 </body>
 </html>
