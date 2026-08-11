@@ -97,21 +97,16 @@
     </div>
 
     <script>
-        // --- 1. AUTHENTICATION SUPABASE INSTANCE (Central Auth) ---
-        const CENTRAL_SUPABASE_URL = 'https://gqlmaxlabfdvansqjufd.supabase.co'; 
-        const CENTRAL_SUPABASE_ANON_KEY = 'sb_publishable_N8eDSEMyu7iLtDscgOrBKQ_xo_mUpzi';
-        const authClient = supabase.createClient(CENTRAL_SUPABASE_URL, CENTRAL_SUPABASE_ANON_KEY);
+    (() => {
+        // --- 1. UNIFIED SUPABASE INSTANCE (PROJECT A) ---
+        const SUPABASE_URL = 'https://gqlmaxlabfdvansqjufd.supabase.co'; 
+        const SUPABASE_ANON_KEY = 'sb_publishable_N8eDSEMyu7iLtDscgOrBKQ_xo_mUpzi';
+        const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // --- 2. PRICING DATA SUPABASE INSTANCE ---
-        const SUPABASE_URL = "https://zqnqkxpseeuyovtqezbc.supabase.co";
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpxbnFreHBzZWV1eW92dHFlemJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3OTYyOTEsImV4cCI6MjA5MjM3MjI5MX0.uR9TcF4_J58cx7XsKx4BbAQcIeYBElgJpKglbMEyHQs";
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-        // --- 3. HARD ENFORCED AUTHENTICATION GUARD ---
+        // --- 2. HARD ENFORCED AUTHENTICATION GUARD ---
         async function checkAuthentication() {
-            const { data: { session }, error } = await authClient.auth.getSession();
+            const { data: { session }, error } = await sb.auth.getSession();
             if (error || !session) {
-                // Hide dashboard and show access denied screen overlay
                 document.getElementById('mainContent').classList.add('hidden');
                 document.getElementById('deniedScreen').classList.remove('hidden');
                 document.getElementById('deniedScreen').classList.add('flex');
@@ -120,8 +115,7 @@
             return true;
         }
 
-        // Listen for live session drops or signouts in other tabs
-        authClient.auth.onAuthStateChange((event, session) => {
+        sb.auth.onAuthStateChange((event, session) => {
             if (event === 'SIGNED_OUT' || !session) {
                 document.getElementById('mainContent').classList.add('hidden');
                 document.getElementById('deniedScreen').classList.remove('hidden');
@@ -129,25 +123,22 @@
             }
         });
 
-        // Logout handler
         document.getElementById('logoutBtn').addEventListener('click', async () => {
-            await authClient.auth.signOut();
+            await sb.auth.signOut();
             window.location.replace("index.html");
         });
 
-        // --- 4. DASHBOARD DOM & DATA LOGIC ---
+        // --- 3. DASHBOARD DOM & DATA LOGIC ---
         const searchInput = document.getElementById('searchInput');
         const resultsTableBody = document.getElementById('resultsTableBody');
         const loadingSpinner = document.getElementById('loadingSpinner');
         const statusMessage = document.getElementById('statusMessage');
 
-        // Global memory cache to hold all items after recursive fetching
         let allItemsCache = [];
 
-        // Recursive Data Fetching Engine
         async function fetchAllItemsRecursive(offset = 0, limit = 1000) {
             try {
-                const { data, error } = await supabaseClient
+                const { data, error } = await sb
                     .from('items')
                     .select('item_code, item_name, price')
                     .range(offset, offset + limit - 1)
@@ -250,13 +241,13 @@
                 .replace(/'/g, '&#039;');
         }
 
-        // Verify session first before fetching database contents
         window.addEventListener('DOMContentLoaded', async () => {
             const isAuthed = await checkAuthentication();
             if (isAuthed) {
                 fetchAllItemsRecursive();
             }
         });
+    })();
     </script>
 </body>
 </html>
