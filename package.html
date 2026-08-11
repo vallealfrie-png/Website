@@ -156,10 +156,12 @@
         async function checkAuthentication() {
             const { data: { session }, error } = await authClient.auth.getSession();
             if (error || !session) {
-                // Hide loader and display the Access Denied overlay page
+                // Hide loader and show warning page overlay
                 document.getElementById('loader').classList.add('hidden');
                 document.getElementById('deniedScreen').classList.remove('hidden');
                 document.getElementById('deniedScreen').classList.add('flex');
+                
+                // Block any further code execution
                 return false;
             }
             return true;
@@ -168,6 +170,7 @@
         // Listen for active auth changes (e.g. token expiration or logout elsewhere)
         authClient.auth.onAuthStateChange((event, session) => {
             if (event === 'SIGNED_OUT' || !session) {
+                document.getElementById('loader').classList.add('hidden');
                 document.getElementById('deniedScreen').classList.remove('hidden');
                 document.getElementById('deniedScreen').classList.add('flex');
             }
