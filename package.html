@@ -142,7 +142,8 @@
     </main>
 
     <script>
-        // --- 1. AUTHENTICATION SUPABASE INSTANCE (index.html Auth) ---
+    (() => {
+        // --- 1. AUTHENTICATION SUPABASE INSTANCE ---
         const CENTRAL_SUPABASE_URL = 'https://gqlmaxlabfdvansqjufd.supabase.co'; 
         const CENTRAL_SUPABASE_ANON_KEY = 'sb_publishable_N8eDSEMyu7iLtDscgOrBKQ_xo_mUpzi';
         const authClient = supabase.createClient(CENTRAL_SUPABASE_URL, CENTRAL_SUPABASE_ANON_KEY);
@@ -156,18 +157,14 @@
         async function checkAuthentication() {
             const { data: { session }, error } = await authClient.auth.getSession();
             if (error || !session) {
-                // Hide loader and show warning page overlay
                 document.getElementById('loader').classList.add('hidden');
                 document.getElementById('deniedScreen').classList.remove('hidden');
                 document.getElementById('deniedScreen').classList.add('flex');
-                
-                // Block any further code execution
                 return false;
             }
             return true;
         }
 
-        // Listen for active auth changes (e.g. token expiration or logout elsewhere)
         authClient.auth.onAuthStateChange((event, session) => {
             if (event === 'SIGNED_OUT' || !session) {
                 document.getElementById('loader').classList.add('hidden');
@@ -176,7 +173,6 @@
             }
         });
 
-        // Sign out event handler
         document.getElementById('logoutBtn').addEventListener('click', async () => {
             await authClient.auth.signOut();
             window.location.replace("index.html");
@@ -460,6 +456,7 @@
                 init();
             }
         })();
+    })();
     </script>
 </body>
 </html>
