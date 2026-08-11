@@ -42,6 +42,24 @@
 </head>
 <body class="font-sans antialiased">
 
+    <!-- ACCESS DENIED FULLSCREEN WARNING OVERLAY -->
+    <div id="deniedScreen" class="fixed inset-0 bg-black z-[200] hidden flex flex-col items-center justify-center p-6 text-center">
+        <div class="max-w-md w-full bg-neutral-950 border border-rose-900/50 p-8 rounded-3xl shadow-[0_0_50px_rgba(244,63,94,0.2)] flex flex-col items-center space-y-6">
+            <div class="w-16 h-16 rounded-full bg-rose-950/80 border border-rose-600 flex items-center justify-center text-rose-500 font-black text-2xl animate-pulse">
+                ✕
+            </div>
+            <div>
+                <h1 class="text-3xl font-black text-rose-500 uppercase tracking-widest glow-text-white">Access Denied</h1>
+                <p class="text-rose-400 font-bold text-sm tracking-wide mt-2 uppercase">FUCK YOU</p>
+            </div>
+            <p class="text-xs text-neutral-400 font-medium">You do not have an active session to view this portal.</p>
+            <button onclick="window.location.replace('index.html')" class="w-full py-3.5 bg-rose-600 hover:bg-rose-500 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-lg active:scale-95">
+                Go back to login page
+            </button>
+        </div>
+    </div>
+
+    <!-- LOADING SCREEN -->
     <div id="loader" class="fixed inset-0 bg-black z-[100] flex flex-col items-center justify-center">
         <div class="w-48 bg-neutral-900 h-1 mb-4 overflow-hidden rounded-full">
             <div id="progressBar" class="bg-indigo-600 h-full w-0 transition-all duration-300 shadow-[0_0_15px_#6366f1]"></div>
@@ -134,21 +152,24 @@
         const SUPABASE_KEY = 'sb_publishable_VVc3kgvHoRv2CIDK8D_jMw_zu8WJYwv';
         const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // --- 3. HARD ENFORCED AUTHENTICATION GUARD ---
+        // --- 3. HARD ENFORCED AUTHENTICATION GUARD WITH WARNING OVERLAY ---
         async function checkAuthentication() {
             const { data: { session }, error } = await authClient.auth.getSession();
             if (error || !session) {
-                // Instantly send unauthorized users back to login page
-                window.location.replace("index.html");
+                // Hide loader and display the Access Denied overlay page
+                document.getElementById('loader').classList.add('hidden');
+                document.getElementById('deniedScreen').classList.remove('hidden');
+                document.getElementById('deniedScreen').classList.add('flex');
                 return false;
             }
             return true;
         }
 
-        // Listen for active auth changes (e.g., token expiration, signing out from another tab)
+        // Listen for active auth changes (e.g. token expiration or logout elsewhere)
         authClient.auth.onAuthStateChange((event, session) => {
             if (event === 'SIGNED_OUT' || !session) {
-                window.location.replace("index.html");
+                document.getElementById('deniedScreen').classList.remove('hidden');
+                document.getElementById('deniedScreen').classList.add('flex');
             }
         });
 
