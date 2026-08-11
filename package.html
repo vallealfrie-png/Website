@@ -151,7 +151,19 @@
         // --- 2. DATA DASHBOARD SUPABASE INSTANCE ---
         const SUPABASE_URL = 'https://edlheufkxcyuxontunvm.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_VVc3kgvHoRv2CIDK8D_jMw_zu8WJYwv';
-        const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // Helper to forward Auth Session Token to Data Client for RLS compliance
+        function updateDataClientSession(session) {
+            const token = session?.access_token;
+            sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+                global: {
+                    headers: {
+                        Authorization: token ? `Bearer ${token}` : ''
+                    }
+                }
+            });
+        }
 
         // --- 3. HARD ENFORCED AUTHENTICATION GUARD WITH WARNING OVERLAY ---
         async function checkAuthentication() {
@@ -162,6 +174,7 @@
                 document.getElementById('deniedScreen').classList.add('flex');
                 return false;
             }
+            updateDataClientSession(session);
             return true;
         }
 
@@ -170,6 +183,8 @@
                 document.getElementById('loader').classList.add('hidden');
                 document.getElementById('deniedScreen').classList.remove('hidden');
                 document.getElementById('deniedScreen').classList.add('flex');
+            } else {
+                updateDataClientSession(session);
             }
         });
 
