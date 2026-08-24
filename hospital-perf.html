@@ -13,7 +13,7 @@
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- AOS -->
+    <!-- AOS CSS -->
     <link
         href="https://unpkg.com/aos@2.3.4/dist/aos.css"
         rel="stylesheet"
@@ -1108,6 +1108,9 @@
     <!-- =========================
          JAVASCRIPT
     ========================== -->
+
+    <!-- AOS JS -->
+    <script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
 
     <script>
 
@@ -2557,12 +2560,12 @@
                         "Top Revenue Driver",
 
                     value:
-                        topDepartment.department,
+                        topDepartment ? topDepartment.department : "N/A",
 
                     description:
-                        `${formatMillions(
+                        topDepartment ? `${formatMillions(
                             topDepartment.revenue
-                        )} generated in January 2026.`
+                        )} generated in January 2026.` : "No data available."
                 }
 
             ];
