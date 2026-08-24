@@ -1,0 +1,2761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Executive Performance Dashboard</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- AOS -->
+    <link
+        href="https://unpkg.com/aos@2.3.4/dist/aos.css"
+        rel="stylesheet"
+    >
+
+    <!-- Highcharts -->
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/highcharts-more.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/modules/accessibility.js"></script>
+
+    <!-- GSAP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+
+        body {
+            background:
+                radial-gradient(
+                    circle at top left,
+                    rgba(30, 41, 59, 0.8),
+                    transparent 40%
+                ),
+                #020617;
+        }
+
+        .glass {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .kpi-card {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kpi-card::before {
+            content: "";
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.03);
+            right: -30px;
+            top: -30px;
+        }
+
+        .chart-container {
+            min-height: 400px;
+        }
+
+        .sidebar-link {
+            transition: all 0.25s ease;
+        }
+
+        .sidebar-link:hover {
+            background: rgba(255,255,255,0.06);
+            transform: translateX(4px);
+        }
+
+        .loading-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #020617;
+        }
+
+        .loader {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 4px solid rgba(255,255,255,0.1);
+            border-top-color: #38bdf8;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+    </style>
+</head>
+
+<body class="text-slate-100">
+
+    <!-- =========================
+         LOADING SCREEN
+    ========================== -->
+
+    <div
+        id="loadingScreen"
+        class="loading-screen"
+    >
+
+        <div class="text-center">
+
+            <div class="loader mx-auto mb-6"></div>
+
+            <h2 class="text-xl font-semibold">
+                Loading Executive Dashboard
+            </h2>
+
+            <p
+                id="loadingText"
+                class="text-slate-400 mt-2"
+            >
+                Connecting to hospital performance data...
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================
+         MAIN APPLICATION
+    ========================== -->
+
+    <div class="min-h-screen flex">
+
+        <!-- SIDEBAR -->
+
+        <aside
+            class="
+                hidden
+                lg:flex
+                w-72
+                fixed
+                inset-y-0
+                left-0
+                flex-col
+                p-6
+                glass
+                border-r
+                border-slate-800
+            "
+        >
+
+            <div class="mb-12">
+
+                <p
+                    class="
+                        text-xs
+                        uppercase
+                        tracking-[0.3em]
+                        text-sky-400
+                    "
+                >
+                    Analytics
+                </p>
+
+                <h1
+                    class="
+                        text-2xl
+                        font-bold
+                        mt-2
+                    "
+                >
+                    Executive
+                    <span class="text-sky-400">
+                        Dashboard
+                    </span>
+                </h1>
+
+            </div>
+
+
+            <nav class="space-y-3">
+
+                <a
+                    href="#overview"
+                    class="
+                        sidebar-link
+                        block
+                        px-4
+                        py-3
+                        rounded-xl
+                        bg-sky-500/10
+                        text-sky-400
+                    "
+                >
+                    Overview
+                </a>
+
+                <a
+                    href="#performance"
+                    class="
+                        sidebar-link
+                        block
+                        px-4
+                        py-3
+                        rounded-xl
+                        text-slate-400
+                    "
+                >
+                    Performance
+                </a>
+
+                <a
+                    href="#departments"
+                    class="
+                        sidebar-link
+                        block
+                        px-4
+                        py-3
+                        rounded-xl
+                        text-slate-400
+                    "
+                >
+                    Departments
+                </a>
+
+                <a
+                    href="#demographics"
+                    class="
+                        sidebar-link
+                        block
+                        px-4
+                        py-3
+                        rounded-xl
+                        text-slate-400
+                    "
+                >
+                    Demographics
+                </a>
+
+                <a
+                    href="#insights"
+                    class="
+                        sidebar-link
+                        block
+                        px-4
+                        py-3
+                        rounded-xl
+                        text-slate-400
+                    "
+                >
+                    Executive Insights
+                </a>
+
+            </nav>
+
+
+            <div class="mt-auto">
+
+                <div
+                    class="
+                        rounded-2xl
+                        p-4
+                        bg-slate-900
+                        border
+                        border-slate-800
+                    "
+                >
+
+                    <p
+                        class="
+                            text-xs
+                            text-slate-500
+                            uppercase
+                        "
+                    >
+                        Data Source
+                    </p>
+
+                    <p
+                        class="
+                            mt-2
+                            font-medium
+                        "
+                    >
+                        Supabase
+                    </p>
+
+                    <p
+                        id="dataStatus"
+                        class="
+                            text-xs
+                            text-slate-500
+                            mt-2
+                        "
+                    >
+                        Connecting...
+                    </p>
+
+                </div>
+
+            </div>
+
+        </aside>
+
+
+        <!-- =========================
+             MAIN CONTENT
+        ========================== -->
+
+        <main class="flex-1 lg:ml-72">
+
+            <!-- HEADER -->
+
+            <header
+                class="
+                    sticky
+                    top-0
+                    z-40
+                    glass
+                    border-b
+                    border-slate-800
+                    px-6
+                    lg:px-10
+                    py-5
+                "
+            >
+
+                <div
+                    class="
+                        flex
+                        flex-col
+                        lg:flex-row
+                        lg:items-center
+                        lg:justify-between
+                        gap-4
+                    "
+                >
+
+                    <div>
+
+                        <p
+                            class="
+                                text-sm
+                                text-sky-400
+                                font-medium
+                            "
+                        >
+                            HOSPITAL PERFORMANCE ANALYTICS
+                        </p>
+
+                        <h2
+                            class="
+                                text-2xl
+                                lg:text-3xl
+                                font-bold
+                            "
+                        >
+                            January 2025 vs January 2026
+                        </h2>
+
+                    </div>
+
+
+                    <!-- FILTERS -->
+
+                    <div
+                        class="
+                            flex
+                            flex-wrap
+                            gap-3
+                        "
+                    >
+
+                        <select
+                            id="departmentFilter"
+                            class="
+                                bg-slate-900
+                                border
+                                border-slate-700
+                                rounded-xl
+                                px-4
+                                py-2
+                                text-sm
+                                outline-none
+                            "
+                        >
+                            <option value="ALL">
+                                All Departments
+                            </option>
+                        </select>
+
+
+                        <button
+                            id="refreshButton"
+                            class="
+                                px-4
+                                py-2
+                                rounded-xl
+                                bg-sky-500
+                                hover:bg-sky-400
+                                transition
+                                font-medium
+                                text-slate-950
+                            "
+                        >
+                            Refresh Data
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </header>
+
+
+            <!-- CONTENT -->
+
+            <div
+                class="
+                    p-6
+                    lg:p-10
+                    space-y-10
+                "
+            >
+
+
+                <!-- =====================
+                     OVERVIEW
+                ====================== -->
+
+                <section id="overview">
+
+                    <div
+                        class="
+                            flex
+                            items-end
+                            justify-between
+                            mb-6
+                        "
+                    >
+
+                        <div>
+
+                            <p
+                                class="
+                                    text-sky-400
+                                    text-sm
+                                    font-semibold
+                                "
+                            >
+                                EXECUTIVE OVERVIEW
+                            </p>
+
+                            <h3
+                                class="
+                                    text-2xl
+                                    font-bold
+                                "
+                            >
+                                Performance at a Glance
+                            </h3>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- KPI GRID -->
+
+                    <div
+                        class="
+                            grid
+                            grid-cols-1
+                            sm:grid-cols-2
+                            xl:grid-cols-4
+                            gap-6
+                        "
+                    >
+
+
+                        <!-- REVENUE -->
+
+                        <div
+                            class="
+                                glass
+                                kpi-card
+                                rounded-2xl
+                                p-6
+                            "
+                            data-aos="fade-up"
+                        >
+
+                            <p
+                                class="
+                                    text-sm
+                                    text-slate-400
+                                "
+                            >
+                                Total Revenue 2026
+                            </p>
+
+                            <h4
+                                id="revenue2026"
+                                class="
+                                    text-3xl
+                                    font-bold
+                                    mt-3
+                                "
+                            >
+                                ₱0
+                            </h4>
+
+                            <div
+                                class="
+                                    mt-4
+                                    text-sm
+                                "
+                            >
+
+                                <span
+                                    id="revenueGrowth"
+                                    class="
+                                        text-emerald-400
+                                        font-semibold
+                                    "
+                                >
+                                    0%
+                                </span>
+
+                                <span class="text-slate-500">
+                                    vs 2025
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- CENSUS -->
+
+                        <div
+                            class="
+                                glass
+                                kpi-card
+                                rounded-2xl
+                                p-6
+                            "
+                            data-aos="fade-up"
+                            data-aos-delay="100"
+                        >
+
+                            <p
+                                class="
+                                    text-sm
+                                    text-slate-400
+                                "
+                            >
+                                Total Census 2026
+                            </p>
+
+                            <h4
+                                id="census2026"
+                                class="
+                                    text-3xl
+                                    font-bold
+                                    mt-3
+                                "
+                            >
+                                0
+                            </h4>
+
+                            <div
+                                class="
+                                    mt-4
+                                    text-sm
+                                "
+                            >
+
+                                <span
+                                    id="censusGrowth"
+                                    class="font-semibold"
+                                >
+                                    0%
+                                </span>
+
+                                <span class="text-slate-500">
+                                    vs 2025
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- REVENUE PER CENSUS -->
+
+                        <div
+                            class="
+                                glass
+                                kpi-card
+                                rounded-2xl
+                                p-6
+                            "
+                            data-aos="fade-up"
+                            data-aos-delay="200"
+                        >
+
+                            <p
+                                class="
+                                    text-sm
+                                    text-slate-400
+                                "
+                            >
+                                Revenue per Census
+                            </p>
+
+                            <h4
+                                id="revenuePerCensus"
+                                class="
+                                    text-3xl
+                                    font-bold
+                                    mt-3
+                                "
+                            >
+                                ₱0
+                            </h4>
+
+                            <div
+                                class="
+                                    mt-4
+                                    text-sm
+                                "
+                            >
+
+                                <span
+                                    id="rpcGrowth"
+                                    class="font-semibold"
+                                >
+                                    0%
+                                </span>
+
+                                <span class="text-slate-500">
+                                    improvement
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- REVENUE DIFFERENCE -->
+
+                        <div
+                            class="
+                                glass
+                                kpi-card
+                                rounded-2xl
+                                p-6
+                            "
+                            data-aos="fade-up"
+                            data-aos-delay="300"
+                        >
+
+                            <p
+                                class="
+                                    text-sm
+                                    text-slate-400
+                                "
+                            >
+                                Revenue Increase
+                            </p>
+
+                            <h4
+                                id="revenueDifference"
+                                class="
+                                    text-3xl
+                                    font-bold
+                                    mt-3
+                                "
+                            >
+                                ₱0
+                            </h4>
+
+                            <div
+                                class="
+                                    mt-4
+                                    text-sm
+                                    text-slate-500
+                                "
+                            >
+                                January 2026 vs 2025
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+
+                <!-- =====================
+                     PERFORMANCE
+                ====================== -->
+
+                <section
+                    id="performance"
+                    class="space-y-6"
+                >
+
+                    <div data-aos="fade-up">
+
+                        <p
+                            class="
+                                text-sky-400
+                                text-sm
+                                font-semibold
+                            "
+                        >
+                            PERFORMANCE ANALYSIS
+                        </p>
+
+                        <h3
+                            class="
+                                text-2xl
+                                font-bold
+                            "
+                        >
+                            Year-on-Year Comparison
+                        </h3>
+
+                    </div>
+
+
+                    <div
+                        class="
+                            grid
+                            grid-cols-1
+                            xl:grid-cols-2
+                            gap-6
+                        "
+                    >
+
+                        <div
+                            class="
+                                glass
+                                rounded-2xl
+                                p-6
+                            "
+                            data-aos="fade-up"
+                        >
+
+                            <h4 class="font-semibold mb-4">
+                                Revenue Comparison
+                            </h4>
+
+                            <div
+                                id="revenueChart"
+                                class="chart-container"
+                            ></div>
+
+                        </div>
+
+
+                        <div
+                            class="
+                                glass
+                                rounded-2xl
+                                p-6
+                            "
+                            data-aos="fade-up"
+                            data-aos-delay="100"
+                        >
+
+                            <h4 class="font-semibold mb-4">
+                                Census Comparison
+                            </h4>
+
+                            <div
+                                id="censusChart"
+                                class="chart-container"
+                            ></div>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+
+                <!-- =====================
+                     DEPARTMENTS
+                ====================== -->
+
+                <section
+                    id="departments"
+                    class="space-y-6"
+                >
+
+                    <div data-aos="fade-up">
+
+                        <p
+                            class="
+                                text-sky-400
+                                text-sm
+                                font-semibold
+                            "
+                        >
+                            DEPARTMENT ANALYSIS
+                        </p>
+
+                        <h3
+                            class="
+                                text-2xl
+                                font-bold
+                            "
+                        >
+                            Revenue Drivers
+                        </h3>
+
+                    </div>
+
+
+                    <div
+                        class="
+                            grid
+                            grid-cols-1
+                            xl:grid-cols-2
+                            gap-6
+                        "
+                    >
+
+                        <div
+                            class="
+                                glass
+                                rounded-2xl
+                                p-6
+                            "
+                            data-aos="fade-up"
+                        >
+
+                            <h4 class="font-semibold mb-4">
+                                Top Departments by Revenue
+                            </h4>
+
+                            <div
+                                id="departmentRevenueChart"
+                                class="chart-container"
+                            ></div>
+
+                        </div>
+
+
+                        <div
+                            class="
+                                glass
+                                rounded-2xl
+                                p-6
+                            "
+                            data-aos="fade-up"
+                            data-aos-delay="100"
+                        >
+
+                            <h4 class="font-semibold mb-4">
+                                Revenue vs Census
+                            </h4>
+
+                            <div
+                                id="departmentBubbleChart"
+                                class="chart-container"
+                            ></div>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- DEPARTMENT TABLE -->
+
+                    <div
+                        class="
+                            glass
+                            rounded-2xl
+                            overflow-hidden
+                        "
+                        data-aos="fade-up"
+                    >
+
+                        <div class="p-6">
+
+                            <h4 class="font-semibold">
+                                Department Performance Comparison
+                            </h4>
+
+                        </div>
+
+
+                        <div class="overflow-x-auto">
+
+                            <table class="w-full">
+
+                                <thead
+                                    class="
+                                        bg-slate-900/70
+                                        text-slate-400
+                                        text-sm
+                                    "
+                                >
+
+                                    <tr>
+
+                                        <th class="text-left p-4">
+                                            Department
+                                        </th>
+
+                                        <th class="text-right p-4">
+                                            2025 Revenue
+                                        </th>
+
+                                        <th class="text-right p-4">
+                                            2026 Revenue
+                                        </th>
+
+                                        <th class="text-right p-4">
+                                            Growth
+                                        </th>
+
+                                        <th class="text-right p-4">
+                                            2026 Census
+                                        </th>
+
+                                    </tr>
+
+                                </thead>
+
+
+                                <tbody
+                                    id="departmentTable"
+                                    class="
+                                        divide-y
+                                        divide-slate-800
+                                    "
+                                ></tbody>
+
+                            </table>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+
+                <!-- =====================
+                     DEMOGRAPHICS
+                ====================== -->
+
+                <section
+                    id="demographics"
+                    class="space-y-6"
+                >
+
+                    <div data-aos="fade-up">
+
+                        <p
+                            class="
+                                text-sky-400
+                                text-sm
+                                font-semibold
+                            "
+                        >
+                            PATIENT PROFILE
+                        </p>
+
+                        <h3
+                            class="
+                                text-2xl
+                                font-bold
+                            "
+                        >
+                            Demographic Distribution
+                        </h3>
+
+                    </div>
+
+
+                    <div
+                        class="
+                            grid
+                            grid-cols-1
+                            lg:grid-cols-2
+                            gap-6
+                        "
+                    >
+
+                        <div
+                            class="
+                                glass
+                                rounded-2xl
+                                p-6
+                            "
+                            data-aos="fade-up"
+                        >
+
+                            <h4 class="font-semibold mb-4">
+                                Gender Distribution
+                            </h4>
+
+                            <div
+                                id="genderChart"
+                                class="chart-container"
+                            ></div>
+
+                        </div>
+
+
+                        <div
+                            class="
+                                glass
+                                rounded-2xl
+                                p-6
+                            "
+                            data-aos="fade-up"
+                            data-aos-delay="100"
+                        >
+
+                            <h4 class="font-semibold mb-4">
+                                Age Bracket Distribution
+                            </h4>
+
+                            <div
+                                id="ageChart"
+                                class="chart-container"
+                            ></div>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+
+                <!-- =====================
+                     EXECUTIVE INSIGHTS
+                ====================== -->
+
+                <section
+                    id="insights"
+                    class="pb-10"
+                >
+
+                    <div class="mb-6">
+
+                        <p
+                            class="
+                                text-sky-400
+                                text-sm
+                                font-semibold
+                            "
+                        >
+                            MANAGEMENT SUMMARY
+                        </p>
+
+                        <h3
+                            class="
+                                text-2xl
+                                font-bold
+                            "
+                        >
+                            Executive Insights
+                        </h3>
+
+                    </div>
+
+
+                    <div
+                        id="insightsContainer"
+                        class="
+                            grid
+                            grid-cols-1
+                            md:grid-cols-2
+                            xl:grid-cols-3
+                            gap-6
+                        "
+                    ></div>
+
+                </section>
+
+
+            </div>
+
+        </main>
+
+    </div>
+
+
+    <!-- =========================
+         JAVASCRIPT
+    ========================== -->
+
+    <script>
+
+        /*
+        ====================================
+        SUPABASE CONFIGURATION
+        ====================================
+        */
+
+        const SUPABASE_URL =
+            "YOUR_SUPABASE_URL "https://gqlmaxlabfdvansqjufd.supabase.co";
+
+        const SUPABASE_ANON_KEY =
+            "YOUR_SUPABASE_ANON_KEY "sb_publishable_N8eDSEMyu7iLtDscgOrBKQ_xo_mUpzi";
+
+
+        const supabase =
+            window.supabase.createClient(
+                SUPABASE_URL,
+                SUPABASE_ANON_KEY
+            );
+
+
+        /*
+        ====================================
+        GLOBAL DATA
+        ====================================
+        */
+
+        let allData = [];
+
+        let filteredData = [];
+
+
+        /*
+        ====================================
+        FORMATTERS
+        ====================================
+        */
+
+        const pesoFormatter =
+            new Intl.NumberFormat(
+                "en-PH",
+                {
+                    style: "currency",
+                    currency: "PHP",
+                    maximumFractionDigits: 0
+                }
+            );
+
+
+        const numberFormatter =
+            new Intl.NumberFormat(
+                "en-PH"
+            );
+
+
+        function formatMillions(value) {
+
+            return "₱" +
+                (value / 1000000)
+                    .toFixed(2) +
+                "M";
+
+        }
+
+
+        function calculateGrowth(
+            oldValue,
+            newValue
+        ) {
+
+            if (!oldValue) {
+                return 0;
+            }
+
+            return (
+                (
+                    (newValue - oldValue)
+                    /
+                    oldValue
+                )
+                * 100
+            );
+
+        }
+
+
+        /*
+        ====================================
+        FETCH ALL DATA
+        ====================================
+        */
+
+        async function fetchAllData() {
+
+            const allRows = [];
+
+            const batchSize = 1000;
+
+            let from = 0;
+
+            let hasMore = true;
+
+
+            while (hasMore) {
+
+                const to =
+                    from + batchSize - 1;
+
+
+                document
+                    .getElementById(
+                        "loadingText"
+                    )
+                    .textContent =
+                    `Loading records ${from + 1}...`;
+
+
+                const {
+                    data,
+                    error
+                } = await supabase
+                    .from(
+                        "hospital_performance"
+                    )
+                    .select("*")
+                    .range(
+                        from,
+                        to
+                    );
+
+
+                if (error) {
+
+                    console.error(error);
+
+                    throw error;
+
+                }
+
+
+                allRows.push(
+                    ...data
+                );
+
+
+                if (
+                    data.length
+                    <
+                    batchSize
+                ) {
+
+                    hasMore = false;
+
+                } else {
+
+                    from += batchSize;
+
+                }
+
+            }
+
+
+            return allRows;
+
+        }
+
+
+        /*
+        ====================================
+        SUMMARY CALCULATION
+        ====================================
+        */
+
+        function calculateSummary(
+            data
+        ) {
+
+            return data.reduce(
+                (
+                    acc,
+                    row
+                ) => {
+
+                    acc.revenue +=
+                        Number(
+                            row.revenue
+                        ) || 0;
+
+
+                    acc.census +=
+                        Number(
+                            row.census
+                        ) || 0;
+
+
+                    acc.records++;
+
+
+                    return acc;
+
+                },
+                {
+                    revenue: 0,
+                    census: 0,
+                    records: 0
+                }
+            );
+
+        }
+
+
+        /*
+        ====================================
+        GROUP BY DEPARTMENT
+        ====================================
+        */
+
+        function groupByDepartment(
+            data
+        ) {
+
+            const result = {};
+
+
+            data.forEach(
+                row => {
+
+                    const department =
+                        row.department
+                        ||
+                        "Unknown";
+
+
+                    if (
+                        !result[
+                            department
+                        ]
+                    ) {
+
+                        result[
+                            department
+                        ] = {
+
+                            department,
+
+                            revenue: 0,
+
+                            census: 0
+
+                        };
+
+                    }
+
+
+                    result[
+                        department
+                    ].revenue +=
+                        Number(
+                            row.revenue
+                        ) || 0;
+
+
+                    result[
+                        department
+                    ].census +=
+                        Number(
+                            row.census
+                        ) || 0;
+
+                }
+            );
+
+
+            return result;
+
+        }
+
+
+        /*
+        ====================================
+        GROUP GENERIC FIELD
+        ====================================
+        */
+
+        function groupByField(
+            data,
+            field
+        ) {
+
+            const result = {};
+
+
+            data.forEach(
+                row => {
+
+                    const key =
+                        row[field]
+                        ||
+                        "Unknown";
+
+
+                    if (!result[key]) {
+
+                        result[key] = {
+                            name: key,
+                            value: 0
+                        };
+
+                    }
+
+
+                    result[key].value +=
+                        Number(
+                            row.census
+                        ) || 0;
+
+                }
+            );
+
+
+            return Object.values(
+                result
+            );
+
+        }
+
+
+        /*
+        ====================================
+        POPULATE FILTER
+        ====================================
+        */
+
+        function populateDepartmentFilter() {
+
+            const select =
+                document.getElementById(
+                    "departmentFilter"
+                );
+
+
+            const departments =
+                [
+                    ...new Set(
+                        allData.map(
+                            item =>
+                                item.department
+                        )
+                    )
+                ]
+                .filter(Boolean)
+                .sort();
+
+
+            departments.forEach(
+                department => {
+
+                    const option =
+                        document.createElement(
+                            "option"
+                        );
+
+
+                    option.value =
+                        department;
+
+
+                    option.textContent =
+                        department;
+
+
+                    select.appendChild(
+                        option
+                    );
+
+                }
+            );
+
+        }
+
+
+        /*
+        ====================================
+        RENDER DASHBOARD
+        ====================================
+        */
+
+        function renderDashboard() {
+
+            const selectedDepartment =
+                document.getElementById(
+                    "departmentFilter"
+                ).value;
+
+
+            filteredData =
+                selectedDepartment === "ALL"
+
+                    ? allData
+
+                    : allData.filter(
+                        item =>
+                            item.department ===
+                            selectedDepartment
+                    );
+
+
+            const data2025 =
+                filteredData.filter(
+                    item =>
+                        Number(
+                            item.year
+                        ) === 2025
+                );
+
+
+            const data2026 =
+                filteredData.filter(
+                    item =>
+                        Number(
+                            item.year
+                        ) === 2026
+                );
+
+
+            const summary2025 =
+                calculateSummary(
+                    data2025
+                );
+
+
+            const summary2026 =
+                calculateSummary(
+                    data2026
+                );
+
+
+            const revenueGrowth =
+                calculateGrowth(
+                    summary2025.revenue,
+                    summary2026.revenue
+                );
+
+
+            const censusGrowth =
+                calculateGrowth(
+                    summary2025.census,
+                    summary2026.census
+                );
+
+
+            const rpc2025 =
+                summary2025.census
+                    ?
+                    summary2025.revenue
+                    /
+                    summary2025.census
+                    :
+                    0;
+
+
+            const rpc2026 =
+                summary2026.census
+                    ?
+                    summary2026.revenue
+                    /
+                    summary2026.census
+                    :
+                    0;
+
+
+            const rpcGrowth =
+                calculateGrowth(
+                    rpc2025,
+                    rpc2026
+                );
+
+
+            /*
+            ========================
+            UPDATE KPI
+            ========================
+            */
+
+            document
+                .getElementById(
+                    "revenue2026"
+                )
+                .textContent =
+                pesoFormatter.format(
+                    summary2026.revenue
+                );
+
+
+            document
+                .getElementById(
+                    "census2026"
+                )
+                .textContent =
+                numberFormatter.format(
+                    summary2026.census
+                );
+
+
+            document
+                .getElementById(
+                    "revenuePerCensus"
+                )
+                .textContent =
+                pesoFormatter.format(
+                    rpc2026
+                );
+
+
+            document
+                .getElementById(
+                    "revenueDifference"
+                )
+                .textContent =
+                pesoFormatter.format(
+                    summary2026.revenue
+                    -
+                    summary2025.revenue
+                );
+
+
+            updateGrowthElement(
+                "revenueGrowth",
+                revenueGrowth
+            );
+
+
+            updateGrowthElement(
+                "censusGrowth",
+                censusGrowth
+            );
+
+
+            updateGrowthElement(
+                "rpcGrowth",
+                rpcGrowth
+            );
+
+
+            /*
+            ========================
+            CHARTS
+            ========================
+            */
+
+            renderRevenueChart(
+                summary2025,
+                summary2026
+            );
+
+
+            renderCensusChart(
+                summary2025,
+                summary2026
+            );
+
+
+            renderDepartmentCharts(
+                data2025,
+                data2026
+            );
+
+
+            renderDemographicCharts(
+                data2026
+            );
+
+
+            renderDepartmentTable(
+                data2025,
+                data2026
+            );
+
+
+            renderInsights(
+                summary2025,
+                summary2026,
+                revenueGrowth,
+                censusGrowth,
+                rpcGrowth,
+                data2025,
+                data2026
+            );
+
+        }
+
+
+        /*
+        ====================================
+        UPDATE GROWTH ELEMENT
+        ====================================
+        */
+
+        function updateGrowthElement(
+            elementId,
+            value
+        ) {
+
+            const element =
+                document.getElementById(
+                    elementId
+                );
+
+
+            const prefix =
+                value >= 0
+                    ?
+                    "▲ "
+                    :
+                    "▼ ";
+
+
+            element.textContent =
+                prefix
+                +
+                Math.abs(
+                    value
+                ).toFixed(2)
+                +
+                "%";
+
+
+            element.className =
+                value >= 0
+
+                    ? "text-emerald-400 font-semibold"
+
+                    : "text-rose-400 font-semibold";
+
+        }
+
+
+        /*
+        ====================================
+        REVENUE CHART
+        ====================================
+        */
+
+        function renderRevenueChart(
+            summary2025,
+            summary2026
+        ) {
+
+            Highcharts.chart(
+                "revenueChart",
+                {
+
+                    chart: {
+                        type: "column",
+                        backgroundColor:
+                            "transparent"
+                    },
+
+                    title: {
+                        text: null
+                    },
+
+                    xAxis: {
+                        categories: [
+                            "January 2025",
+                            "January 2026"
+                        ]
+                    },
+
+                    yAxis: {
+
+                        title: {
+                            text:
+                                "Revenue"
+                        }
+
+                    },
+
+                    tooltip: {
+
+                        valuePrefix:
+                            "₱"
+
+                    },
+
+                    series: [
+                        {
+                            name:
+                                "Revenue",
+
+                            data: [
+                                summary2025.revenue,
+                                summary2026.revenue
+                            ]
+                        }
+                    ],
+
+                    credits: {
+                        enabled: false
+                    }
+
+                }
+            );
+
+        }
+
+
+        /*
+        ====================================
+        CENSUS CHART
+        ====================================
+        */
+
+        function renderCensusChart(
+            summary2025,
+            summary2026
+        ) {
+
+            Highcharts.chart(
+                "censusChart",
+                {
+
+                    chart: {
+                        type:
+                            "column",
+
+                        backgroundColor:
+                            "transparent"
+                    },
+
+                    title: {
+                        text:
+                            null
+                    },
+
+                    xAxis: {
+
+                        categories: [
+                            "January 2025",
+                            "January 2026"
+                        ]
+
+                    },
+
+                    yAxis: {
+
+                        title: {
+
+                            text:
+                                "Census"
+
+                        }
+
+                    },
+
+                    series: [
+
+                        {
+
+                            name:
+                                "Census",
+
+                            data: [
+
+                                summary2025.census,
+
+                                summary2026.census
+
+                            ]
+
+                        }
+
+                    ],
+
+                    credits: {
+
+                        enabled:
+                            false
+
+                    }
+
+                }
+            );
+
+        }
+
+
+        /*
+        ====================================
+        DEPARTMENT CHARTS
+        ====================================
+        */
+
+        function renderDepartmentCharts(
+            data2025,
+            data2026
+        ) {
+
+            const departments2025 =
+                groupByDepartment(
+                    data2025
+                );
+
+
+            const departments2026 =
+                groupByDepartment(
+                    data2026
+                );
+
+
+            const topDepartments =
+                Object.values(
+                    departments2026
+                )
+                .sort(
+                    (a, b) =>
+                        b.revenue
+                        -
+                        a.revenue
+                )
+                .slice(
+                    0,
+                    10
+                );
+
+
+            Highcharts.chart(
+                "departmentRevenueChart",
+                {
+
+                    chart: {
+
+                        type:
+                            "bar",
+
+                        backgroundColor:
+                            "transparent"
+
+                    },
+
+                    title: {
+                        text:
+                            null
+                    },
+
+                    xAxis: {
+
+                        categories:
+                            topDepartments.map(
+                                item =>
+                                    item.department
+                            )
+
+                    },
+
+                    yAxis: {
+
+                        title: {
+
+                            text:
+                                "Revenue"
+
+                        }
+
+                    },
+
+                    series: [
+
+                        {
+
+                            name:
+                                "2026 Revenue",
+
+                            data:
+                                topDepartments.map(
+                                    item =>
+                                        item.revenue
+                                )
+
+                        }
+
+                    ],
+
+                    credits: {
+
+                        enabled:
+                            false
+
+                    }
+
+                }
+            );
+
+
+            /*
+            BUBBLE CHART
+            */
+
+            const bubbleData =
+                Object.values(
+                    departments2026
+                )
+                .map(
+                    department => {
+
+                        const previous =
+                            departments2025[
+                                department.department
+                            ]
+                            ||
+                            {
+                                revenue: 0,
+                                census: 0
+                            };
+
+
+                        const growth =
+                            calculateGrowth(
+                                previous.revenue,
+                                department.revenue
+                            );
+
+
+                        return {
+
+                            name:
+                                department.department,
+
+                            x:
+                                department.census,
+
+                            y:
+                                department.revenue,
+
+                            z:
+                                Math.abs(
+                                    growth
+                                )
+
+                        };
+
+                    }
+                );
+
+
+            Highcharts.chart(
+                "departmentBubbleChart",
+                {
+
+                    chart: {
+
+                        type:
+                            "bubble",
+
+                        backgroundColor:
+                            "transparent"
+
+                    },
+
+                    title: {
+
+                        text:
+                            null
+
+                    },
+
+                    xAxis: {
+
+                        title: {
+
+                            text:
+                                "Census"
+
+                        }
+
+                    },
+
+                    yAxis: {
+
+                        title: {
+
+                            text:
+                                "Revenue"
+
+                        }
+
+                    },
+
+                    tooltip: {
+
+                        pointFormat:
+                            "<b>{point.name}</b><br/>"
+                            +
+                            "Census: {point.x}<br/>"
+                            +
+                            "Revenue: ₱{point.y:,.0f}"
+
+                    },
+
+                    series: [
+
+                        {
+
+                            name:
+                                "Departments",
+
+                            data:
+                                bubbleData
+
+                        }
+
+                    ],
+
+                    credits: {
+
+                        enabled:
+                            false
+
+                    }
+
+                }
+            );
+
+        }
+
+
+        /*
+        ====================================
+        DEPARTMENT TABLE
+        ====================================
+        */
+
+        function renderDepartmentTable(
+            data2025,
+            data2026
+        ) {
+
+            const departments2025 =
+                groupByDepartment(
+                    data2025
+                );
+
+
+            const departments2026 =
+                groupByDepartment(
+                    data2026
+                );
+
+
+            const departments =
+                [
+                    ...new Set(
+                        [
+                            ...Object.keys(
+                                departments2025
+                            ),
+
+                            ...Object.keys(
+                                departments2026
+                            )
+                        ]
+                    )
+                ];
+
+
+            const rows =
+                departments
+                    .map(
+                        department => {
+
+                            const d2025 =
+                                departments2025[
+                                    department
+                                ]
+                                ||
+                                {
+                                    revenue: 0,
+                                    census: 0
+                                };
+
+
+                            const d2026 =
+                                departments2026[
+                                    department
+                                ]
+                                ||
+                                {
+                                    revenue: 0,
+                                    census: 0
+                                };
+
+
+                            const growth =
+                                calculateGrowth(
+                                    d2025.revenue,
+                                    d2026.revenue
+                                );
+
+
+                            return {
+
+                                department,
+
+                                revenue2025:
+                                    d2025.revenue,
+
+                                revenue2026:
+                                    d2026.revenue,
+
+                                census2026:
+                                    d2026.census,
+
+                                growth
+
+                            };
+
+                        }
+                    )
+                    .sort(
+                        (a, b) =>
+                            b.revenue2026
+                            -
+                            a.revenue2026
+                    );
+
+
+            const tbody =
+                document.getElementById(
+                    "departmentTable"
+                );
+
+
+            tbody.innerHTML = "";
+
+
+            rows.forEach(
+                row => {
+
+                    const growthClass =
+                        row.growth >= 0
+
+                            ? "text-emerald-400"
+
+                            : "text-rose-400";
+
+
+                    tbody.innerHTML += `
+
+                        <tr class="hover:bg-slate-800/40 transition">
+
+                            <td class="p-4 font-medium">
+                                ${row.department}
+                            </td>
+
+                            <td class="p-4 text-right text-slate-400">
+                                ${formatMillions(
+                                    row.revenue2025
+                                )}
+                            </td>
+
+                            <td class="p-4 text-right">
+                                ${formatMillions(
+                                    row.revenue2026
+                                )}
+                            </td>
+
+                            <td class="p-4 text-right ${growthClass}">
+                                ${row.growth >= 0 ? "▲" : "▼"}
+                                ${Math.abs(
+                                    row.growth
+                                ).toFixed(2)}%
+                            </td>
+
+                            <td class="p-4 text-right text-slate-400">
+                                ${numberFormatter.format(
+                                    row.census2026
+                                )}
+                            </td>
+
+                        </tr>
+
+                    `;
+
+                }
+            );
+
+        }
+
+
+        /*
+        ====================================
+        DEMOGRAPHICS
+        ====================================
+        */
+
+        function renderDemographicCharts(
+            data
+        ) {
+
+            const genderData =
+                groupByField(
+                    data,
+                    "gender"
+                );
+
+
+            Highcharts.chart(
+                "genderChart",
+                {
+
+                    chart: {
+
+                        type:
+                            "pie",
+
+                        backgroundColor:
+                            "transparent"
+
+                    },
+
+                    title: {
+
+                        text:
+                            null
+
+                    },
+
+                    series: [
+
+                        {
+
+                            name:
+                                "Census",
+
+                            data:
+                                genderData.map(
+                                    item => ({
+
+                                        name:
+                                            item.name,
+
+                                        y:
+                                            item.value
+
+                                    })
+                                )
+
+                        }
+
+                    ],
+
+                    credits: {
+
+                        enabled:
+                            false
+
+                    }
+
+                }
+            );
+
+
+            const ageData =
+                groupByField(
+                    data,
+                    "age_bracket"
+                )
+                .sort(
+                    (a, b) =>
+                        b.value
+                        -
+                        a.value
+                );
+
+
+            Highcharts.chart(
+                "ageChart",
+                {
+
+                    chart: {
+
+                        type:
+                            "bar",
+
+                        backgroundColor:
+                            "transparent"
+
+                    },
+
+                    title: {
+
+                        text:
+                            null
+
+                    },
+
+                    xAxis: {
+
+                        categories:
+                            ageData.map(
+                                item =>
+                                    item.name
+                            )
+
+                    },
+
+                    yAxis: {
+
+                        title: {
+
+                            text:
+                                "Census"
+
+                        }
+
+                    },
+
+                    series: [
+
+                        {
+
+                            name:
+                                "Census",
+
+                            data:
+                                ageData.map(
+                                    item =>
+                                        item.value
+                                )
+
+                        }
+
+                    ],
+
+                    credits: {
+
+                        enabled:
+                            false
+
+                    }
+
+                }
+            );
+
+        }
+
+
+        /*
+        ====================================
+        EXECUTIVE INSIGHTS
+        ====================================
+        */
+
+        function renderInsights(
+            summary2025,
+            summary2026,
+            revenueGrowth,
+            censusGrowth,
+            rpcGrowth,
+            data2025,
+            data2026
+        ) {
+
+            const departments2026 =
+                Object.values(
+                    groupByDepartment(
+                        data2026
+                    )
+                );
+
+
+            const topDepartment =
+                departments2026
+                    .sort(
+                        (a, b) =>
+                            b.revenue
+                            -
+                            a.revenue
+                    )[0];
+
+
+            const container =
+                document.getElementById(
+                    "insightsContainer"
+                );
+
+
+            const insights = [
+
+                {
+                    title:
+                        "Revenue Performance",
+
+                    value:
+                        `₱${(
+                            (
+                                summary2026.revenue
+                                -
+                                summary2025.revenue
+                            )
+                            /
+                            1000000
+                        ).toFixed(2)}M`,
+
+                    description:
+                        `Revenue increased by ${Math.abs(
+                            revenueGrowth
+                        ).toFixed(2)}% compared with January 2025.`
+                },
+
+                {
+                    title:
+                        "Volume Performance",
+
+                    value:
+                        `${Math.abs(
+                            censusGrowth
+                        ).toFixed(2)}%`,
+
+                    description:
+                        censusGrowth >= 0
+
+                            ?
+                            "Patient census increased year-on-year."
+
+                            :
+                            "Patient census remained stable with a minimal decline."
+                },
+
+                {
+                    title:
+                        "Revenue Productivity",
+
+                    value:
+                        `${Math.abs(
+                            rpcGrowth
+                        ).toFixed(2)}%`,
+
+                    description:
+                        "Revenue generated per census improved compared with the previous year."
+                },
+
+                {
+                    title:
+                        "Top Revenue Driver",
+
+                    value:
+                        topDepartment.department,
+
+                    description:
+                        `${formatMillions(
+                            topDepartment.revenue
+                        )} generated in January 2026.`
+                }
+
+            ];
+
+
+            container.innerHTML = "";
+
+
+            insights.forEach(
+                (
+                    insight,
+                    index
+                ) => {
+
+                    container.innerHTML += `
+
+                        <div
+                            class="
+                                glass
+                                rounded-2xl
+                                p-6
+                            "
+                            data-aos="fade-up"
+                            data-aos-delay="${index * 100}"
+                        >
+
+                            <p class="text-sm text-sky-400">
+                                ${insight.title}
+                            </p>
+
+                            <h4 class="text-2xl font-bold mt-3">
+                                ${insight.value}
+                            </h4>
+
+                            <p class="text-slate-400 text-sm mt-4 leading-relaxed">
+                                ${insight.description}
+                            </p>
+
+                        </div>
+
+                    `;
+
+                }
+            );
+
+
+            AOS.refresh();
+
+        }
+
+
+        /*
+        ====================================
+        INITIALIZE APP
+        ====================================
+        */
+
+        async function initializeDashboard() {
+
+            try {
+
+                document
+                    .getElementById(
+                        "dataStatus"
+                    )
+                    .textContent =
+                    "Fetching hospital data...";
+
+
+                allData =
+                    await fetchAllData();
+
+
+                document
+                    .getElementById(
+                        "dataStatus"
+                    )
+                    .textContent =
+                    `${numberFormatter.format(
+                        allData.length
+                    )} records loaded`;
+
+
+                populateDepartmentFilter();
+
+
+                renderDashboard();
+
+
+                gsap.from(
+                    ".kpi-card",
+                    {
+
+                        y: 30,
+
+                        opacity: 0,
+
+                        duration: 0.6,
+
+                        stagger: 0.1
+
+                    }
+                );
+
+
+                gsap.to(
+                    "#loadingScreen",
+                    {
+
+                        opacity: 0,
+
+                        duration: 0.5,
+
+                        onComplete: () => {
+
+                            document
+                                .getElementById(
+                                    "loadingScreen"
+                                )
+                                .style.display =
+                                "none";
+
+                        }
+
+                    }
+                );
+
+
+            } catch (error) {
+
+                console.error(
+                    error
+                );
+
+
+                document
+                    .getElementById(
+                        "loadingText"
+                    )
+                    .textContent =
+                    "Error loading dashboard data. Check your Supabase configuration.";
+
+            }
+
+        }
+
+
+        /*
+        ====================================
+        EVENTS
+        ====================================
+        */
+
+        document
+            .getElementById(
+                "departmentFilter"
+            )
+            .addEventListener(
+                "change",
+                renderDashboard
+            );
+
+
+        document
+            .getElementById(
+                "refreshButton"
+            )
+            .addEventListener(
+                "click",
+                initializeDashboard
+            );
+
+
+        /*
+        ====================================
+        START
+        ====================================
+        */
+
+        AOS.init({
+
+            duration: 700,
+
+            once: true,
+
+            offset: 50
+
+        });
+
+
+        initializeDashboard();
+
+    </script>
+
+</body>
+</html>
