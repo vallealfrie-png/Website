@@ -156,6 +156,7 @@
                 <a href="#overview" class="sidebar-link block px-4 py-2.5 rounded-xl bg-sky-500/10 text-sky-400 text-sm">Overview</a>
                 <a href="#performance" class="sidebar-link block px-4 py-2.5 rounded-xl text-slate-400 text-sm">Performance</a>
                 <a href="#departments" class="sidebar-link block px-4 py-2.5 rounded-xl text-slate-400 text-sm">Departments</a>
+                <a href="#items" class="sidebar-link block px-4 py-2.5 rounded-xl text-slate-400 text-sm">Item Analytics</a>
                 <a href="#demographics" class="sidebar-link block px-4 py-2.5 rounded-xl text-slate-400 text-sm">Demographics</a>
                 <a href="#insights" class="sidebar-link block px-4 py-2.5 rounded-xl text-slate-400 text-sm">Executive Insights</a>
             </nav>
@@ -193,23 +194,17 @@
             <!-- CONTENT -->
             <div class="p-6 lg:p-10 space-y-10">
 
-                <!-- =====================
-                     OVERVIEW
-                ====================== -->
+                <!-- OVERVIEW -->
                 <section id="overview">
                     <div class="mb-6">
                         <p class="text-sky-400 text-xs font-semibold uppercase tracking-wider">Executive Overview</p>
                         <h3 class="text-2xl font-bold">Performance at a Glance</h3>
                     </div>
 
-                    <!-- KPI GRID -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-
-                        <!-- REVENUE CARD -->
                         <div class="glass kpi-card rounded-2xl p-6" data-aos="fade-up">
                             <p id="labelRevenueTarget" class="text-xs text-slate-400">Total Revenue (Current Year)</p>
                             <h4 id="revenueTarget" class="text-3xl font-bold mt-2">₱0</h4>
-
                             <div class="mt-3 text-xs flex items-center justify-between">
                                 <div>
                                     <span id="revenueGrowth" class="text-emerald-400 font-semibold">0%</span>
@@ -229,11 +224,9 @@
                             </details>
                         </div>
 
-                        <!-- CENSUS CARD -->
                         <div class="glass kpi-card rounded-2xl p-6" data-aos="fade-up" data-aos-delay="100">
                             <p id="labelCensusTarget" class="text-xs text-slate-400">Total Census (Current Year)</p>
                             <h4 id="censusTarget" class="text-3xl font-bold mt-2">0</h4>
-
                             <div class="mt-3 text-xs">
                                 <span id="censusGrowth" class="font-semibold">0%</span>
                                 <span class="text-slate-500">vs prev year</span>
@@ -251,7 +244,6 @@
                             </details>
                         </div>
 
-                        <!-- REVENUE PER CENSUS -->
                         <div class="glass kpi-card rounded-2xl p-6" data-aos="fade-up" data-aos-delay="200">
                             <p class="text-xs text-slate-400">Revenue per Census</p>
                             <h4 id="revenuePerCensus" class="text-3xl font-bold mt-2">₱0</h4>
@@ -261,7 +253,6 @@
                             </div>
                         </div>
 
-                        <!-- DYNAMIC REVENUE DIFFERENCE -->
                         <div class="glass kpi-card rounded-2xl p-6" data-aos="fade-up" data-aos-delay="300">
                             <p id="dynamicDiffLabel" class="text-xs text-slate-400 font-medium">Revenue Variance</p>
                             <h4 id="revenueDifference" class="text-3xl font-bold mt-2">₱0</h4>
@@ -269,13 +260,10 @@
                                 Year-on-Year Variance
                             </div>
                         </div>
-
                     </div>
                 </section>
 
-                <!-- =====================
-                     PERFORMANCE
-                ====================== -->
+                <!-- PERFORMANCE -->
                 <section id="performance" class="space-y-6">
                     <div data-aos="fade-up">
                         <p class="text-sky-400 text-xs font-semibold uppercase tracking-wider">PERFORMANCE ANALYSIS</p>
@@ -295,9 +283,7 @@
                     </div>
                 </section>
 
-                <!-- =====================
-                     DEPARTMENTS
-                ====================== -->
+                <!-- DEPARTMENTS -->
                 <section id="departments" class="space-y-6">
                     <div data-aos="fade-up">
                         <p class="text-sky-400 text-xs font-semibold uppercase tracking-wider">DEPARTMENT ANALYSIS</p>
@@ -316,12 +302,10 @@
                         </div>
                     </div>
 
-                    <!-- DEPARTMENT TABLE -->
                     <div class="glass rounded-2xl overflow-hidden" data-aos="fade-up">
                         <div class="p-6">
                             <h4 class="font-semibold text-sm text-slate-300">Department Performance Comparison</h4>
                         </div>
-
                         <div class="overflow-x-auto">
                             <table class="w-full">
                                 <thead class="bg-slate-900/70 text-slate-400 text-xs">
@@ -340,8 +324,82 @@
                 </section>
 
                 <!-- =====================
-                     DEMOGRAPHICS
+                     ITEM ANALYSIS (NEW)
                 ====================== -->
+                <section id="items" class="space-y-6">
+                    <div data-aos="fade-up">
+                        <p class="text-sky-400 text-xs font-semibold uppercase tracking-wider">ITEM ANALYTICS</p>
+                        <h3 class="text-2xl font-bold">Top Revenue Items & Exceptions</h3>
+                    </div>
+
+                    <!-- MAIN TOP ITEMS TABLE -->
+                    <div class="glass rounded-2xl overflow-hidden" data-aos="fade-up">
+                        <div class="p-6 flex items-center justify-between border-b border-slate-800">
+                            <div>
+                                <h4 class="font-semibold text-sm text-slate-200">Top Revenue Items</h4>
+                                <p class="text-xs text-slate-500 mt-0.5">Excludes Supplies & Drugs/Medicines</p>
+                            </div>
+                            <button id="toggleItemsBtn" class="px-4 py-1.5 rounded-lg bg-sky-500/10 text-sky-400 border border-sky-500/30 hover:bg-sky-500/20 text-xs font-semibold transition">
+                                See More
+                            </button>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-slate-900/70 text-slate-400 text-xs">
+                                    <tr>
+                                        <th class="text-left p-4">#</th>
+                                        <th class="text-left p-4">Item Description</th>
+                                        <th class="text-right p-4">Revenue</th>
+                                        <th class="text-right p-4">Volume (Census)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="topItemsTable" class="divide-y divide-slate-800 text-xs"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- SEPARATE EXCEPTION TABLES -->
+                    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                        <!-- SUPPLIES -->
+                        <div class="glass rounded-2xl overflow-hidden" data-aos="fade-up">
+                            <div class="p-5 border-b border-slate-800">
+                                <h4 class="font-semibold text-sm text-slate-300">Top Supplies by Revenue</h4>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full">
+                                    <thead class="bg-slate-900/70 text-slate-400 text-xs">
+                                        <tr>
+                                            <th class="text-left p-3">Item Description</th>
+                                            <th class="text-right p-3">Revenue</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="suppliesTable" class="divide-y divide-slate-800 text-xs"></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- DRUGS & MEDICINES -->
+                        <div class="glass rounded-2xl overflow-hidden" data-aos="fade-up" data-aos-delay="100">
+                            <div class="p-5 border-b border-slate-800">
+                                <h4 class="font-semibold text-sm text-slate-300">Top Drugs & Medicines by Revenue</h4>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full">
+                                    <thead class="bg-slate-900/70 text-slate-400 text-xs">
+                                        <tr>
+                                            <th class="text-left p-3">Item Description</th>
+                                            <th class="text-right p-3">Revenue</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="drugsTable" class="divide-y divide-slate-800 text-xs"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- DEMOGRAPHICS (UPDATED) -->
                 <section id="demographics" class="space-y-6">
                     <div data-aos="fade-up">
                         <p class="text-sky-400 text-xs font-semibold uppercase tracking-wider">PATIENT PROFILE</p>
@@ -358,12 +416,22 @@
                             <h4 class="font-semibold mb-4 text-sm text-slate-300">Age Bracket Distribution</h4>
                             <div id="ageChart" class="chart-container"></div>
                         </div>
+
+                        <!-- NEW: LOCATION CHART -->
+                        <div class="glass rounded-2xl p-6" data-aos="fade-up">
+                            <h4 class="font-semibold mb-4 text-sm text-slate-300">Location Distribution</h4>
+                            <div id="locationChart" class="chart-container"></div>
+                        </div>
+
+                        <!-- NEW: CIVIL STATUS CHART -->
+                        <div class="glass rounded-2xl p-6" data-aos="fade-up" data-aos-delay="100">
+                            <h4 class="font-semibold mb-4 text-sm text-slate-300">Civil Status Distribution</h4>
+                            <div id="civilStatusChart" class="chart-container"></div>
+                        </div>
                     </div>
                 </section>
 
-                <!-- =====================
-                     EXECUTIVE INSIGHTS
-                ====================== -->
+                <!-- INSIGHTS -->
                 <section id="insights" class="pb-10">
                     <div class="mb-6">
                         <p class="text-sky-400 text-xs font-semibold uppercase tracking-wider">MANAGEMENT SUMMARY</p>
@@ -377,9 +445,7 @@
         </main>
     </div>
 
-    <!-- =========================
-         JAVASCRIPT
-    ========================== -->
+    <!-- JAVASCRIPT -->
     <script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
 
     <script>
@@ -391,6 +457,7 @@
         let filteredData = [];
         let targetYear = 2026;
         let prevYear = 2025;
+        let isItemsExpanded = false;
 
         const pesoFormatter = new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP", maximumFractionDigits: 0 });
         const numberFormatter = new Intl.NumberFormat("en-PH");
@@ -404,7 +471,6 @@
             return ((newValue - oldValue) / oldValue) * 100;
         }
 
-        // GSAP NUMBER COUNTING ANIMATION HELPER
         function animateValue(elementId, targetValue, formatter, prefix = "") {
             const element = document.getElementById(elementId);
             const obj = { val: 0 };
@@ -504,7 +570,6 @@
             const selectedMonth = document.getElementById("monthFilterSidebar").value;
             const selectedDepartment = document.getElementById("departmentFilterSidebar").value;
 
-            // 1. DYNAMIC HEADER TITLE UPDATE
             const headerTitleElem = document.getElementById("dynamicHeaderTitle");
             const selectedMonthText = document.getElementById("monthFilterSidebar").options[document.getElementById("monthFilterSidebar").selectedIndex].text;
             
@@ -514,7 +579,6 @@
                 headerTitleElem.textContent = `${selectedMonthText} ${prevYear} vs ${selectedMonthText} ${targetYear}`;
             }
 
-            // 2. DATA FILTERING WITH FLEXIBLE MONTH MATCHING (Matches Jan/January)
             filteredData = selectedDepartment === "ALL" 
                 ? allData 
                 : allData.filter(item => item.department === selectedDepartment);
@@ -543,7 +607,6 @@
 
             const revDifference = summaryTarget.revenue - summaryPrev.revenue;
 
-            // 3. SCORECARD LABELS & ANIMATED COUNTERS
             document.getElementById("labelRevenueTarget").textContent = `Total Revenue ${targetYear}`;
             animateValue("revenueTarget", summaryTarget.revenue, val => pesoFormatter.format(val));
 
@@ -561,7 +624,6 @@
             animateValue("revenuePerCensus", rpcTarget, val => pesoFormatter.format(val));
             animateValue("revenueDifference", Math.abs(revDifference), val => pesoFormatter.format(val));
 
-            // DYNAMIC SCORECARD TITLE (INCREASE / DECREASE)
             const dynamicDiffLabel = document.getElementById("dynamicDiffLabel");
             const dynamicDiffSubtext = document.getElementById("dynamicDiffSubtext");
             if (revDifference >= 0) {
@@ -578,15 +640,14 @@
             updateGrowthElement("censusGrowth", censusGrowth);
             updateGrowthElement("rpcGrowth", rpcGrowth);
 
-            // TABLE HEADERS UPDATE
             document.getElementById("thPrevRev").textContent = `${prevYear} Revenue`;
             document.getElementById("thCurrRev").textContent = `${targetYear} Revenue`;
             document.getElementById("thCurrCensus").textContent = `${targetYear} Census`;
 
-            // 4. RENDER CHARTS & INSIGHTS
             renderRevenueChart(summaryPrev, summaryTarget, prevYear, targetYear);
             renderCensusChart(summaryPrev, summaryTarget, prevYear, targetYear);
             renderDepartmentCharts(dataPrevYear, dataTargetYear, targetYear);
+            renderItemTables(dataTargetYear);
             renderDemographicCharts(dataTargetYear);
             renderDepartmentTable(dataPrevYear, dataTargetYear);
             renderInsights(summaryPrev, summaryTarget, revenueGrowth, censusGrowth, rpcGrowth, dataTargetYear, prevYear, targetYear);
@@ -653,6 +714,88 @@
             });
         }
 
+        // ==========================================
+        // ITEM ANALYTICS & TABLES IMPLEMENTATION
+        // ==========================================
+        function renderItemTables(dataTarget) {
+            const aggregatedItems = {};
+
+            dataTarget.forEach(row => {
+                const desc = (row.item_decs || row.item_desc || "Unspecified").toString().trim();
+                if (!aggregatedItems[desc]) {
+                    aggregatedItems[desc] = { desc, revenue: 0, census: 0 };
+                }
+                aggregatedItems[desc].revenue += Number(row.revenue) || 0;
+                aggregatedItems[desc].census += Number(row.census) || 0;
+            });
+
+            const allItemsSorted = Object.values(aggregatedItems).sort((a, b) => b.revenue - a.revenue);
+
+            // SEPARATE EXCEPTIONS (SUPPLIES & DRUGS / MEDICINES)
+            const mainItems = [];
+            const suppliesItems = [];
+            const drugsItems = [];
+
+            allItemsSorted.forEach(item => {
+                const upper = item.desc.toUpperCase();
+                if (upper.includes("SUPPLIES") || upper.includes("SUPPLY")) {
+                    suppliesItems.push(item);
+                } else if (upper.includes("DRUG") || upper.includes("MEDICINE") || upper.includes("MEDS")) {
+                    drugsItems.push(item);
+                } else {
+                    mainItems.push(item);
+                }
+            });
+
+            // RENDER MAIN TOP ITEMS TABLE
+            const topItemsTbody = document.getElementById("topItemsTable");
+            topItemsTbody.innerHTML = "";
+            const displayList = isItemsExpanded ? mainItems : mainItems.slice(0, 10);
+
+            displayList.forEach((item, index) => {
+                topItemsTbody.innerHTML += `
+                    <tr class="hover:bg-slate-800/40 transition">
+                        <td class="p-4 text-slate-500 font-mono text-[11px]">${index + 1}</td>
+                        <td class="p-4 font-medium text-slate-200">${item.desc}</td>
+                        <td class="p-4 text-right font-semibold text-emerald-400">${pesoFormatter.format(item.revenue)}</td>
+                        <td class="p-4 text-right text-slate-400">${numberFormatter.format(item.census)}</td>
+                    </tr>
+                `;
+            });
+
+            // RENDER SUPPLIES TABLE (TOP 5)
+            const suppliesTbody = document.getElementById("suppliesTable");
+            suppliesTbody.innerHTML = "";
+            suppliesItems.slice(0, 5).forEach(item => {
+                suppliesTbody.innerHTML += `
+                    <tr class="hover:bg-slate-800/40 transition">
+                        <td class="p-3 font-medium text-slate-300">${item.desc}</td>
+                        <td class="p-3 text-right font-semibold text-sky-400">${pesoFormatter.format(item.revenue)}</td>
+                    </tr>
+                `;
+            });
+
+            // RENDER DRUGS TABLE (TOP 5)
+            const drugsTbody = document.getElementById("drugsTable");
+            drugsTbody.innerHTML = "";
+            drugsItems.slice(0, 5).forEach(item => {
+                drugsTbody.innerHTML += `
+                    <tr class="hover:bg-slate-800/40 transition">
+                        <td class="p-3 font-medium text-slate-300">${item.desc}</td>
+                        <td class="p-3 text-right font-semibold text-sky-400">${pesoFormatter.format(item.revenue)}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        // SEE MORE / SHOW LESS BUTTON EVENT
+        document.getElementById("toggleItemsBtn").addEventListener("click", function() {
+            isItemsExpanded = !isItemsExpanded;
+            this.textContent = isItemsExpanded ? "Show Less" : "See More";
+            const dataTargetYear = filteredData.filter(item => Number(item.year) === targetYear);
+            renderItemTables(dataTargetYear);
+        });
+
         function renderDepartmentTable(dataPrev, dataTarget) {
             const departmentsPrev = groupByDepartment(dataPrev);
             const departmentsTarget = groupByDepartment(dataTarget);
@@ -689,7 +832,11 @@
             });
         }
 
+        // ==========================================
+        // DEMOGRAPHICS CHARTS (LOCATION & CIVIL STATUS)
+        // ==========================================
         function renderDemographicCharts(data) {
+            // 1. GENDER
             const genderData = groupByField(data, "gender");
             Highcharts.chart("genderChart", {
                 chart: { type: "pie", backgroundColor: "transparent" },
@@ -698,6 +845,7 @@
                 credits: { enabled: false }
             });
 
+            // 2. AGE BRACKET
             const ageData = groupByField(data, "age_bracket").sort((a, b) => b.value - a.value);
             Highcharts.chart("ageChart", {
                 chart: { type: "bar", backgroundColor: "transparent" },
@@ -705,6 +853,32 @@
                 xAxis: { categories: ageData.map(item => item.name) },
                 yAxis: { title: { text: "Census" } },
                 series: [{ name: "Census", data: ageData.map(item => item.value) }],
+                credits: { enabled: false }
+            });
+
+            // 3. LOCATION
+            const locationData = groupByField(data, "location").sort((a, b) => b.value - a.value).slice(0, 10);
+            Highcharts.chart("locationChart", {
+                chart: { type: "bar", backgroundColor: "transparent" },
+                title: { text: null },
+                xAxis: { categories: locationData.map(item => item.name) },
+                yAxis: { title: { text: "Patient Census" } },
+                series: [{ name: "Census", data: locationData.map(item => item.value) }],
+                credits: { enabled: false }
+            });
+
+            // 4. CIVIL STATUS
+            const civilData = groupByField(data, "civil_status");
+            Highcharts.chart("civilStatusChart", {
+                chart: { type: "pie", backgroundColor: "transparent" },
+                title: { text: null },
+                plotOptions: {
+                    pie: {
+                        innerSize: '60%',
+                        dataLabels: { enabled: true }
+                    }
+                },
+                series: [{ name: "Census", data: civilData.map(item => ({ name: item.name, y: item.value })) }],
                 credits: { enabled: false }
             });
         }
@@ -772,12 +946,10 @@
             }
         }
 
-        // LISTENERS
         document.getElementById("monthFilterSidebar").addEventListener("change", renderDashboard);
         document.getElementById("departmentFilterSidebar").addEventListener("change", renderDashboard);
         document.getElementById("refreshButton").addEventListener("click", initializeDashboard);
 
-        // INIT AOS WITH CONTINUOUS SCROLL ANIMATIONS (once: false)
         AOS.init({ duration: 700, once: false, offset: 50 });
         initializeDashboard();
     </script>
