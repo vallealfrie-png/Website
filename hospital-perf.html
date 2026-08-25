@@ -116,17 +116,17 @@
 
         <!-- SIDEBAR -->
         <aside class="hidden lg:flex w-72 fixed inset-y-0 left-0 flex-col p-6 glass border-r border-slate-800 z-50">
-            <div class="mb-8">
+            <div class="mb-6">
                 <p class="text-xs uppercase tracking-[0.3em] text-sky-400">Analytics</p>
                 <h1 class="text-2xl font-bold mt-2">Executive <span class="text-sky-400">Dashboard</span></h1>
             </div>
 
-            <!-- SIDEBAR FILTERS -->
-            <div class="mb-8 space-y-3 bg-slate-900/60 p-4 rounded-xl border border-slate-800">
-                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Global Filters</p>
+            <!-- SINGLE SIDEBAR FILTERS AREA -->
+            <div class="mb-6 space-y-3 bg-slate-900/60 p-4 rounded-xl border border-slate-800">
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Filters</p>
                 
                 <div>
-                    <label class="text-xs text-slate-500 block mb-1">Target Month</label>
+                    <label class="text-xs text-slate-500 block mb-1">Month</label>
                     <select id="monthFilterSidebar" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs outline-none focus:border-sky-500">
                         <option value="ALL">All Months</option>
                         <option value="January">January</option>
@@ -145,9 +145,9 @@
                 </div>
 
                 <div>
-                    <label class="text-xs text-slate-500 block mb-1">Target Year</label>
-                    <select id="yearFilterSidebar" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs outline-none focus:border-sky-500">
-                        <!-- Populated dynamically -->
+                    <label class="text-xs text-slate-500 block mb-1">Department</label>
+                    <select id="departmentFilterSidebar" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs outline-none focus:border-sky-500">
+                        <option value="ALL">All Departments</option>
                     </select>
                 </div>
             </div>
@@ -174,9 +174,9 @@
         ========================== -->
         <main class="flex-1 lg:ml-72">
 
-            <!-- HEADER -->
+            <!-- HEADER (CLEANED - NO FILTERS) -->
             <header class="sticky top-0 z-40 glass border-b border-slate-800 px-6 lg:px-10 py-5">
-                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
                         <p class="text-xs text-sky-400 font-semibold tracking-wider">HOSPITAL PERFORMANCE ANALYTICS</p>
                         <h2 id="dynamicHeaderTitle" class="text-xl lg:text-2xl font-bold mt-1 text-slate-100">
@@ -184,36 +184,9 @@
                         </h2>
                     </div>
 
-                    <!-- HEADER FILTERS -->
-                    <div class="flex flex-wrap items-center gap-3">
-                        <select id="monthFilterHeader" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs outline-none focus:border-sky-500">
-                            <option value="ALL">All Months</option>
-                            <option value="January">January</option>
-                            <option value="February">February</option>
-                            <option value="March">March</option>
-                            <option value="April">April</option>
-                            <option value="May">May</option>
-                            <option value="June">June</option>
-                            <option value="July">July</option>
-                            <option value="August">August</option>
-                            <option value="September">September</option>
-                            <option value="October">October</option>
-                            <option value="November">November</option>
-                            <option value="December">December</option>
-                        </select>
-
-                        <select id="yearFilterHeader" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs outline-none focus:border-sky-500">
-                            <!-- Populated dynamically -->
-                        </select>
-
-                        <select id="departmentFilter" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs outline-none focus:border-sky-500">
-                            <option value="ALL">All Departments</option>
-                        </select>
-
-                        <button id="refreshButton" class="px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-xs font-semibold text-slate-950 transition">
-                            Refresh Data
-                        </button>
-                    </div>
+                    <button id="refreshButton" class="px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-xs font-semibold text-slate-950 transition self-start sm:self-auto">
+                        Refresh Data
+                    </button>
                 </div>
             </header>
 
@@ -339,7 +312,6 @@
                             <div id="departmentRevenueChart" class="chart-container"></div>
                         </div>
 
-                        <!-- UPDATED: TOP DEPARTMENTS BY CENSUS -->
                         <div class="glass rounded-2xl p-6" data-aos="fade-up" data-aos-delay="100">
                             <h4 class="font-semibold mb-4 text-sm text-slate-300">Top Departments by Census</h4>
                             <div id="departmentCensusChart" class="chart-container"></div>
@@ -410,7 +382,6 @@
     <!-- =========================
          JAVASCRIPT
     ========================== -->
-    <!-- AOS JS -->
     <script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
 
     <script>
@@ -420,7 +391,8 @@
 
         let allData = [];
         let filteredData = [];
-        let availableYears = [];
+        let targetYear = 2026;
+        let prevYear = 2025;
 
         const pesoFormatter = new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP", maximumFractionDigits: 0 });
         const numberFormatter = new Intl.NumberFormat("en-PH");
@@ -499,8 +471,8 @@
         }
 
         function setupDynamicOptions() {
-            // Populate department selector
-            const deptSelect = document.getElementById("departmentFilter");
+            // Populate department selector in sidebar
+            const deptSelect = document.getElementById("departmentFilterSidebar");
             const departments = [...new Set(allData.map(item => item.department))].filter(Boolean).sort();
             deptSelect.innerHTML = `<option value="ALL">All Departments</option>`;
             departments.forEach(department => {
@@ -510,38 +482,17 @@
                 deptSelect.appendChild(option);
             });
 
-            // Extract Years dynamically from Supabase dataset
+            // Automatically detect latest year from dataset
             const years = [...new Set(allData.map(item => Number(item.year)))].filter(Boolean).sort((a, b) => b - a);
-            availableYears = years.length > 0 ? years : [2026, 2025];
-
-            const yearHeader = document.getElementById("yearFilterHeader");
-            const yearSidebar = document.getElementById("yearFilterSidebar");
-            
-            yearHeader.innerHTML = "";
-            yearSidebar.innerHTML = "";
-
-            availableYears.forEach(y => {
-                yearHeader.innerHTML += `<option value="${y}">${y}</option>`;
-                yearSidebar.innerHTML += `<option value="${y}">${y}</option>`;
-            });
-        }
-
-        function syncFilters(source) {
-            if (source === 'header') {
-                document.getElementById("monthFilterSidebar").value = document.getElementById("monthFilterHeader").value;
-                document.getElementById("yearFilterSidebar").value = document.getElementById("yearFilterHeader").value;
-            } else if (source === 'sidebar') {
-                document.getElementById("monthFilterHeader").value = document.getElementById("monthFilterSidebar").value;
-                document.getElementById("yearFilterHeader").value = document.getElementById("yearFilterSidebar").value;
+            if (years.length > 0) {
+                targetYear = years[0];
+                prevYear = years[1] || (targetYear - 1);
             }
-            renderDashboard();
         }
 
         function renderDashboard() {
-            const selectedMonth = document.getElementById("monthFilterHeader").value;
-            const targetYear = Number(document.getElementById("yearFilterHeader").value);
-            const prevYear = targetYear - 1;
-            const selectedDepartment = document.getElementById("departmentFilter").value;
+            const selectedMonth = document.getElementById("monthFilterSidebar").value;
+            const selectedDepartment = document.getElementById("departmentFilterSidebar").value;
 
             // 1. DYNAMIC HEADER TITLE UPDATE
             const headerTitleElem = document.getElementById("dynamicHeaderTitle");
@@ -672,7 +623,7 @@
                 credits: { enabled: false }
             });
 
-            // TOP DEPARTMENTS BY CENSUS (Replaces Scatter/Bubble Chart)
+            // TOP DEPARTMENTS BY CENSUS
             const topDeptCensus = Object.values(departmentsTarget)
                 .sort((a, b) => b.census - a.census)
                 .slice(0, 10);
@@ -806,14 +757,9 @@
             }
         }
 
-        // EVEN LISTENERS
-        document.getElementById("monthFilterHeader").addEventListener("change", () => syncFilters('header'));
-        document.getElementById("yearFilterHeader").addEventListener("change", () => syncFilters('header'));
-
-        document.getElementById("monthFilterSidebar").addEventListener("change", () => syncFilters('sidebar'));
-        document.getElementById("yearFilterSidebar").addEventListener("change", () => syncFilters('sidebar'));
-
-        document.getElementById("departmentFilter").addEventListener("change", renderDashboard);
+        // LISTENERS FOR SIDEBAR FILTERS ONLY
+        document.getElementById("monthFilterSidebar").addEventListener("change", renderDashboard);
+        document.getElementById("departmentFilterSidebar").addEventListener("change", renderDashboard);
         document.getElementById("refreshButton").addEventListener("click", initializeDashboard);
 
         // INIT
