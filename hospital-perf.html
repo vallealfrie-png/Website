@@ -445,6 +445,46 @@
         const SUPABASE_ANON_KEY = "sb_publishable_N8eDSEMyu7iLtDscgOrBKQ_xo_mUpzi";
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+        // GLOBAL HIGHCHARTS CONFIG (WHITE FONTS, NO CONTEXT MENU, MULTI-COLOR PALETTE)
+        Highcharts.setOptions({
+            colors: ['#38bdf8', '#818cf8', '#c084fc', '#f472b6', '#fb7185', '#34d399', '#fbbf24', '#a78bfa', '#2dd4bf', '#f43f5e'],
+            exporting: {
+                enabled: false
+            },
+            chart: {
+                style: {
+                    fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+                }
+            },
+            title: {
+                style: { color: '#f8fafc' }
+            },
+            subtitle: {
+                style: { color: '#cbd5e1' }
+            },
+            xAxis: {
+                labels: { style: { color: '#f8fafc' } },
+                title: { style: { color: '#f8fafc' } }
+            },
+            yAxis: {
+                labels: { style: { color: '#f8fafc' } },
+                title: { style: { color: '#f8fafc' } }
+            },
+            legend: {
+                itemStyle: { color: '#f8fafc' },
+                itemHoverStyle: { color: '#38bdf8' },
+                itemHiddenStyle: { color: '#64748b' }
+            },
+            plotOptions: {
+                series: {
+                    dataLabels: { style: { color: '#f8fafc' } }
+                }
+            },
+            tooltip: {
+                style: { color: '#f8fafc' }
+            }
+        });
+
         let allData = [];
         let filteredData = [];
         let targetYear = 2026;
@@ -660,6 +700,10 @@
                 xAxis: { categories: [`${prevYear}`, `${targetYear}`] },
                 yAxis: { title: { text: "Revenue (PHP)" } },
                 tooltip: { valuePrefix: "₱" },
+                legend: { enabled: false },
+                plotOptions: {
+                    column: { colorByPoint: true }
+                },
                 series: [{ name: "Revenue", data: [summaryPrev.revenue, summaryTarget.revenue] }],
                 credits: { enabled: false }
             });
@@ -671,6 +715,10 @@
                 title: { text: null },
                 xAxis: { categories: [`${prevYear}`, `${targetYear}`] },
                 yAxis: { title: { text: "Census" } },
+                legend: { enabled: false },
+                plotOptions: {
+                    column: { colorByPoint: true }
+                },
                 series: [{ name: "Census", data: [summaryPrev.census, summaryTarget.census] }],
                 credits: { enabled: false }
             });
@@ -688,6 +736,10 @@
                 title: { text: null },
                 xAxis: { categories: topDeptRev.map(item => item.department) },
                 yAxis: { title: { text: "Revenue" } },
+                legend: { enabled: false },
+                plotOptions: {
+                    bar: { colorByPoint: true }
+                },
                 series: [{ name: `${targetYear} Revenue`, data: topDeptRev.map(item => item.revenue) }],
                 credits: { enabled: false }
             });
@@ -701,14 +753,15 @@
                 title: { text: null },
                 xAxis: { categories: topDeptCensus.map(item => item.department) },
                 yAxis: { title: { text: "Patient Volume (Census)" } },
+                legend: { enabled: false },
+                plotOptions: {
+                    bar: { colorByPoint: true }
+                },
                 series: [{ name: `${targetYear} Census`, data: topDeptCensus.map(item => item.census) }],
                 credits: { enabled: false }
             });
         }
 
-        // ==========================================
-        // ITEM ANALYTICS (EXACT MATCH EXCEPTION CHECK)
-        // ==========================================
         function renderItemTables(dataTarget) {
             const aggregatedItems = {};
 
@@ -727,7 +780,6 @@
             const suppliesItems = [];
             const drugsItems = [];
 
-            // EXACT MATCH COMPARISON LOGIC
             allItemsSorted.forEach(item => {
                 const exactName = item.desc.toUpperCase().trim();
 
@@ -740,7 +792,6 @@
                 }
             });
 
-            // RENDER MAIN TOP ITEMS TABLE
             const topItemsTbody = document.getElementById("topItemsTable");
             topItemsTbody.innerHTML = "";
             const displayList = isItemsExpanded ? mainItems : mainItems.slice(0, 10);
@@ -756,7 +807,6 @@
                 `;
             });
 
-            // RENDER SUPPLIES TABLE
             const suppliesTbody = document.getElementById("suppliesTable");
             suppliesTbody.innerHTML = "";
             if (suppliesItems.length === 0) {
@@ -773,7 +823,6 @@
                 });
             }
 
-            // RENDER DRUGS & MEDICINES TABLE
             const drugsTbody = document.getElementById("drugsTable");
             drugsTbody.innerHTML = "";
             if (drugsItems.length === 0) {
@@ -849,6 +898,10 @@
                 title: { text: null },
                 xAxis: { categories: ageData.map(item => item.name) },
                 yAxis: { title: { text: "Census" } },
+                legend: { enabled: false },
+                plotOptions: {
+                    bar: { colorByPoint: true }
+                },
                 series: [{ name: "Census", data: ageData.map(item => item.value) }],
                 credits: { enabled: false }
             });
@@ -859,6 +912,10 @@
                 title: { text: null },
                 xAxis: { categories: locationData.map(item => item.name) },
                 yAxis: { title: { text: "Patient Census" } },
+                legend: { enabled: false },
+                plotOptions: {
+                    bar: { colorByPoint: true }
+                },
                 series: [{ name: "Census", data: locationData.map(item => item.value) }],
                 credits: { enabled: false }
             });
