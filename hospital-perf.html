@@ -90,6 +90,8 @@
             display: none;
         }
 
+        .glow-text-white { color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
@@ -97,6 +99,23 @@
 </head>
 
 <body class="text-slate-100">
+
+    <!-- ACCESS DENIED FULLSCREEN WARNING OVERLAY -->
+    <div id="deniedScreen" class="fixed inset-0 bg-black z-[10000] hidden flex flex-col items-center justify-center p-6 text-center">
+        <div class="max-w-md w-full bg-neutral-950 border border-rose-900/50 p-8 rounded-3xl shadow-[0_0_50px_rgba(244,63,94,0.2)] flex flex-col items-center space-y-6">
+            <div class="w-16 h-16 rounded-full bg-rose-950/80 border border-rose-600 flex items-center justify-center text-rose-500 font-black text-2xl animate-pulse">
+                ✕
+            </div>
+            <div>
+                <h1 class="text-3xl font-black text-rose-500 uppercase tracking-widest glow-text-white">Access Denied</h1>
+                <p class="text-rose-400 font-bold text-sm tracking-wide mt-2 uppercase">GO BACK</p>
+            </div>
+            <p class="text-xs text-neutral-400 font-medium">You do not have an active session to view this portal.</p>
+            <button onclick="window.location.replace('index.html')" class="w-full py-3.5 bg-rose-600 hover:bg-rose-500 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-lg active:scale-95">
+                Go back to login page
+            </button>
+        </div>
+    </div>
 
     <!-- LOADING SCREEN -->
     <div id="loadingScreen" class="loading-screen">
@@ -185,6 +204,9 @@
                         </a>
                         <button id="refreshButton" class="px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-xs font-semibold text-slate-950 transition">
                             Refresh Data
+                        </button>
+                        <button id="logoutBtn" class="bg-rose-950/60 hover:bg-rose-900 border border-rose-800/50 text-rose-300 text-xs font-semibold px-4 py-2 rounded-xl transition-all">
+                            Sign Out
                         </button>
                     </div>
                 </div>
@@ -449,6 +471,31 @@
         const SUPABASE_URL = "https://gqlmaxlabfdvansqjufd.supabase.co";
         const SUPABASE_ANON_KEY = "sb_publishable_N8eDSEMyu7iLtDscgOrBKQ_xo_mUpzi";
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // --- AUTHENTICATION GUARD ---
+        async function checkAuthentication() {
+            const { data: { session }, error } = await supabaseClient.auth.getSession();
+            if (error || !session) {
+                document.getElementById('loadingScreen').style.display = 'none';
+                document.getElementById('deniedScreen').classList.remove('hidden');
+                document.getElementById('deniedScreen').classList.add('flex');
+                return false;
+            }
+            return true;
+        }
+
+        supabaseClient.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_OUT' || !session) {
+                document.getElementById('loadingScreen').style.display = 'none';
+                document.getElementById('deniedScreen').classList.remove('hidden');
+                document.getElementById('deniedScreen').classList.add('flex');
+            }
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            await supabaseClient.auth.signOut();
+            window.location.replace("index.html");
+        });
 
         // GLOBAL HIGHCHARTS CONFIG (WHITE FONTS, NO CONTEXT MENU, MULTI-COLOR PALETTE)
         Highcharts.setOptions({
@@ -1008,7 +1055,14 @@
         document.getElementById("refreshButton").addEventListener("click", initializeDashboard);
 
         AOS.init({ duration: 700, once: false, offset: 50 });
-        initializeDashboard();
+
+        // EXECUTE AUTH CHECK BEFORE INITIALIZING DASHBOARD DATA
+        (async () => {
+            const isAuthed = await checkAuthentication();
+            if (isAuthed) {
+                initializeDashboard();
+            }
+        })();
     </script>
 </body>
 </html>
