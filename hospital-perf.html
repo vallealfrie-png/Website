@@ -98,9 +98,7 @@
 
 <body class="text-slate-100">
 
-    <!-- =========================
-         LOADING SCREEN
-    ========================== -->
+    <!-- LOADING SCREEN -->
     <div id="loadingScreen" class="loading-screen">
         <div class="text-center">
             <div class="loader mx-auto mb-6"></div>
@@ -109,9 +107,7 @@
         </div>
     </div>
 
-    <!-- =========================
-         MAIN APPLICATION
-    ========================== -->
+    <!-- MAIN APPLICATION -->
     <div class="min-h-screen flex">
 
         <!-- SIDEBAR -->
@@ -170,9 +166,7 @@
             </div>
         </aside>
 
-        <!-- =========================
-             MAIN CONTENT
-        ========================== -->
+        <!-- MAIN CONTENT -->
         <main class="flex-1 lg:ml-72">
 
             <!-- HEADER -->
@@ -323,9 +317,7 @@
                     </div>
                 </section>
 
-                <!-- =====================
-                     ITEM ANALYSIS (NEW)
-                ====================== -->
+                <!-- ITEM ANALYSIS -->
                 <section id="items" class="space-y-6">
                     <div data-aos="fade-up">
                         <p class="text-sky-400 text-xs font-semibold uppercase tracking-wider">ITEM ANALYTICS</p>
@@ -337,7 +329,7 @@
                         <div class="p-6 flex items-center justify-between border-b border-slate-800">
                             <div>
                                 <h4 class="font-semibold text-sm text-slate-200">Top Revenue Items</h4>
-                                <p class="text-xs text-slate-500 mt-0.5">Excludes Supplies & Drugs/Medicines</p>
+                                <p class="text-xs text-slate-500 mt-0.5">Excludes exact matches for SUPPLIES & DRUGS & MEDICINES</p>
                             </div>
                             <button id="toggleItemsBtn" class="px-4 py-1.5 rounded-lg bg-sky-500/10 text-sky-400 border border-sky-500/30 hover:bg-sky-500/20 text-xs font-semibold transition">
                                 See More
@@ -359,12 +351,12 @@
                         </div>
                     </div>
 
-                    <!-- SEPARATE EXCEPTION TABLES -->
+                    <!-- EXCEPTION TABLES -->
                     <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
                         <!-- SUPPLIES -->
                         <div class="glass rounded-2xl overflow-hidden" data-aos="fade-up">
                             <div class="p-5 border-b border-slate-800">
-                                <h4 class="font-semibold text-sm text-slate-300">Top Supplies by Revenue</h4>
+                                <h4 class="font-semibold text-sm text-slate-300">SUPPLIES</h4>
                             </div>
                             <div class="overflow-x-auto">
                                 <table class="w-full">
@@ -372,6 +364,7 @@
                                         <tr>
                                             <th class="text-left p-3">Item Description</th>
                                             <th class="text-right p-3">Revenue</th>
+                                            <th class="text-right p-3">Census</th>
                                         </tr>
                                     </thead>
                                     <tbody id="suppliesTable" class="divide-y divide-slate-800 text-xs"></tbody>
@@ -382,7 +375,7 @@
                         <!-- DRUGS & MEDICINES -->
                         <div class="glass rounded-2xl overflow-hidden" data-aos="fade-up" data-aos-delay="100">
                             <div class="p-5 border-b border-slate-800">
-                                <h4 class="font-semibold text-sm text-slate-300">Top Drugs & Medicines by Revenue</h4>
+                                <h4 class="font-semibold text-sm text-slate-300">DRUGS & MEDICINES</h4>
                             </div>
                             <div class="overflow-x-auto">
                                 <table class="w-full">
@@ -390,6 +383,7 @@
                                         <tr>
                                             <th class="text-left p-3">Item Description</th>
                                             <th class="text-right p-3">Revenue</th>
+                                            <th class="text-right p-3">Census</th>
                                         </tr>
                                     </thead>
                                     <tbody id="drugsTable" class="divide-y divide-slate-800 text-xs"></tbody>
@@ -399,7 +393,7 @@
                     </div>
                 </section>
 
-                <!-- DEMOGRAPHICS (UPDATED) -->
+                <!-- DEMOGRAPHICS -->
                 <section id="demographics" class="space-y-6">
                     <div data-aos="fade-up">
                         <p class="text-sky-400 text-xs font-semibold uppercase tracking-wider">PATIENT PROFILE</p>
@@ -417,13 +411,11 @@
                             <div id="ageChart" class="chart-container"></div>
                         </div>
 
-                        <!-- NEW: LOCATION CHART -->
                         <div class="glass rounded-2xl p-6" data-aos="fade-up">
                             <h4 class="font-semibold mb-4 text-sm text-slate-300">Location Distribution</h4>
                             <div id="locationChart" class="chart-container"></div>
                         </div>
 
-                        <!-- NEW: CIVIL STATUS CHART -->
                         <div class="glass rounded-2xl p-6" data-aos="fade-up" data-aos-delay="100">
                             <h4 class="font-semibold mb-4 text-sm text-slate-300">Civil Status Distribution</h4>
                             <div id="civilStatusChart" class="chart-container"></div>
@@ -715,7 +707,7 @@
         }
 
         // ==========================================
-        // ITEM ANALYTICS & TABLES IMPLEMENTATION
+        // ITEM ANALYTICS (EXACT MATCH EXCEPTION CHECK)
         // ==========================================
         function renderItemTables(dataTarget) {
             const aggregatedItems = {};
@@ -731,16 +723,17 @@
 
             const allItemsSorted = Object.values(aggregatedItems).sort((a, b) => b.revenue - a.revenue);
 
-            // SEPARATE EXCEPTIONS (SUPPLIES & DRUGS / MEDICINES)
             const mainItems = [];
             const suppliesItems = [];
             const drugsItems = [];
 
+            // EXACT MATCH COMPARISON LOGIC
             allItemsSorted.forEach(item => {
-                const upper = item.desc.toUpperCase();
-                if (upper.includes("SUPPLIES") || upper.includes("SUPPLY")) {
+                const exactName = item.desc.toUpperCase().trim();
+
+                if (exactName === "SUPPLIES") {
                     suppliesItems.push(item);
-                } else if (upper.includes("DRUG") || upper.includes("MEDICINE") || upper.includes("MEDS")) {
+                } else if (exactName === "DRUGS & MEDICINES" || exactName === "DRUGS AND MEDICINES") {
                     drugsItems.push(item);
                 } else {
                     mainItems.push(item);
@@ -763,32 +756,41 @@
                 `;
             });
 
-            // RENDER SUPPLIES TABLE (TOP 5)
+            // RENDER SUPPLIES TABLE
             const suppliesTbody = document.getElementById("suppliesTable");
             suppliesTbody.innerHTML = "";
-            suppliesItems.slice(0, 5).forEach(item => {
-                suppliesTbody.innerHTML += `
-                    <tr class="hover:bg-slate-800/40 transition">
-                        <td class="p-3 font-medium text-slate-300">${item.desc}</td>
-                        <td class="p-3 text-right font-semibold text-sky-400">${pesoFormatter.format(item.revenue)}</td>
-                    </tr>
-                `;
-            });
+            if (suppliesItems.length === 0) {
+                suppliesTbody.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-slate-500">No exact 'SUPPLIES' records found</td></tr>`;
+            } else {
+                suppliesItems.forEach(item => {
+                    suppliesTbody.innerHTML += `
+                        <tr class="hover:bg-slate-800/40 transition">
+                            <td class="p-3 font-medium text-slate-300">${item.desc}</td>
+                            <td class="p-3 text-right font-semibold text-sky-400">${pesoFormatter.format(item.revenue)}</td>
+                            <td class="p-3 text-right text-slate-400">${numberFormatter.format(item.census)}</td>
+                        </tr>
+                    `;
+                });
+            }
 
-            // RENDER DRUGS TABLE (TOP 5)
+            // RENDER DRUGS & MEDICINES TABLE
             const drugsTbody = document.getElementById("drugsTable");
             drugsTbody.innerHTML = "";
-            drugsItems.slice(0, 5).forEach(item => {
-                drugsTbody.innerHTML += `
-                    <tr class="hover:bg-slate-800/40 transition">
-                        <td class="p-3 font-medium text-slate-300">${item.desc}</td>
-                        <td class="p-3 text-right font-semibold text-sky-400">${pesoFormatter.format(item.revenue)}</td>
-                    </tr>
-                `;
-            });
+            if (drugsItems.length === 0) {
+                drugsTbody.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-slate-500">No exact 'DRUGS & MEDICINES' records found</td></tr>`;
+            } else {
+                drugsItems.forEach(item => {
+                    drugsTbody.innerHTML += `
+                        <tr class="hover:bg-slate-800/40 transition">
+                            <td class="p-3 font-medium text-slate-300">${item.desc}</td>
+                            <td class="p-3 text-right font-semibold text-sky-400">${pesoFormatter.format(item.revenue)}</td>
+                            <td class="p-3 text-right text-slate-400">${numberFormatter.format(item.census)}</td>
+                        </tr>
+                    `;
+                });
+            }
         }
 
-        // SEE MORE / SHOW LESS BUTTON EVENT
         document.getElementById("toggleItemsBtn").addEventListener("click", function() {
             isItemsExpanded = !isItemsExpanded;
             this.textContent = isItemsExpanded ? "Show Less" : "See More";
@@ -832,11 +834,7 @@
             });
         }
 
-        // ==========================================
-        // DEMOGRAPHICS CHARTS (LOCATION & CIVIL STATUS)
-        // ==========================================
         function renderDemographicCharts(data) {
-            // 1. GENDER
             const genderData = groupByField(data, "gender");
             Highcharts.chart("genderChart", {
                 chart: { type: "pie", backgroundColor: "transparent" },
@@ -845,7 +843,6 @@
                 credits: { enabled: false }
             });
 
-            // 2. AGE BRACKET
             const ageData = groupByField(data, "age_bracket").sort((a, b) => b.value - a.value);
             Highcharts.chart("ageChart", {
                 chart: { type: "bar", backgroundColor: "transparent" },
@@ -856,7 +853,6 @@
                 credits: { enabled: false }
             });
 
-            // 3. LOCATION
             const locationData = groupByField(data, "location").sort((a, b) => b.value - a.value).slice(0, 10);
             Highcharts.chart("locationChart", {
                 chart: { type: "bar", backgroundColor: "transparent" },
@@ -867,7 +863,6 @@
                 credits: { enabled: false }
             });
 
-            // 4. CIVIL STATUS
             const civilData = groupByField(data, "civil_status");
             Highcharts.chart("civilStatusChart", {
                 chart: { type: "pie", backgroundColor: "transparent" },
