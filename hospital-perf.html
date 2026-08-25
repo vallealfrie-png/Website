@@ -121,7 +121,7 @@
                 <h1 class="text-2xl font-bold mt-2">Executive <span class="text-sky-400">Dashboard</span></h1>
             </div>
 
-            <!-- SINGLE SIDEBAR FILTERS AREA -->
+            <!-- SIDEBAR FILTERS AREA -->
             <div class="mb-6 space-y-3 bg-slate-900/60 p-4 rounded-xl border border-slate-800">
                 <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Filters</p>
                 
@@ -129,18 +129,18 @@
                     <label class="text-xs text-slate-500 block mb-1">Month</label>
                     <select id="monthFilterSidebar" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs outline-none focus:border-sky-500">
                         <option value="ALL">All Months</option>
-                        <option value="January">January</option>
-                        <option value="February">February</option>
-                        <option value="March">March</option>
-                        <option value="April">April</option>
+                        <option value="Jan">January</option>
+                        <option value="Feb">February</option>
+                        <option value="Mar">March</option>
+                        <option value="Apr">April</option>
                         <option value="May">May</option>
-                        <option value="June">June</option>
-                        <option value="July">July</option>
-                        <option value="August">August</option>
-                        <option value="September">September</option>
-                        <option value="October">October</option>
-                        <option value="November">November</option>
-                        <option value="December">December</option>
+                        <option value="Jun">June</option>
+                        <option value="Jul">July</option>
+                        <option value="Aug">August</option>
+                        <option value="Sep">September</option>
+                        <option value="Oct">October</option>
+                        <option value="Nov">November</option>
+                        <option value="Dec">December</option>
                     </select>
                 </div>
 
@@ -174,7 +174,7 @@
         ========================== -->
         <main class="flex-1 lg:ml-72">
 
-            <!-- HEADER (CLEANED - NO FILTERS) -->
+            <!-- HEADER -->
             <header class="sticky top-0 z-40 glass border-b border-slate-800 px-6 lg:px-10 py-5">
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
@@ -217,7 +217,6 @@
                                 </div>
                             </div>
 
-                            <!-- COLLAPSIBLE PREVIOUS YEAR DETAIL -->
                             <details class="mt-4 pt-3 border-t border-slate-800 text-xs text-slate-400 group">
                                 <summary class="flex items-center justify-between text-sky-400 hover:text-sky-300 font-medium select-none">
                                     <span id="labelRevCollapsibleTitle">View Previous Year Revenue</span>
@@ -240,7 +239,6 @@
                                 <span class="text-slate-500">vs prev year</span>
                             </div>
 
-                            <!-- COLLAPSIBLE PREVIOUS YEAR DETAIL -->
                             <details class="mt-4 pt-3 border-t border-slate-800 text-xs text-slate-400 group">
                                 <summary class="flex items-center justify-between text-sky-400 hover:text-sky-300 font-medium select-none">
                                     <span id="labelCensusCollapsibleTitle">View Previous Year Census</span>
@@ -263,7 +261,7 @@
                             </div>
                         </div>
 
-                        <!-- DYNAMIC REVENUE DIFFERENCE (INCREASE / DECREASE) -->
+                        <!-- DYNAMIC REVENUE DIFFERENCE -->
                         <div class="glass kpi-card rounded-2xl p-6" data-aos="fade-up" data-aos-delay="300">
                             <p id="dynamicDiffLabel" class="text-xs text-slate-400 font-medium">Revenue Variance</p>
                             <h4 id="revenueDifference" class="text-3xl font-bold mt-2">₱0</h4>
@@ -406,6 +404,20 @@
             return ((newValue - oldValue) / oldValue) * 100;
         }
 
+        // GSAP NUMBER COUNTING ANIMATION HELPER
+        function animateValue(elementId, targetValue, formatter, prefix = "") {
+            const element = document.getElementById(elementId);
+            const obj = { val: 0 };
+            gsap.to(obj, {
+                val: targetValue,
+                duration: 1.2,
+                ease: "power2.out",
+                onUpdate: () => {
+                    element.textContent = prefix + formatter(obj.val);
+                }
+            });
+        }
+
         async function fetchAllData() {
             const allRows = [];
             const batchSize = 1000;
@@ -471,7 +483,6 @@
         }
 
         function setupDynamicOptions() {
-            // Populate department selector in sidebar
             const deptSelect = document.getElementById("departmentFilterSidebar");
             const departments = [...new Set(allData.map(item => item.department))].filter(Boolean).sort();
             deptSelect.innerHTML = `<option value="ALL">All Departments</option>`;
@@ -482,7 +493,6 @@
                 deptSelect.appendChild(option);
             });
 
-            // Automatically detect latest year from dataset
             const years = [...new Set(allData.map(item => Number(item.year)))].filter(Boolean).sort((a, b) => b - a);
             if (years.length > 0) {
                 targetYear = years[0];
@@ -496,21 +506,25 @@
 
             // 1. DYNAMIC HEADER TITLE UPDATE
             const headerTitleElem = document.getElementById("dynamicHeaderTitle");
+            const selectedMonthText = document.getElementById("monthFilterSidebar").options[document.getElementById("monthFilterSidebar").selectedIndex].text;
+            
             if (selectedMonth === "ALL") {
                 headerTitleElem.textContent = `Full Year ${prevYear} vs Full Year ${targetYear}`;
             } else {
-                headerTitleElem.textContent = `${selectedMonth} ${prevYear} vs ${selectedMonth} ${targetYear}`;
+                headerTitleElem.textContent = `${selectedMonthText} ${prevYear} vs ${selectedMonthText} ${targetYear}`;
             }
 
-            // 2. DATA FILTERING
+            // 2. DATA FILTERING WITH FLEXIBLE MONTH MATCHING (Matches Jan/January)
             filteredData = selectedDepartment === "ALL" 
                 ? allData 
                 : allData.filter(item => item.department === selectedDepartment);
 
             if (selectedMonth !== "ALL") {
                 filteredData = filteredData.filter(item => {
-                    if (!item.month) return true;
-                    return item.month.toString().toLowerCase() === selectedMonth.toLowerCase();
+                    if (!item.month) return false;
+                    const dbMonth = item.month.toString().trim().toLowerCase();
+                    const filterMonth = selectedMonth.toLowerCase();
+                    return dbMonth.startsWith(filterMonth) || filterMonth.startsWith(dbMonth);
                 });
             }
 
@@ -529,23 +543,25 @@
 
             const revDifference = summaryTarget.revenue - summaryPrev.revenue;
 
-            // 3. UPDATE SCORECARDS & LABELS
+            // 3. SCORECARD LABELS & ANIMATED COUNTERS
             document.getElementById("labelRevenueTarget").textContent = `Total Revenue ${targetYear}`;
-            document.getElementById("revenueTarget").textContent = pesoFormatter.format(summaryTarget.revenue);
+            animateValue("revenueTarget", summaryTarget.revenue, val => pesoFormatter.format(val));
+
             document.getElementById("labelRevCollapsibleTitle").textContent = `View ${prevYear} Revenue Details`;
-            document.getElementById("labelRevPrevVal").textContent = pesoFormatter.format(summaryPrev.revenue);
-            document.getElementById("labelRevPrevDesc").textContent = `${selectedMonth === 'ALL' ? 'Full Year' : selectedMonth} ${prevYear} Total Revenue`;
+            animateValue("labelRevPrevVal", summaryPrev.revenue, val => pesoFormatter.format(val));
+            document.getElementById("labelRevPrevDesc").textContent = `${selectedMonth === 'ALL' ? 'Full Year' : selectedMonthText} ${prevYear} Total Revenue`;
 
             document.getElementById("labelCensusTarget").textContent = `Total Census ${targetYear}`;
-            document.getElementById("censusTarget").textContent = numberFormatter.format(summaryTarget.census);
+            animateValue("censusTarget", summaryTarget.census, val => numberFormatter.format(Math.round(val)));
+
             document.getElementById("labelCensusCollapsibleTitle").textContent = `View ${prevYear} Census Details`;
-            document.getElementById("labelCensusPrevVal").textContent = numberFormatter.format(summaryPrev.census);
-            document.getElementById("labelCensusPrevDesc").textContent = `${selectedMonth === 'ALL' ? 'Full Year' : selectedMonth} ${prevYear} Patient Census`;
+            animateValue("labelCensusPrevVal", summaryPrev.census, val => numberFormatter.format(Math.round(val)));
+            document.getElementById("labelCensusPrevDesc").textContent = `${selectedMonth === 'ALL' ? 'Full Year' : selectedMonthText} ${prevYear} Patient Census`;
 
-            document.getElementById("revenuePerCensus").textContent = pesoFormatter.format(rpcTarget);
-            document.getElementById("revenueDifference").textContent = pesoFormatter.format(Math.abs(revDifference));
+            animateValue("revenuePerCensus", rpcTarget, val => pesoFormatter.format(val));
+            animateValue("revenueDifference", Math.abs(revDifference), val => pesoFormatter.format(val));
 
-            // DYNAMIC SCORECARD TITLE FOR INCREASE / DECREASE
+            // DYNAMIC SCORECARD TITLE (INCREASE / DECREASE)
             const dynamicDiffLabel = document.getElementById("dynamicDiffLabel");
             const dynamicDiffSubtext = document.getElementById("dynamicDiffSubtext");
             if (revDifference >= 0) {
@@ -567,7 +583,7 @@
             document.getElementById("thCurrRev").textContent = `${targetYear} Revenue`;
             document.getElementById("thCurrCensus").textContent = `${targetYear} Census`;
 
-            // 4. CHARTS & RENDERERS
+            // 4. RENDER CHARTS & INSIGHTS
             renderRevenueChart(summaryPrev, summaryTarget, prevYear, targetYear);
             renderCensusChart(summaryPrev, summaryTarget, prevYear, targetYear);
             renderDepartmentCharts(dataPrevYear, dataTargetYear, targetYear);
@@ -577,10 +593,11 @@
         }
 
         function updateGrowthElement(elementId, value) {
-            const element = document.getElementById(elementId);
             const prefix = value >= 0 ? "▲ " : "▼ ";
-            element.textContent = prefix + Math.abs(value).toFixed(2) + "%";
+            const element = document.getElementById(elementId);
             element.className = value >= 0 ? "text-emerald-400 font-semibold" : "text-rose-400 font-semibold";
+
+            animateValue(elementId, Math.abs(value), val => val.toFixed(2) + "%", prefix);
         }
 
         function renderRevenueChart(summaryPrev, summaryTarget, prevYear, targetYear) {
@@ -609,7 +626,6 @@
         function renderDepartmentCharts(dataPrev, dataTarget, targetYear) {
             const departmentsTarget = groupByDepartment(dataTarget);
 
-            // TOP DEPARTMENTS BY REVENUE
             const topDeptRev = Object.values(departmentsTarget)
                 .sort((a, b) => b.revenue - a.revenue)
                 .slice(0, 10);
@@ -623,7 +639,6 @@
                 credits: { enabled: false }
             });
 
-            // TOP DEPARTMENTS BY CENSUS
             const topDeptCensus = Object.values(departmentsTarget)
                 .sort((a, b) => b.census - a.census)
                 .slice(0, 10);
@@ -757,13 +772,13 @@
             }
         }
 
-        // LISTENERS FOR SIDEBAR FILTERS ONLY
+        // LISTENERS
         document.getElementById("monthFilterSidebar").addEventListener("change", renderDashboard);
         document.getElementById("departmentFilterSidebar").addEventListener("change", renderDashboard);
         document.getElementById("refreshButton").addEventListener("click", initializeDashboard);
 
-        // INIT
-        AOS.init({ duration: 700, once: true, offset: 50 });
+        // INIT AOS WITH CONTINUOUS SCROLL ANIMATIONS (once: false)
+        AOS.init({ duration: 700, once: false, offset: 50 });
         initializeDashboard();
     </script>
 </body>
