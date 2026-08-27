@@ -493,715 +493,746 @@
         const SUPABASE_ANON_KEY = "sb_publishable_N8eDSEMyu7iLtDscgOrBKQ_xo_mUpzi";
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// --- AUTHENTICATION GUARD ---
-async function checkAuthentication() {
-    const { data: { session }, error } = await supabaseClient.auth.getSession();
-    if (error || !session) {
-        document.getElementById('loadingScreen').style.display = 'none';
-        document.getElementById('deniedScreen').classList.remove('hidden');
-        document.getElementById('deniedScreen').classList.add('flex');
-        return false;
-    }
-    return true;
-}
-
-supabaseClient.auth.onAuthStateChange((event, session) => {
-    if (event === 'SIGNED_OUT' || !session) {
-        document.getElementById('loadingScreen').style.display = 'none';
-        document.getElementById('deniedScreen').classList.remove('hidden');
-        document.getElementById('deniedScreen').classList.add('flex');
-    }
-});
-
-document.getElementById('logoutBtn').addEventListener('click', async () => {
-    await supabaseClient.auth.signOut();
-    window.location.replace("index.html");
-});
-
-// GLOBAL HIGHCHARTS CONFIG (Data labels appear on hover only)
-Highcharts.setOptions({
-    colors: ['#38bdf8', '#818cf8', '#c084fc', '#f472b6', '#fb7185', '#34d399', '#fbbf24', '#a78bfa', '#2dd4bf', '#f43f5e'],
-    exporting: { enabled: false },
-    chart: {
-        style: {
-            fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+        // --- AUTHENTICATION GUARD ---
+        async function checkAuthentication() {
+            const { data: { session }, error } = await supabaseClient.auth.getSession();
+            if (error || !session) {
+                document.getElementById('loadingScreen').style.display = 'none';
+                document.getElementById('deniedScreen').classList.remove('hidden');
+                document.getElementById('deniedScreen').classList.add('flex');
+                return false;
+            }
+            return true;
         }
-    },
-    title: { style: { color: '#f8fafc' } },
-    subtitle: { style: { color: '#cbd5e1' } },
-    xAxis: {
-        labels: { style: { color: '#f8fafc' } },
-        title: { style: { color: '#f8fafc' } }
-    },
-    yAxis: {
-        labels: { style: { color: '#f8fafc' } },
-        title: { style: { color: '#f8fafc' } }
-    },
-    legend: {
-        itemStyle: { color: '#f8fafc' },
-        itemHoverStyle: { color: '#38bdf8' },
-        itemHiddenStyle: { color: '#64748b' }
-    },
-    plotOptions: {
-        series: {
-            dataLabels: {
-                enabled: false, // Hidden by default
-                style: { color: '#f8fafc', fontSize: '11px', fontWeight: 'bold', textOutline: 'none' }
+
+        supabaseClient.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_OUT' || !session) {
+                document.getElementById('loadingScreen').style.display = 'none';
+                document.getElementById('deniedScreen').classList.remove('hidden');
+                document.getElementById('deniedScreen').classList.add('flex');
+            }
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            await supabaseClient.auth.signOut();
+            window.location.replace("index.html");
+        });
+
+        // GLOBAL HIGHCHARTS CONFIG WITH VISIBLE DATA LABELS
+        Highcharts.setOptions({
+            colors: ['#38bdf8', '#818cf8', '#c084fc', '#f472b6', '#fb7185', '#34d399', '#fbbf24', '#a78bfa', '#2dd4bf', '#f43f5e'],
+            exporting: { enabled: false },
+            chart: {
+                style: {
+                    fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+                }
             },
-            states: {
-                hover: {
+            title: { style: { color: '#f8fafc' } },
+            subtitle: { style: { color: '#cbd5e1' } },
+            xAxis: {
+                labels: { style: { color: '#f8fafc' } },
+                title: { style: { color: '#f8fafc' } }
+            },
+            yAxis: {
+                labels: { style: { color: '#f8fafc' } },
+                title: { style: { color: '#f8fafc' } }
+            },
+            legend: {
+                itemStyle: { color: '#f8fafc' },
+                itemHoverStyle: { color: '#38bdf8' },
+                itemHiddenStyle: { color: '#64748b' }
+            },
+            plotOptions: {
+                series: {
                     dataLabels: {
-                        enabled: true // Appears when hovered
+                        enabled: true,
+                        style: { color: '#f8fafc', fontSize: '11px', fontWeight: 'bold', textOutline: 'none' }
                     }
                 }
-            }
-        }
-    },
-    tooltip: { style: { color: '#f8fafc' } }
-});
-
-let allData = [];
-let filteredData = [];
-let targetYear = 2026;
-let prevYear = 2025;
-let isItemsExpanded = false;
-
-const pesoFormatter = new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP", maximumFractionDigits: 0 });
-const numberFormatter = new Intl.NumberFormat("en-PH");
-
-function formatMillions(value) {
-    return "₱" + (value / 1000000).toFixed(2) + "M";
-}
-
-function calculateGrowth(oldValue, newValue) {
-    if (!oldValue) return 0;
-    return ((newValue - oldValue) / oldValue) * 100;
-}
-
-function animateValue(elementId, targetValue, formatter, prefix = "") {
-    const element = document.getElementById(elementId);
-    const obj = { val: 0 };
-    gsap.to(obj, {
-        val: targetValue,
-        duration: 1.2,
-        ease: "power2.out",
-        onUpdate: () => {
-            element.textContent = prefix + formatter(obj.val);
-        }
-    });
-}
-
-async function fetchAllData() {
-    const allRows = [];
-    const batchSize = 1000;
-    let from = 0;
-    let hasMore = true;
-
-    while (hasMore) {
-        const to = from + batchSize - 1;
-        document.getElementById("loadingText").textContent = `Loading records ${from + 1}...`;
-
-        const { data, error } = await supabaseClient
-            .from("hospital_performance")
-            .select("*")
-            .range(from, to);
-
-        if (error) {
-            console.error(error);
-            throw error;
-        }
-
-        allRows.push(...data);
-        if (data.length < batchSize) {
-            hasMore = false;
-        } else {
-            from += batchSize;
-        }
-    }
-    return allRows;
-}
-
-function calculateSummary(data) {
-    return data.reduce((acc, row) => {
-        acc.revenue += Number(row.revenue) || 0;
-        acc.census += Number(row.census) || 0;
-        acc.records++;
-        return acc;
-    }, { revenue: 0, census: 0, records: 0 });
-}
-
-function groupByDepartment(data) {
-    const result = {};
-    data.forEach(row => {
-        const department = row.department || "Unknown";
-        if (!result[department]) {
-            result[department] = { department, revenue: 0, census: 0 };
-        }
-        result[department].revenue += Number(row.revenue) || 0;
-        result[department].census += Number(row.census) || 0;
-    });
-    return result;
-}
-
-function groupByField(data, field) {
-    const result = {};
-    data.forEach(row => {
-        const key = row[field] || "Unknown";
-        if (!result[key]) {
-            result[key] = { name: key, value: 0 };
-        }
-        result[key].value += Number(row.census) || 0;
-    });
-    return Object.values(result);
-}
-
-function setupDynamicOptions() {
-    const deptSelect = document.getElementById("departmentFilterSidebar");
-    const departments = [...new Set(allData.map(item => item.department))].filter(Boolean).sort();
-    deptSelect.innerHTML = `<option value="ALL">All Departments</option>`;
-    departments.forEach(department => {
-        const option = document.createElement("option");
-        option.value = department;
-        option.textContent = department;
-        deptSelect.appendChild(option);
-    });
-
-    const years = [...new Set(allData.map(item => Number(item.year)))].filter(Boolean).sort((a, b) => b - a);
-    if (years.length > 0) {
-        targetYear = years[0];
-        prevYear = years[1] || (targetYear - 1);
-    }
-}
-
-function renderDashboard() {
-    const selectedMonth = document.getElementById("monthFilterSidebar").value;
-    const selectedDepartment = document.getElementById("departmentFilterSidebar").value;
-
-    const headerTitleElem = document.getElementById("dynamicHeaderTitle");
-    const selectedMonthText = document.getElementById("monthFilterSidebar").options[document.getElementById("monthFilterSidebar").selectedIndex].text;
-    
-    if (selectedMonth === "ALL") {
-        headerTitleElem.textContent = `Full Year ${prevYear} vs Full Year ${targetYear}`;
-    } else {
-        headerTitleElem.textContent = `${selectedMonthText} ${prevYear} vs ${selectedMonthText} ${targetYear}`;
-    }
-
-    filteredData = selectedDepartment === "ALL" 
-        ? allData 
-        : allData.filter(item => item.department === selectedDepartment);
-
-    if (selectedMonth !== "ALL") {
-        filteredData = filteredData.filter(item => {
-            if (!item.month) return false;
-            const dbMonth = item.month.toString().trim().toLowerCase();
-            const filterMonth = selectedMonth.toLowerCase();
-            return dbMonth.startsWith(filterMonth) || filterMonth.startsWith(dbMonth);
+            },
+            tooltip: { style: { color: '#f8fafc' } }
         });
-    }
 
-    const dataPrevYear = filteredData.filter(item => Number(item.year) === prevYear);
-    const dataTargetYear = filteredData.filter(item => Number(item.year) === targetYear);
+        let allData = [];
+        let filteredData = [];
+        let targetYear = 2026;
+        let prevYear = 2025;
+        let isItemsExpanded = false;
 
-    const summaryPrev = calculateSummary(dataPrevYear);
-    const summaryTarget = calculateSummary(dataTargetYear);
+        const pesoFormatter = new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP", maximumFractionDigits: 0 });
+        const numberFormatter = new Intl.NumberFormat("en-PH");
 
-    const revenueGrowth = calculateGrowth(summaryPrev.revenue, summaryTarget.revenue);
-    const censusGrowth = calculateGrowth(summaryPrev.census, summaryTarget.census);
-
-    const rpcPrev = summaryPrev.census ? summaryPrev.revenue / summaryPrev.census : 0;
-    const rpcTarget = summaryTarget.census ? summaryTarget.revenue / summaryTarget.census : 0;
-    const rpcGrowth = calculateGrowth(rpcPrev, rpcTarget);
-
-    const revDifference = summaryTarget.revenue - summaryPrev.revenue;
-
-    document.getElementById("labelRevenueTarget").textContent = `Total Revenue ${targetYear}`;
-    animateValue("revenueTarget", summaryTarget.revenue, val => pesoFormatter.format(val));
-
-    document.getElementById("labelRevCollapsibleTitle").textContent = `View ${prevYear} Revenue Details`;
-    animateValue("labelRevPrevVal", summaryPrev.revenue, val => pesoFormatter.format(val));
-    document.getElementById("labelRevPrevDesc").textContent = `${selectedMonth === 'ALL' ? 'Full Year' : selectedMonthText} ${prevYear} Total Revenue`;
-
-    document.getElementById("labelCensusTarget").textContent = `Total Census ${targetYear}`;
-    animateValue("censusTarget", summaryTarget.census, val => numberFormatter.format(Math.round(val)));
-
-    document.getElementById("labelCensusCollapsibleTitle").textContent = `View ${prevYear} Census Details`;
-    animateValue("labelCensusPrevVal", summaryPrev.census, val => numberFormatter.format(Math.round(val)));
-    document.getElementById("labelCensusPrevDesc").textContent = `${selectedMonth === 'ALL' ? 'Full Year' : selectedMonthText} ${prevYear} Patient Census`;
-
-    animateValue("revenuePerCensus", rpcTarget, val => pesoFormatter.format(val));
-    animateValue("revenueDifference", Math.abs(revDifference), val => pesoFormatter.format(val));
-
-    const dynamicDiffLabel = document.getElementById("dynamicDiffLabel");
-    const dynamicDiffSubtext = document.getElementById("dynamicDiffSubtext");
-    if (revDifference >= 0) {
-        dynamicDiffLabel.textContent = "Revenue Increase";
-        dynamicDiffLabel.className = "text-xs text-emerald-400 font-semibold";
-        dynamicDiffSubtext.textContent = `Gain in ${targetYear} vs ${prevYear}`;
-    } else {
-        dynamicDiffLabel.textContent = "Revenue Decrease";
-        dynamicDiffLabel.className = "text-xs text-rose-400 font-semibold";
-        dynamicDiffSubtext.textContent = `Drop in ${targetYear} vs ${prevYear}`;
-    }
-
-    updateGrowthElement("revenueGrowth", revenueGrowth);
-    updateGrowthElement("censusGrowth", censusGrowth);
-    updateGrowthElement("rpcGrowth", rpcGrowth);
-
-    document.getElementById("thPrevRev").textContent = `${prevYear} Revenue`;
-    document.getElementById("thCurrRev").textContent = `${targetYear} Revenue`;
-    document.getElementById("thCurrCensus").textContent = `${targetYear} Census`;
-
-    renderRevenueChart(summaryPrev, summaryTarget, prevYear, targetYear);
-    renderCensusChart(summaryPrev, summaryTarget, prevYear, targetYear);
-    renderTypeCharts(dataTargetYear);
-    renderDepartmentCharts(dataPrevYear, dataTargetYear, targetYear);
-    renderItemTables(dataTargetYear);
-    renderDemographicCharts(dataTargetYear);
-    renderDepartmentTable(dataPrevYear, dataTargetYear);
-    renderInsights(summaryPrev, summaryTarget, revenueGrowth, censusGrowth, rpcGrowth, dataTargetYear, prevYear, targetYear);
-}
-
-function updateGrowthElement(elementId, value) {
-    const prefix = value >= 0 ? "▲ " : "▼ ";
-    const element = document.getElementById(elementId);
-    element.className = value >= 0 ? "text-emerald-400 font-semibold" : "text-rose-400 font-semibold";
-
-    animateValue(elementId, Math.abs(value), val => val.toFixed(2) + "%", prefix);
-}
-
-function renderRevenueChart(summaryPrev, summaryTarget, prevYear, targetYear) {
-    const total = summaryPrev.revenue + summaryTarget.revenue;
-
-    Highcharts.chart("revenueChart", {
-        chart: { type: "column", backgroundColor: "transparent" },
-        title: { text: null },
-        xAxis: { categories: [`${prevYear}`, `${targetYear}`] },
-        yAxis: { title: { text: "Revenue (PHP)" } },
-        tooltip: { valuePrefix: "₱" },
-        legend: { enabled: false },
-        plotOptions: {
-            column: {
-                colorByPoint: true,
-                dataLabels: {
-                    formatter: function () {
-                        const pct = total ? ((this.y / total) * 100).toFixed(1) : 0;
-                        return `${formatMillions(this.y)}<br/>(${pct}%)`;
-                    }
-                }
-            }
-        },
-        series: [{ name: "Revenue", data: [summaryPrev.revenue, summaryTarget.revenue] }],
-        credits: { enabled: false }
-    });
-}
-
-function renderCensusChart(summaryPrev, summaryTarget, prevYear, targetYear) {
-    const total = summaryPrev.census + summaryTarget.census;
-
-    Highcharts.chart("censusChart", {
-        chart: { type: "column", backgroundColor: "transparent" },
-        title: { text: null },
-        xAxis: { categories: [`${prevYear}`, `${targetYear}`] },
-        yAxis: { title: { text: "Census" } },
-        legend: { enabled: false },
-        plotOptions: {
-            column: {
-                colorByPoint: true,
-                dataLabels: {
-                    formatter: function () {
-                        const pct = total ? ((this.y / total) * 100).toFixed(1) : 0;
-                        return `${numberFormatter.format(this.y)}<br/>(${pct}%)`;
-                    }
-                }
-            }
-        },
-        series: [{ name: "Census", data: [summaryPrev.census, summaryTarget.census] }],
-        credits: { enabled: false }
-    });
-}
-
-function renderTypeCharts(dataTarget) {
-    const typeData = groupByField(dataTarget, "type").sort((a, b) => b.value - a.value);
-
-    Highcharts.chart("typeChart", {
-        chart: { type: "pie", backgroundColor: "transparent" },
-        title: { text: null },
-        plotOptions: {
-            pie: {
-                innerSize: '50%',
-                dataLabels: {
-                    formatter: function () {
-                        return `<b>${this.point.name}</b><br/>${numberFormatter.format(this.y)} (${this.percentage.toFixed(1)}%)`;
-                    }
-                }
-            }
-        },
-        series: [{ name: "Census", data: typeData.map(item => ({ name: item.name, y: item.value })) }],
-        credits: { enabled: false }
-    });
-
-    const patientTypeData = groupByField(dataTarget, "patient_type").sort((a, b) => b.value - a.value);
-    const totalPatientTypeCensus = patientTypeData.reduce((sum, item) => sum + item.value, 0);
-
-    Highcharts.chart("patientTypeChart", {
-        chart: { type: "bar", backgroundColor: "transparent" },
-        title: { text: null },
-        xAxis: { categories: patientTypeData.map(item => item.name) },
-        yAxis: { title: { text: "Census Volume" } },
-        legend: { enabled: false },
-        plotOptions: {
-            bar: {
-                colorByPoint: true,
-                dataLabels: {
-                    formatter: function () {
-                        const pct = totalPatientTypeCensus ? ((this.y / totalPatientTypeCensus) * 100).toFixed(1) : 0;
-                        return `${numberFormatter.format(this.y)} (${pct}%)`;
-                    }
-                }
-            }
-        },
-        series: [{ name: "Census", data: patientTypeData.map(item => item.value) }],
-        credits: { enabled: false }
-    });
-}
-
-function renderDepartmentCharts(dataPrev, dataTarget, targetYear) {
-    const departmentsTarget = groupByDepartment(dataTarget);
-
-    const topDeptRev = Object.values(departmentsTarget)
-        .sort((a, b) => b.revenue - a.revenue)
-        .slice(0, 10);
-    const totalDeptRev = topDeptRev.reduce((sum, d) => sum + d.revenue, 0);
-
-    Highcharts.chart("departmentRevenueChart", {
-        chart: { type: "bar", backgroundColor: "transparent" },
-        title: { text: null },
-        xAxis: { categories: topDeptRev.map(item => item.department) },
-        yAxis: { title: { text: "Revenue" } },
-        legend: { enabled: false },
-        plotOptions: {
-            bar: {
-                colorByPoint: true,
-                dataLabels: {
-                    formatter: function () {
-                        const pct = totalDeptRev ? ((this.y / totalDeptRev) * 100).toFixed(1) : 0;
-                        return `${formatMillions(this.y)} (${pct}%)`;
-                    }
-                }
-            }
-        },
-        series: [{ name: `${targetYear} Revenue`, data: topDeptRev.map(item => item.revenue) }],
-        credits: { enabled: false }
-    });
-
-    const topDeptCensus = Object.values(departmentsTarget)
-        .sort((a, b) => b.census - a.census)
-        .slice(0, 10);
-    const totalDeptCensus = topDeptCensus.reduce((sum, d) => sum + d.census, 0);
-
-    Highcharts.chart("departmentCensusChart", {
-        chart: { type: "bar", backgroundColor: "transparent" },
-        title: { text: null },
-        xAxis: { categories: topDeptCensus.map(item => item.department) },
-        yAxis: { title: { text: "Patient Volume (Census)" } },
-        legend: { enabled: false },
-        plotOptions: {
-            bar: {
-                colorByPoint: true,
-                dataLabels: {
-                    formatter: function () {
-                        const pct = totalDeptCensus ? ((this.y / totalDeptCensus) * 100).toFixed(1) : 0;
-                        return `${numberFormatter.format(this.y)} (${pct}%)`;
-                    }
-                }
-            }
-        },
-        series: [{ name: `${targetYear} Census`, data: topDeptCensus.map(item => item.census) }],
-        credits: { enabled: false }
-    });
-}
-
-function renderItemTables(dataTarget) {
-    const aggregatedItems = {};
-
-    dataTarget.forEach(row => {
-        const desc = (row.item_decs || row.item_desc || "Unspecified").toString().trim();
-        if (!aggregatedItems[desc]) {
-            aggregatedItems[desc] = { desc, revenue: 0, census: 0 };
+        function formatMillions(value) {
+            return "₱" + (value / 1000000).toFixed(2) + "M";
         }
-        aggregatedItems[desc].revenue += Number(row.revenue) || 0;
-        aggregatedItems[desc].census += Number(row.census) || 0;
-    });
 
-    const allItemsSorted = Object.values(aggregatedItems).sort((a, b) => b.revenue - a.revenue);
-
-    const mainItems = [];
-    const suppliesItems = [];
-    const drugsItems = [];
-
-    allItemsSorted.forEach(item => {
-        const exactName = item.desc.toUpperCase().trim();
-
-        if (exactName === "SUPPLIES") {
-            suppliesItems.push(item);
-        } else if (exactName === "DRUGS & MEDICINES" || exactName === "DRUGS AND MEDICINES") {
-            drugsItems.push(item);
-        } else {
-            mainItems.push(item);
+        function calculateGrowth(oldValue, newValue) {
+            if (!oldValue) return 0;
+            return ((newValue - oldValue) / oldValue) * 100;
         }
-    });
 
-    const topItemsTbody = document.getElementById("topItemsTable");
-    topItemsTbody.innerHTML = "";
-    const displayList = isItemsExpanded ? mainItems : mainItems.slice(0, 10);
-
-    displayList.forEach((item, index) => {
-        topItemsTbody.innerHTML += `
-            <tr class="hover:bg-slate-800/40 transition">
-                <td class="p-4 text-slate-500 font-mono text-[11px]">${index + 1}</td>
-                <td class="p-4 font-medium text-slate-200">${item.desc}</td>
-                <td class="p-4 text-right font-semibold text-emerald-400">${pesoFormatter.format(item.revenue)}</td>
-                <td class="p-4 text-right text-slate-400">${numberFormatter.format(item.census)}</td>
-            </tr>
-        `;
-    });
-
-    const suppliesTbody = document.getElementById("suppliesTable");
-    suppliesTbody.innerHTML = "";
-    if (suppliesItems.length === 0) {
-        suppliesTbody.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-slate-500">No exact 'SUPPLIES' records found</td></tr>`;
-    } else {
-        suppliesItems.forEach(item => {
-            suppliesTbody.innerHTML += `
-                <tr class="hover:bg-slate-800/40 transition">
-                    <td class="p-3 font-medium text-slate-300">${item.desc}</td>
-                    <td class="p-3 text-right font-semibold text-sky-400">${pesoFormatter.format(item.revenue)}</td>
-                    <td class="p-3 text-right text-slate-400">${numberFormatter.format(item.census)}</td>
-                </tr>
-            `;
-        });
-    }
-
-    const drugsTbody = document.getElementById("drugsTable");
-    drugsTbody.innerHTML = "";
-    if (drugsItems.length === 0) {
-        drugsTbody.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-slate-500">No exact 'DRUGS & MEDICINES' records found</td></tr>`;
-    } else {
-        drugsItems.forEach(item => {
-            drugsTbody.innerHTML += `
-                <tr class="hover:bg-slate-800/40 transition">
-                    <td class="p-3 font-medium text-slate-300">${item.desc}</td>
-                    <td class="p-3 text-right font-semibold text-sky-400">${pesoFormatter.format(item.revenue)}</td>
-                    <td class="p-3 text-right text-slate-400">${numberFormatter.format(item.census)}</td>
-                </tr>
-            `;
-        });
-    }
-}
-
-document.getElementById("toggleItemsBtn").addEventListener("click", function() {
-    isItemsExpanded = !isItemsExpanded;
-    this.textContent = isItemsExpanded ? "Show Less" : "See More";
-    const dataTargetYear = filteredData.filter(item => Number(item.year) === targetYear);
-    renderItemTables(dataTargetYear);
-});
-
-function renderDepartmentTable(dataPrev, dataTarget) {
-    const departmentsPrev = groupByDepartment(dataPrev);
-    const departmentsTarget = groupByDepartment(dataTarget);
-    const departments = [...new Set([...Object.keys(departmentsPrev), ...Object.keys(departmentsTarget)])];
-
-    const rows = departments.map(dept => {
-        const dPrev = departmentsPrev[dept] || { revenue: 0, census: 0 };
-        const dTarget = departmentsTarget[dept] || { revenue: 0, census: 0 };
-        const growth = calculateGrowth(dPrev.revenue, dTarget.revenue);
-
-        return {
-            department: dept,
-            revenuePrev: dPrev.revenue,
-            revenueTarget: dTarget.revenue,
-            censusTarget: dTarget.census,
-            growth
-        };
-    }).sort((a, b) => b.revenueTarget - a.revenueTarget);
-
-    const tbody = document.getElementById("departmentTable");
-    tbody.innerHTML = "";
-
-    rows.forEach(row => {
-        const growthClass = row.growth >= 0 ? "text-emerald-400" : "text-rose-400";
-        tbody.innerHTML += `
-            <tr class="hover:bg-slate-800/40 transition">
-                <td class="p-4 font-medium">${row.department}</td>
-                <td class="p-4 text-right text-slate-400">${formatMillions(row.revenuePrev)}</td>
-                <td class="p-4 text-right font-semibold text-slate-200">${formatMillions(row.revenueTarget)}</td>
-                <td class="p-4 text-right ${growthClass}">${row.growth >= 0 ? "▲" : "▼"} ${Math.abs(row.growth).toFixed(2)}%</td>
-                <td class="p-4 text-right text-slate-400">${numberFormatter.format(row.censusTarget)}</td>
-            </tr>
-        `;
-    });
-}
-
-function renderDemographicCharts(data) {
-    const genderData = groupByField(data, "gender");
-    Highcharts.chart("genderChart", {
-        chart: { type: "pie", backgroundColor: "transparent" },
-        title: { text: null },
-        plotOptions: {
-            pie: {
-                dataLabels: {
-                    formatter: function () {
-                        return `<b>${this.point.name}</b><br/>${numberFormatter.format(this.y)} (${this.percentage.toFixed(1)}%)`;
-                    }
+        function animateValue(elementId, targetValue, formatter, prefix = "") {
+            const element = document.getElementById(elementId);
+            const obj = { val: 0 };
+            gsap.to(obj, {
+                val: targetValue,
+                duration: 1.2,
+                ease: "power2.out",
+                onUpdate: () => {
+                    element.textContent = prefix + formatter(obj.val);
                 }
-            }
-        },
-        series: [{ name: "Census", data: genderData.map(item => ({ name: item.name, y: item.value })) }],
-        credits: { enabled: false }
-    });
-
-    const ageData = groupByField(data, "age_bracket").sort((a, b) => b.value - a.value);
-    const totalAgeCensus = ageData.reduce((sum, item) => sum + item.value, 0);
-
-    Highcharts.chart("ageChart", {
-        chart: { type: "bar", backgroundColor: "transparent" },
-        title: { text: null },
-        xAxis: { categories: ageData.map(item => item.name) },
-        yAxis: { title: { text: "Census" } },
-        legend: { enabled: false },
-        plotOptions: {
-            bar: {
-                colorByPoint: true,
-                dataLabels: {
-                    formatter: function () {
-                        const pct = totalAgeCensus ? ((this.y / totalAgeCensus) * 100).toFixed(1) : 0;
-                        return `${numberFormatter.format(this.y)} (${pct}%)`;
-                    }
-                }
-            }
-        },
-        series: [{ name: "Census", data: ageData.map(item => item.value) }],
-        credits: { enabled: false }
-    });
-
-    const locationData = groupByField(data, "location").sort((a, b) => b.value - a.value).slice(0, 10);
-    const totalLocationCensus = locationData.reduce((sum, item) => sum + item.value, 0);
-
-    Highcharts.chart("locationChart", {
-        chart: { type: "bar", backgroundColor: "transparent" },
-        title: { text: null },
-        xAxis: { categories: locationData.map(item => item.name) },
-        yAxis: { title: { text: "Patient Census" } },
-        legend: { enabled: false },
-        plotOptions: {
-            bar: {
-                colorByPoint: true,
-                dataLabels: {
-                    formatter: function () {
-                        const pct = totalLocationCensus ? ((this.y / totalLocationCensus) * 100).toFixed(1) : 0;
-                        return `${numberFormatter.format(this.y)} (${pct}%)`;
-                    }
-                }
-            }
-        },
-        series: [{ name: "Census", data: locationData.map(item => item.value) }],
-        credits: { enabled: false }
-    });
-
-    const civilData = groupByField(data, "civil_status");
-    Highcharts.chart("civilStatusChart", {
-        chart: { type: "pie", backgroundColor: "transparent" },
-        title: { text: null },
-        plotOptions: {
-            pie: {
-                innerSize: '60%',
-                dataLabels: {
-                    formatter: function () {
-                        return `<b>${this.point.name}</b><br/>${numberFormatter.format(this.y)} (${this.percentage.toFixed(1)}%)`;
-                    }
-                }
-            }
-        },
-        series: [{ name: "Census", data: civilData.map(item => ({ name: item.name, y: item.value })) }],
-        credits: { enabled: false }
-    });
-}
-
-function renderInsights(summaryPrev, summaryTarget, revenueGrowth, censusGrowth, rpcGrowth, dataTarget, prevYear, targetYear) {
-    const departmentsTarget = Object.values(groupByDepartment(dataTarget));
-    const topDepartment = departmentsTarget.sort((a, b) => b.revenue - a.revenue)[0];
-    const container = document.getElementById("insightsContainer");
-
-    const insights = [
-        {
-            title: "Revenue Performance",
-            value: `₱${((summaryTarget.revenue - summaryPrev.revenue) / 1000000).toFixed(2)}M`,
-            description: `Revenue ${revenueGrowth >= 0 ? 'increased' : 'decreased'} by ${Math.abs(revenueGrowth).toFixed(2)}% compared to ${prevYear}.`
-        },
-        {
-            title: "Volume Performance",
-            value: `${Math.abs(censusGrowth).toFixed(2)}%`,
-            description: censusGrowth >= 0 ? `Patient census grew in ${targetYear}.` : `Patient census dropped compared to ${prevYear}.`
-        },
-        {
-            title: "Revenue Productivity",
-            value: `${Math.abs(rpcGrowth).toFixed(2)}%`,
-            description: `Revenue generated per census ${rpcGrowth >= 0 ? 'improved' : 'declined'} year-on-year.`
-        },
-        {
-            title: "Top Revenue Driver",
-            value: topDepartment ? topDepartment.department : "N/A",
-            description: topDepartment ? `${formatMillions(topDepartment.revenue)} generated in ${targetYear}.` : "No data available."
+            });
         }
-    ];
 
-    container.innerHTML = "";
-    insights.forEach((insight, index) => {
-        container.innerHTML += `
-            <div class="glass rounded-2xl p-6" data-aos="fade-up" data-aos-delay="${index * 100}">
-                <p class="text-xs text-sky-400 font-semibold uppercase tracking-wider">${insight.title}</p>
-                <h4 class="text-2xl font-bold mt-2">${insight.value}</h4>
-                <p class="text-slate-400 text-xs mt-3 leading-relaxed">${insight.description}</p>
-            </div>
-        `;
-    });
+        async function fetchAllData() {
+            const allRows = [];
+            const batchSize = 1000;
+            let from = 0;
+            let hasMore = true;
 
-    AOS.refresh();
-}
+            while (hasMore) {
+                const to = from + batchSize - 1;
+                document.getElementById("loadingText").textContent = `Loading records ${from + 1}...`;
 
-async function initializeDashboard() {
-    try {
-        document.getElementById("dataStatus").textContent = "Fetching hospital data...";
-        allData = await fetchAllData();
-        document.getElementById("dataStatus").textContent = `${numberFormatter.format(allData.length)} records loaded`;
+                const { data, error } = await supabaseClient
+                    .from("hospital_performance")
+                    .select("*")
+                    .range(from, to);
 
-        setupDynamicOptions();
-        renderDashboard();
+                if (error) {
+                    console.error(error);
+                    throw error;
+                }
 
-        gsap.from(".kpi-card", { y: 30, opacity: 0, duration: 0.6, stagger: 0.1 });
-        gsap.to("#loadingScreen", {
-            opacity: 0,
-            duration: 0.5,
-            onComplete: () => { document.getElementById("loadingScreen").style.display = "none"; }
+                allRows.push(...data);
+                if (data.length < batchSize) {
+                    hasMore = false;
+                } else {
+                    from += batchSize;
+                }
+            }
+            return allRows;
+        }
+
+        function calculateSummary(data) {
+            return data.reduce((acc, row) => {
+                acc.revenue += Number(row.revenue) || 0;
+                acc.census += Number(row.census) || 0;
+                acc.records++;
+                return acc;
+            }, { revenue: 0, census: 0, records: 0 });
+        }
+
+        function groupByDepartment(data) {
+            const result = {};
+            data.forEach(row => {
+                const department = row.department || "Unknown";
+                if (!result[department]) {
+                    result[department] = { department, revenue: 0, census: 0 };
+                }
+                result[department].revenue += Number(row.revenue) || 0;
+                result[department].census += Number(row.census) || 0;
+            });
+            return result;
+        }
+
+        function groupByField(data, field) {
+            const result = {};
+            data.forEach(row => {
+                const key = row[field] || "Unknown";
+                if (!result[key]) {
+                    result[key] = { name: key, value: 0 };
+                }
+                result[key].value += Number(row.census) || 0;
+            });
+            return Object.values(result);
+        }
+
+        function groupByFieldRevenue(data, field) {
+            const result = {};
+            data.forEach(row => {
+                const key = row[field] || "Unknown";
+                if (!result[key]) {
+                    result[key] = { name: key, value: 0 };
+                }
+                result[key].value += Number(row.revenue) || 0;
+            });
+            return Object.values(result);
+        }
+
+        function setupDynamicOptions() {
+            const deptSelect = document.getElementById("departmentFilterSidebar");
+            const departments = [...new Set(allData.map(item => item.department))].filter(Boolean).sort();
+            deptSelect.innerHTML = `<option value="ALL">All Departments</option>`;
+            departments.forEach(department => {
+                const option = document.createElement("option");
+                option.value = department;
+                option.textContent = department;
+                deptSelect.appendChild(option);
+            });
+
+            const years = [...new Set(allData.map(item => Number(item.year)))].filter(Boolean).sort((a, b) => b - a);
+            if (years.length > 0) {
+                targetYear = years[0];
+                prevYear = years[1] || (targetYear - 1);
+            }
+        }
+
+        function renderDashboard() {
+            const selectedMonth = document.getElementById("monthFilterSidebar").value;
+            const selectedDepartment = document.getElementById("departmentFilterSidebar").value;
+
+            const headerTitleElem = document.getElementById("dynamicHeaderTitle");
+            const selectedMonthText = document.getElementById("monthFilterSidebar").options[document.getElementById("monthFilterSidebar").selectedIndex].text;
+            
+            if (selectedMonth === "ALL") {
+                headerTitleElem.textContent = `Full Year ${prevYear} vs Full Year ${targetYear}`;
+            } else {
+                headerTitleElem.textContent = `${selectedMonthText} ${prevYear} vs ${selectedMonthText} ${targetYear}`;
+            }
+
+            filteredData = selectedDepartment === "ALL" 
+                ? allData 
+                : allData.filter(item => item.department === selectedDepartment);
+
+            if (selectedMonth !== "ALL") {
+                filteredData = filteredData.filter(item => {
+                    if (!item.month) return false;
+                    const dbMonth = item.month.toString().trim().toLowerCase();
+                    const filterMonth = selectedMonth.toLowerCase();
+                    return dbMonth.startsWith(filterMonth) || filterMonth.startsWith(dbMonth);
+                });
+            }
+
+            const dataPrevYear = filteredData.filter(item => Number(item.year) === prevYear);
+            const dataTargetYear = filteredData.filter(item => Number(item.year) === targetYear);
+
+            const summaryPrev = calculateSummary(dataPrevYear);
+            const summaryTarget = calculateSummary(dataTargetYear);
+
+            const revenueGrowth = calculateGrowth(summaryPrev.revenue, summaryTarget.revenue);
+            const censusGrowth = calculateGrowth(summaryPrev.census, summaryTarget.census);
+
+            const rpcPrev = summaryPrev.census ? summaryPrev.revenue / summaryPrev.census : 0;
+            const rpcTarget = summaryTarget.census ? summaryTarget.revenue / summaryTarget.census : 0;
+            const rpcGrowth = calculateGrowth(rpcPrev, rpcTarget);
+
+            const revDifference = summaryTarget.revenue - summaryPrev.revenue;
+
+            document.getElementById("labelRevenueTarget").textContent = `Total Revenue ${targetYear}`;
+            animateValue("revenueTarget", summaryTarget.revenue, val => pesoFormatter.format(val));
+
+            document.getElementById("labelRevCollapsibleTitle").textContent = `View ${prevYear} Revenue Details`;
+            animateValue("labelRevPrevVal", summaryPrev.revenue, val => pesoFormatter.format(val));
+            document.getElementById("labelRevPrevDesc").textContent = `${selectedMonth === 'ALL' ? 'Full Year' : selectedMonthText} ${prevYear} Total Revenue`;
+
+            document.getElementById("labelCensusTarget").textContent = `Total Census ${targetYear}`;
+            animateValue("censusTarget", summaryTarget.census, val => numberFormatter.format(Math.round(val)));
+
+            document.getElementById("labelCensusCollapsibleTitle").textContent = `View ${prevYear} Census Details`;
+            animateValue("labelCensusPrevVal", summaryPrev.census, val => numberFormatter.format(Math.round(val)));
+            document.getElementById("labelCensusPrevDesc").textContent = `${selectedMonth === 'ALL' ? 'Full Year' : selectedMonthText} ${prevYear} Patient Census`;
+
+            animateValue("revenuePerCensus", rpcTarget, val => pesoFormatter.format(val));
+            animateValue("revenueDifference", Math.abs(revDifference), val => pesoFormatter.format(val));
+
+            const dynamicDiffLabel = document.getElementById("dynamicDiffLabel");
+            const dynamicDiffSubtext = document.getElementById("dynamicDiffSubtext");
+            if (revDifference >= 0) {
+                dynamicDiffLabel.textContent = "Revenue Increase";
+                dynamicDiffLabel.className = "text-xs text-emerald-400 font-semibold";
+                dynamicDiffSubtext.textContent = `Gain in ${targetYear} vs ${prevYear}`;
+            } else {
+                dynamicDiffLabel.textContent = "Revenue Decrease";
+                dynamicDiffLabel.className = "text-xs text-rose-400 font-semibold";
+                dynamicDiffSubtext.textContent = `Drop in ${targetYear} vs ${prevYear}`;
+            }
+
+            updateGrowthElement("revenueGrowth", revenueGrowth);
+            updateGrowthElement("censusGrowth", censusGrowth);
+            updateGrowthElement("rpcGrowth", rpcGrowth);
+
+            document.getElementById("thPrevRev").textContent = `${prevYear} Revenue`;
+            document.getElementById("thCurrRev").textContent = `${targetYear} Revenue`;
+            document.getElementById("thCurrCensus").textContent = `${targetYear} Census`;
+
+            renderRevenueChart(summaryPrev, summaryTarget, prevYear, targetYear);
+            renderCensusChart(summaryPrev, summaryTarget, prevYear, targetYear);
+            renderTypeCharts(dataTargetYear);
+            renderDepartmentCharts(dataPrevYear, dataTargetYear, targetYear);
+            renderItemTables(dataTargetYear);
+            renderDemographicCharts(dataTargetYear);
+            renderDepartmentTable(dataPrevYear, dataTargetYear);
+            renderInsights(summaryPrev, summaryTarget, revenueGrowth, censusGrowth, rpcGrowth, dataTargetYear, prevYear, targetYear);
+        }
+
+        function updateGrowthElement(elementId, value) {
+            const prefix = value >= 0 ? "▲ " : "▼ ";
+            const element = document.getElementById(elementId);
+            element.className = value >= 0 ? "text-emerald-400 font-semibold" : "text-rose-400 font-semibold";
+
+            animateValue(elementId, Math.abs(value), val => val.toFixed(2) + "%", prefix);
+        }
+
+        // --- REVENUE COMPARISON CHART ---
+        function renderRevenueChart(summaryPrev, summaryTarget, prevYear, targetYear) {
+            const total = summaryPrev.revenue + summaryTarget.revenue;
+
+            Highcharts.chart("revenueChart", {
+                chart: { type: "column", backgroundColor: "transparent" },
+                title: { text: null },
+                xAxis: { categories: [`${prevYear}`, `${targetYear}`] },
+                yAxis: { title: { text: "Revenue (PHP)" } },
+                tooltip: { valuePrefix: "₱" },
+                legend: { enabled: false },
+                plotOptions: {
+                    column: {
+                        colorByPoint: true,
+                        dataLabels: {
+                            enabled: true,
+                            formatter: function () {
+                                const pct = total ? ((this.y / total) * 100).toFixed(1) : 0;
+                                return `${formatMillions(this.y)}<br/>(${pct}%)`;
+                            }
+                        }
+                    }
+                },
+                series: [{ name: "Revenue", data: [summaryPrev.revenue, summaryTarget.revenue] }],
+                credits: { enabled: false }
+            });
+        }
+
+        // --- CENSUS COMPARISON CHART ---
+        function renderCensusChart(summaryPrev, summaryTarget, prevYear, targetYear) {
+            const total = summaryPrev.census + summaryTarget.census;
+
+            Highcharts.chart("censusChart", {
+                chart: { type: "column", backgroundColor: "transparent" },
+                title: { text: null },
+                xAxis: { categories: [`${prevYear}`, `${targetYear}`] },
+                yAxis: { title: { text: "Census" } },
+                legend: { enabled: false },
+                plotOptions: {
+                    column: {
+                        colorByPoint: true,
+                        dataLabels: {
+                            enabled: true,
+                            formatter: function () {
+                                const pct = total ? ((this.y / total) * 100).toFixed(1) : 0;
+                                return `${numberFormatter.format(this.y)}<br/>(${pct}%)`;
+                            }
+                        }
+                    }
+                },
+                series: [{ name: "Census", data: [summaryPrev.census, summaryTarget.census] }],
+                credits: { enabled: false }
+            });
+        }
+
+        // --- NEW CHARTS: TYPE & PATIENT_TYPE ---
+        function renderTypeCharts(dataTarget) {
+            // Service / Visit Type Chart
+            const typeData = groupByField(dataTarget, "type").sort((a, b) => b.value - a.value);
+            const totalTypeCensus = typeData.reduce((sum, item) => sum + item.value, 0);
+
+            Highcharts.chart("typeChart", {
+                chart: { type: "pie", backgroundColor: "transparent" },
+                title: { text: null },
+                plotOptions: {
+                    pie: {
+                        innerSize: '50%',
+                        dataLabels: {
+                            enabled: true,
+                            formatter: function () {
+                                return `<b>${this.point.name}</b><br/>${numberFormatter.format(this.y)} (${this.percentage.toFixed(1)}%)`;
+                            }
+                        }
+                    }
+                },
+                series: [{ name: "Census", data: typeData.map(item => ({ name: item.name, y: item.value })) }],
+                credits: { enabled: false }
+            });
+
+            // Patient Classification Chart
+            const patientTypeData = groupByField(dataTarget, "patient_type").sort((a, b) => b.value - a.value);
+            const totalPatientTypeCensus = patientTypeData.reduce((sum, item) => sum + item.value, 0);
+
+            Highcharts.chart("patientTypeChart", {
+                chart: { type: "bar", backgroundColor: "transparent" },
+                title: { text: null },
+                xAxis: { categories: patientTypeData.map(item => item.name) },
+                yAxis: { title: { text: "Census Volume" } },
+                legend: { enabled: false },
+                plotOptions: {
+                    bar: {
+                        colorByPoint: true,
+                        dataLabels: {
+                            enabled: true,
+                            formatter: function () {
+                                const pct = totalPatientTypeCensus ? ((this.y / totalPatientTypeCensus) * 100).toFixed(1) : 0;
+                                return `${numberFormatter.format(this.y)} (${pct}%)`;
+                            }
+                        }
+                    }
+                },
+                series: [{ name: "Census", data: patientTypeData.map(item => item.value) }],
+                credits: { enabled: false }
+            });
+        }
+
+        // --- DEPARTMENT CHARTS ---
+        function renderDepartmentCharts(dataPrev, dataTarget, targetYear) {
+            const departmentsTarget = groupByDepartment(dataTarget);
+
+            const topDeptRev = Object.values(departmentsTarget)
+                .sort((a, b) => b.revenue - a.revenue)
+                .slice(0, 10);
+            const totalDeptRev = topDeptRev.reduce((sum, d) => sum + d.revenue, 0);
+
+            Highcharts.chart("departmentRevenueChart", {
+                chart: { type: "bar", backgroundColor: "transparent" },
+                title: { text: null },
+                xAxis: { categories: topDeptRev.map(item => item.department) },
+                yAxis: { title: { text: "Revenue" } },
+                legend: { enabled: false },
+                plotOptions: {
+                    bar: {
+                        colorByPoint: true,
+                        dataLabels: {
+                            enabled: true,
+                            formatter: function () {
+                                const pct = totalDeptRev ? ((this.y / totalDeptRev) * 100).toFixed(1) : 0;
+                                return `${formatMillions(this.y)} (${pct}%)`;
+                            }
+                        }
+                    }
+                },
+                series: [{ name: `${targetYear} Revenue`, data: topDeptRev.map(item => item.revenue) }],
+                credits: { enabled: false }
+            });
+
+            const topDeptCensus = Object.values(departmentsTarget)
+                .sort((a, b) => b.census - a.census)
+                .slice(0, 10);
+            const totalDeptCensus = topDeptCensus.reduce((sum, d) => sum + d.census, 0);
+
+            Highcharts.chart("departmentCensusChart", {
+                chart: { type: "bar", backgroundColor: "transparent" },
+                title: { text: null },
+                xAxis: { categories: topDeptCensus.map(item => item.department) },
+                yAxis: { title: { text: "Patient Volume (Census)" } },
+                legend: { enabled: false },
+                plotOptions: {
+                    bar: {
+                        colorByPoint: true,
+                        dataLabels: {
+                            enabled: true,
+                            formatter: function () {
+                                const pct = totalDeptCensus ? ((this.y / totalDeptCensus) * 100).toFixed(1) : 0;
+                                return `${numberFormatter.format(this.y)} (${pct}%)`;
+                            }
+                        }
+                    }
+                },
+                series: [{ name: `${targetYear} Census`, data: topDeptCensus.map(item => item.census) }],
+                credits: { enabled: false }
+            });
+        }
+
+        // --- ITEM TABLES ---
+        function renderItemTables(dataTarget) {
+            const aggregatedItems = {};
+
+            dataTarget.forEach(row => {
+                const desc = (row.item_decs || row.item_desc || "Unspecified").toString().trim();
+                if (!aggregatedItems[desc]) {
+                    aggregatedItems[desc] = { desc, revenue: 0, census: 0 };
+                }
+                aggregatedItems[desc].revenue += Number(row.revenue) || 0;
+                aggregatedItems[desc].census += Number(row.census) || 0;
+            });
+
+            const allItemsSorted = Object.values(aggregatedItems).sort((a, b) => b.revenue - a.revenue);
+
+            const mainItems = [];
+            const suppliesItems = [];
+            const drugsItems = [];
+
+            allItemsSorted.forEach(item => {
+                const exactName = item.desc.toUpperCase().trim();
+
+                if (exactName === "SUPPLIES") {
+                    suppliesItems.push(item);
+                } else if (exactName === "DRUGS & MEDICINES" || exactName === "DRUGS AND MEDICINES") {
+                    drugsItems.push(item);
+                } else {
+                    mainItems.push(item);
+                }
+            });
+
+            const topItemsTbody = document.getElementById("topItemsTable");
+            topItemsTbody.innerHTML = "";
+            const displayList = isItemsExpanded ? mainItems : mainItems.slice(0, 10);
+
+            displayList.forEach((item, index) => {
+                topItemsTbody.innerHTML += `
+                    <tr class="hover:bg-slate-800/40 transition">
+                        <td class="p-4 text-slate-500 font-mono text-[11px]">${index + 1}</td>
+                        <td class="p-4 font-medium text-slate-200">${item.desc}</td>
+                        <td class="p-4 text-right font-semibold text-emerald-400">${pesoFormatter.format(item.revenue)}</td>
+                        <td class="p-4 text-right text-slate-400">${numberFormatter.format(item.census)}</td>
+                    </tr>
+                `;
+            });
+
+            const suppliesTbody = document.getElementById("suppliesTable");
+            suppliesTbody.innerHTML = "";
+            if (suppliesItems.length === 0) {
+                suppliesTbody.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-slate-500">No exact 'SUPPLIES' records found</td></tr>`;
+            } else {
+                suppliesItems.forEach(item => {
+                    suppliesTbody.innerHTML += `
+                        <tr class="hover:bg-slate-800/40 transition">
+                            <td class="p-3 font-medium text-slate-300">${item.desc}</td>
+                            <td class="p-3 text-right font-semibold text-sky-400">${pesoFormatter.format(item.revenue)}</td>
+                            <td class="p-3 text-right text-slate-400">${numberFormatter.format(item.census)}</td>
+                        </tr>
+                    `;
+                });
+            }
+
+            const drugsTbody = document.getElementById("drugsTable");
+            drugsTbody.innerHTML = "";
+            if (drugsItems.length === 0) {
+                drugsTbody.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-slate-500">No exact 'DRUGS & MEDICINES' records found</td></tr>`;
+            } else {
+                drugsItems.forEach(item => {
+                    drugsTbody.innerHTML += `
+                        <tr class="hover:bg-slate-800/40 transition">
+                            <td class="p-3 font-medium text-slate-300">${item.desc}</td>
+                            <td class="p-3 text-right font-semibold text-sky-400">${pesoFormatter.format(item.revenue)}</td>
+                            <td class="p-3 text-right text-slate-400">${numberFormatter.format(item.census)}</td>
+                        </tr>
+                    `;
+                });
+            }
+        }
+
+        document.getElementById("toggleItemsBtn").addEventListener("click", function() {
+            isItemsExpanded = !isItemsExpanded;
+            this.textContent = isItemsExpanded ? "Show Less" : "See More";
+            const dataTargetYear = filteredData.filter(item => Number(item.year) === targetYear);
+            renderItemTables(dataTargetYear);
         });
-    } catch (error) {
-        console.error(error);
-        document.getElementById("loadingText").textContent = "Error loading dashboard data. Check your Supabase configuration.";
-    }
-}
 
-document.getElementById("monthFilterSidebar").addEventListener("change", renderDashboard);
-document.getElementById("departmentFilterSidebar").addEventListener("change", renderDashboard);
-document.getElementById("refreshButton").addEventListener("click", initializeDashboard);
+        // --- DEPARTMENT TABLE ---
+        function renderDepartmentTable(dataPrev, dataTarget) {
+            const departmentsPrev = groupByDepartment(dataPrev);
+            const departmentsTarget = groupByDepartment(dataTarget);
+            const departments = [...new Set([...Object.keys(departmentsPrev), ...Object.keys(departmentsTarget)])];
 
-AOS.init({ duration: 700, once: false, offset: 50 });
+            const rows = departments.map(dept => {
+                const dPrev = departmentsPrev[dept] || { revenue: 0, census: 0 };
+                const dTarget = departmentsTarget[dept] || { revenue: 0, census: 0 };
+                const growth = calculateGrowth(dPrev.revenue, dTarget.revenue);
 
-(async () => {
-    const isAuthed = await checkAuthentication();
-    if (isAuthed) {
-        initializeDashboard();
-    }
-})();
+                return {
+                    department: dept,
+                    revenuePrev: dPrev.revenue,
+                    revenueTarget: dTarget.revenue,
+                    censusTarget: dTarget.census,
+                    growth
+                };
+            }).sort((a, b) => b.revenueTarget - a.revenueTarget);
+
+            const tbody = document.getElementById("departmentTable");
+            tbody.innerHTML = "";
+
+            rows.forEach(row => {
+                const growthClass = row.growth >= 0 ? "text-emerald-400" : "text-rose-400";
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-800/40 transition">
+                        <td class="p-4 font-medium">${row.department}</td>
+                        <td class="p-4 text-right text-slate-400">${formatMillions(row.revenuePrev)}</td>
+                        <td class="p-4 text-right font-semibold text-slate-200">${formatMillions(row.revenueTarget)}</td>
+                        <td class="p-4 text-right ${growthClass}">${row.growth >= 0 ? "▲" : "▼"} ${Math.abs(row.growth).toFixed(2)}%</td>
+                        <td class="p-4 text-right text-slate-400">${numberFormatter.format(row.censusTarget)}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        // --- DEMOGRAPHIC CHARTS WITH LABELS AND PERCENTAGES ---
+        function renderDemographicCharts(data) {
+            // Gender Chart
+            const genderData = groupByField(data, "gender");
+            Highcharts.chart("genderChart", {
+                chart: { type: "pie", backgroundColor: "transparent" },
+                title: { text: null },
+                plotOptions: {
+                    pie: {
+                        dataLabels: {
+                            enabled: true,
+                            formatter: function () {
+                                return `<b>${this.point.name}</b><br/>${numberFormatter.format(this.y)} (${this.percentage.toFixed(1)}%)`;
+                            }
+                        }
+                    }
+                },
+                series: [{ name: "Census", data: genderData.map(item => ({ name: item.name, y: item.value })) }],
+                credits: { enabled: false }
+            });
+
+            // Age Bracket Chart
+            const ageData = groupByField(data, "age_bracket").sort((a, b) => b.value - a.value);
+            const totalAgeCensus = ageData.reduce((sum, item) => sum + item.value, 0);
+
+            Highcharts.chart("ageChart", {
+                chart: { type: "bar", backgroundColor: "transparent" },
+                title: { text: null },
+                xAxis: { categories: ageData.map(item => item.name) },
+                yAxis: { title: { text: "Census" } },
+                legend: { enabled: false },
+                plotOptions: {
+                    bar: {
+                        colorByPoint: true,
+                        dataLabels: {
+                            enabled: true,
+                            formatter: function () {
+                                const pct = totalAgeCensus ? ((this.y / totalAgeCensus) * 100).toFixed(1) : 0;
+                                return `${numberFormatter.format(this.y)} (${pct}%)`;
+                            }
+                        }
+                    }
+                },
+                series: [{ name: "Census", data: ageData.map(item => item.value) }],
+                credits: { enabled: false }
+            });
+
+            // Location Chart
+            const locationData = groupByField(data, "location").sort((a, b) => b.value - a.value).slice(0, 10);
+            const totalLocationCensus = locationData.reduce((sum, item) => sum + item.value, 0);
+
+            Highcharts.chart("locationChart", {
+                chart: { type: "bar", backgroundColor: "transparent" },
+                title: { text: null },
+                xAxis: { categories: locationData.map(item => item.name) },
+                yAxis: { title: { text: "Patient Census" } },
+                legend: { enabled: false },
+                plotOptions: {
+                    bar: {
+                        colorByPoint: true,
+                        dataLabels: {
+                            enabled: true,
+                            formatter: function () {
+                                const pct = totalLocationCensus ? ((this.y / totalLocationCensus) * 100).toFixed(1) : 0;
+                                return `${numberFormatter.format(this.y)} (${pct}%)`;
+                            }
+                        }
+                    }
+                },
+                series: [{ name: "Census", data: locationData.map(item => item.value) }],
+                credits: { enabled: false }
+            });
+
+            // Civil Status Chart
+            const civilData = groupByField(data, "civil_status");
+            Highcharts.chart("civilStatusChart", {
+                chart: { type: "pie", backgroundColor: "transparent" },
+                title: { text: null },
+                plotOptions: {
+                    pie: {
+                        innerSize: '60%',
+                        dataLabels: {
+                            enabled: true,
+                            formatter: function () {
+                                return `<b>${this.point.name}</b><br/>${numberFormatter.format(this.y)} (${this.percentage.toFixed(1)}%)`;
+                            }
+                        }
+                    }
+                },
+                series: [{ name: "Census", data: civilData.map(item => ({ name: item.name, y: item.value })) }],
+                credits: { enabled: false }
+            });
+        }
+
+        // --- EXECUTIVE INSIGHTS ---
+        function renderInsights(summaryPrev, summaryTarget, revenueGrowth, censusGrowth, rpcGrowth, dataTarget, prevYear, targetYear) {
+            const departmentsTarget = Object.values(groupByDepartment(dataTarget));
+            const topDepartment = departmentsTarget.sort((a, b) => b.revenue - a.revenue)[0];
+            const container = document.getElementById("insightsContainer");
+
+            const insights = [
+                {
+                    title: "Revenue Performance",
+                    value: `₱${((summaryTarget.revenue - summaryPrev.revenue) / 1000000).toFixed(2)}M`,
+                    description: `Revenue ${revenueGrowth >= 0 ? 'increased' : 'decreased'} by ${Math.abs(revenueGrowth).toFixed(2)}% compared to ${prevYear}.`
+                },
+                {
+                    title: "Volume Performance",
+                    value: `${Math.abs(censusGrowth).toFixed(2)}%`,
+                    description: censusGrowth >= 0 ? `Patient census grew in ${targetYear}.` : `Patient census dropped compared to ${prevYear}.`
+                },
+                {
+                    title: "Revenue Productivity",
+                    value: `${Math.abs(rpcGrowth).toFixed(2)}%`,
+                    description: `Revenue generated per census ${rpcGrowth >= 0 ? 'improved' : 'declined'} year-on-year.`
+                },
+                {
+                    title: "Top Revenue Driver",
+                    value: topDepartment ? topDepartment.department : "N/A",
+                    description: topDepartment ? `${formatMillions(topDepartment.revenue)} generated in ${targetYear}.` : "No data available."
+                }
+            ];
+
+            container.innerHTML = "";
+            insights.forEach((insight, index) => {
+                container.innerHTML += `
+                    <div class="glass rounded-2xl p-6" data-aos="fade-up" data-aos-delay="${index * 100}">
+                        <p class="text-xs text-sky-400 font-semibold uppercase tracking-wider">${insight.title}</p>
+                        <h4 class="text-2xl font-bold mt-2">${insight.value}</h4>
+                        <p class="text-slate-400 text-xs mt-3 leading-relaxed">${insight.description}</p>
+                    </div>
+                `;
+            });
+
+            AOS.refresh();
+        }
+
+        async function initializeDashboard() {
+            try {
+                document.getElementById("dataStatus").textContent = "Fetching hospital data...";
+                allData = await fetchAllData();
+                document.getElementById("dataStatus").textContent = `${numberFormatter.format(allData.length)} records loaded`;
+
+                setupDynamicOptions();
+                renderDashboard();
+
+                gsap.from(".kpi-card", { y: 30, opacity: 0, duration: 0.6, stagger: 0.1 });
+                gsap.to("#loadingScreen", {
+                    opacity: 0,
+                    duration: 0.5,
+                    onComplete: () => { document.getElementById("loadingScreen").style.display = "none"; }
+                });
+            } catch (error) {
+                console.error(error);
+                document.getElementById("loadingText").textContent = "Error loading dashboard data. Check your Supabase configuration.";
+            }
+        }
+
+        document.getElementById("monthFilterSidebar").addEventListener("change", renderDashboard);
+        document.getElementById("departmentFilterSidebar").addEventListener("change", renderDashboard);
+        document.getElementById("refreshButton").addEventListener("click", initializeDashboard);
+
+        AOS.init({ duration: 700, once: false, offset: 50 });
+
+        // EXECUTE AUTH CHECK BEFORE INITIALIZING DASHBOARD DATA
+        (async () => {
+            const isAuthed = await checkAuthentication();
+            if (isAuthed) {
+                initializeDashboard();
+            }
+        })();
     </script>
 </body>
 </html>
