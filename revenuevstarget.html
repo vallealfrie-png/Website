@@ -30,6 +30,7 @@
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #374151; border-radius: 2px; }
 
+        /* Force option background colors on browser engines to avoid white dropdown flashes */
         select option {
             background-color: #030712 !important;
             color: #e5e7eb !important;
@@ -204,54 +205,15 @@
                     <div id="growthStreamContainer" class="h-[360px]"></div>
                 </div>
             </div>
-
-            <!-- CENTER REVENUE CONTRIBUTION TABLE (BELOW YOY GRAPH) -->
-            <div class="bg-gray-950 neon-emerald rounded-2xl p-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h4 class="text-xs font-bold text-emerald-400 uppercase tracking-widest flex items-center gap-2">
-                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Department Revenue Contribution (2026)
-                    </h4>
-                    <span id="centerTableTotal" class="text-xs font-extrabold text-gray-300">Total: ₱0</span>
-                </div>
-                <div class="overflow-x-auto custom-scrollbar">
-                    <table class="w-full text-left text-xs">
-                        <thead>
-                            <tr class="border-b border-gray-800 text-gray-500 uppercase text-[10px] tracking-wider">
-                                <th scope="col" class="pb-3 px-2">Department / Center</th>
-                                <th scope="col" class="pb-3 px-2 text-right">Revenue (2026)</th>
-                                <th scope="col" class="pb-3 px-2 text-right">% Contribution</th>
-                                <th scope="col" class="pb-3 px-2 text-right w-1/3">Share</th>
-                            </tr>
-                        </thead>
-                        <tbody id="centerContributionBody" class="divide-y divide-gray-900/60 font-medium text-gray-300">
-                            <tr>
-                                <td colspan="4" class="py-4 text-center text-gray-500 italic">Loading contribution data...</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
         </div>
     </div>
 
     <script>
     (() => {
-        // --- UNIFIED SUPABASE INSTANCE ---
+        // --- UNIFIED SUPABASE INSTANCE (PROJECT A) ---
         const SUPABASE_URL = 'https://gqlmaxlabfdvansqjufd.supabase.co'; 
         const SUPABASE_ANON_KEY = 'sb_publishable_N8eDSEMyu7iLtDscgOrBKQ_xo_mUpzi';
         const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-        // Helper string normalizer to safely match PT/OT, PTOT, pt/ot, or trailing spaces
-        const normalizeDept = (dept) => {
-            if (!dept) return '';
-            return dept.toString().trim().toLowerCase().replace(/[^a-z0-9]/g, '');
-        };
-
-        const normalizeMonth = (m) => {
-            if (!m) return '';
-            return m.toString().trim().toLowerCase().slice(0, 3);
-        };
 
         // --- HARD ENFORCED AUTHENTICATION GUARD ---
         async function checkAuthentication() {
@@ -450,32 +412,21 @@
         async function refreshData() {
             const selectedMonth = document.getElementById('monthSelect').value;
             const selectedDept = document.getElementById('deptSelect').value;
-            const normSelectedDept = normalizeDept(selectedDept);
 
-            let { data: rawData } = await sb.from('revenue_targets').select('*').limit(3000);
+            let { data: rawData } = await sb.from('revenue_targets').select('*').limit(2000);
             if (!rawData) return;
 
-            // Clean & Normalize records
-            rawData = rawData.map(d => ({
-                ...d, 
-                month: (d.month || "").trim(),
-                department: (d.department || "").trim()
-            }));
-
-            let deptData = selectedDept === 'ALL' 
-                ? rawData 
-                : rawData.filter(d => normalizeDept(d.department) === normSelectedDept);
+            rawData = rawData.map(d => ({...d, month: (d.month || "").trim()}));
+            let deptData = selectedDept === 'ALL' ? rawData : rawData.filter(d => d.department === selectedDept);
 
             const monthsWith2026Data = [...new Set(deptData.filter(d => d.year == 2026 && parseVal(d.revenue) > 0).map(d => d.month))];
-            const activeIndices = monthsWith2026Data.map(m => MONTH_ORDER.findIndex(mo => normalizeMonth(m) === normalizeMonth(mo))).filter(idx => idx !== -1);
+            const activeIndices = monthsWith2026Data.map(m => MONTH_ORDER.findIndex(mo => m.startsWith(mo))).filter(idx => idx !== -1);
             const max2026MonthIndex = activeIndices.length > 0 ? Math.max(...activeIndices) : -1;
             const validComparisonMonths = max2026MonthIndex !== -1 ? MONTH_ORDER.slice(0, max2026MonthIndex + 1) : [];
 
             document.getElementById('applesToApplesBadge').innerHTML = selectedMonth !== 'ALL' ? selectedMonth : (validComparisonMonths.length > 0 ? `YTD (Jan-${validComparisonMonths[validComparisonMonths.length - 1]})` : "No Data");
 
-            let metricsData = selectedMonth === 'ALL' 
-                ? deptData 
-                : deptData.filter(d => normalizeMonth(d.month) === normalizeMonth(selectedMonth));
+            let metricsData = selectedMonth === 'ALL' ? deptData : deptData.filter(d => d.month === selectedMonth);
 
             const curRev = metricsData.filter(d => d.year == 2026).reduce((s, r) => s + parseVal(r.revenue), 0);
             const curTarget = metricsData.filter(d => d.year == 2026).reduce((s, r) => s + parseVal(r.target), 0);
@@ -485,8 +436,8 @@
                 oldRev = metricsData.filter(d => d.year == 2025).reduce((s, r) => s + parseVal(r.revenue), 0);
                 oldRev2024 = metricsData.filter(d => d.year == 2024).reduce((s, r) => s + parseVal(r.revenue), 0);
             } else {
-                oldRev = deptData.filter(d => d.year == 2025 && validComparisonMonths.some(vm => normalizeMonth(d.month) === normalizeMonth(vm))).reduce((s, r) => s + parseVal(r.revenue), 0);
-                oldRev2024 = deptData.filter(d => d.year == 2024 && validComparisonMonths.some(vm => normalizeMonth(d.month) === normalizeMonth(vm))).reduce((s, r) => s + parseVal(r.revenue), 0);
+                oldRev = deptData.filter(d => d.year == 2025 && validComparisonMonths.some(vm => d.month.startsWith(vm))).reduce((s, r) => s + parseVal(r.revenue), 0);
+                oldRev2024 = deptData.filter(d => d.year == 2024 && validComparisonMonths.some(vm => d.month.startsWith(vm))).reduce((s, r) => s + parseVal(r.revenue), 0);
             }
             
             const realAchieve = curTarget > 0 ? Math.round((curRev / curTarget) * 100) : 0;
@@ -521,18 +472,18 @@
             gaugeChart.yAxis[0].update({ plotBands: [{ from: 0, to: 100, color: gaugeColor, thickness: 40 }] }, false);
             gaugeChart.series[0].points[0].update({ y: realAchieve > 100 ? 100 : realAchieve, realValue: realAchieve }, true, { duration: 1000 });
 
-            const dynamicChartCategories = [...new Set(rawData.map(d => d.month))].sort((a, b) => MONTH_ORDER.findIndex(m => normalizeMonth(a) === normalizeMonth(m)) - MONTH_ORDER.findIndex(m => normalizeMonth(b) === normalizeMonth(m))).filter(m => {
-                if (selectedMonth !== 'ALL') return normalizeMonth(m) === normalizeMonth(selectedMonth);
-                const checkIdx = MONTH_ORDER.findIndex(mo => normalizeMonth(m) === normalizeMonth(mo));
+            const dynamicChartCategories = [...new Set(rawData.map(d => d.month))].sort((a, b) => MONTH_ORDER.findIndex(m => a.startsWith(m)) - MONTH_ORDER.findIndex(m => b.startsWith(m))).filter(m => {
+                if (selectedMonth !== 'ALL') return m === selectedMonth;
+                const checkIdx = MONTH_ORDER.findIndex(mo => m.startsWith(mo));
                 return checkIdx !== -1 && checkIdx <= max2026MonthIndex;
             });
             
             comparisonChart.update({ xAxis: { categories: dynamicChartCategories } }, false);
             growthStreamChart.update({ xAxis: { categories: dynamicChartCategories } }, false);
             
-            const revList2026 = dynamicChartCategories.map(m => deptData.filter(d => d.year == 2026 && normalizeMonth(d.month) === normalizeMonth(m)).reduce((s, r) => s + parseVal(r.revenue), 0));
-            const targetList2026 = dynamicChartCategories.map(m => deptData.filter(d => d.year == 2026 && normalizeMonth(d.month) === normalizeMonth(m)).reduce((s, r) => s + parseVal(r.target), 0));
-            const revList2025 = dynamicChartCategories.map(m => deptData.filter(d => d.year == 2025 && normalizeMonth(d.month) === normalizeMonth(m)).reduce((s, r) => s + parseVal(r.revenue), 0));
+            const revList2026 = dynamicChartCategories.map(m => deptData.filter(d => d.year == 2026 && d.month == m).reduce((s, r) => s + parseVal(r.revenue), 0));
+            const targetList2026 = dynamicChartCategories.map(m => deptData.filter(d => d.year == 2026 && d.month == m).reduce((s, r) => s + parseVal(r.target), 0));
+            const revList2025 = dynamicChartCategories.map(m => deptData.filter(d => d.year == 2025 && d.month == m).reduce((s, r) => s + parseVal(r.revenue), 0));
             const monthlyGrowthRates = revList2026.map((rev26, idx) => revList2025[idx] > 0 ? Math.round(((rev26 - revList2025[idx]) / revList2025[idx]) * 100) : 0);
             
             comparisonChart.series[0].setData(revList2026.map((rev, idx) => ({ y: rev, color: rev >= targetList2026[idx] ? '#228b22' : '#f43f5e', attainmentPct: targetList2026[idx] > 0 ? Math.round((rev / targetList2026[idx]) * 100) : 0, monthTarget: targetList2026[idx] })), false);
@@ -542,74 +493,26 @@
             growthStreamChart.series[1].setData(revList2026, false);
             growthStreamChart.series[2].setData(monthlyGrowthRates, true);
 
-            // Dynamic Distinct Departments
-            const deptMap = new Map();
-            rawData.forEach(item => {
-                const clean = (item.department || "").trim();
-                const key = normalizeDept(clean);
-                if (clean && !deptMap.has(key)) {
-                    deptMap.set(key, clean);
-                }
-            });
-
-            const distinctDepartments = Array.from(deptMap.values()).sort();
+            const distinctDepartments = [...new Set(rawData.map(item => item.department))].sort();
             const achievedContainer = document.getElementById('hitList'); const missedContainer = document.getElementById('missList');
             achievedContainer.innerHTML = ''; missedContainer.innerHTML = '';
             let hitCounter = 0, missCounter = 0;
 
-            const centerTableBody = document.getElementById('centerContributionBody');
-            centerTableBody.innerHTML = '';
-            
-            let centerDataArray = [];
             distinctDepartments.forEach(dept => {
-                const normDeptKey = normalizeDept(dept);
-                const deptMetricsRows = metricsData.filter(row => normalizeDept(row.department) === normDeptKey && row.year == 2026);
+                const deptMetricsRows = metricsData.filter(row => row.department === dept && row.year == 2026); if (deptMetricsRows.length === 0) return;
                 const totalDeptRev = deptMetricsRows.reduce((acc, row) => acc + parseVal(row.revenue), 0);
-                
-                if (totalDeptRev > 0 || selectedDept === 'ALL') {
-                    centerDataArray.push({ department: dept, revenue: totalDeptRev });
-                }
+                const totalDeptTarget = deptMetricsRows.reduce((acc, row) => acc + parseVal(row.target), 0);
+                const percentage = totalDeptTarget > 0 ? Math.round((totalDeptRev / totalDeptTarget) * 100) : 0;
 
-                if (deptMetricsRows.length > 0) {
-                    const totalDeptTarget = deptMetricsRows.reduce((acc, row) => acc + parseVal(row.target), 0);
-                    const percentage = totalDeptTarget > 0 ? Math.round((totalDeptRev / totalDeptTarget) * 100) : 0;
-                    const deptItemElement = document.createElement('div');
-                    deptItemElement.className = "flex justify-between items-center bg-gray-900/30 border border-gray-800/60 p-2.5 rounded-xl text-xs font-semibold text-gray-300";
-
-                    if (totalDeptRev >= totalDeptTarget) {
-                        deptItemElement.innerHTML = `<span class="flex items-center gap-2 truncate"><span class="text-emerald-400 text-[10px]">✓</span><span class="truncate text-gray-200">${dept}</span></span><span class="font-bold text-emerald-400 ml-2">${percentage}%</span>`;
-                        achievedContainer.appendChild(deptItemElement); hitCounter++;
-                    } else {
-                        deptItemElement.innerHTML = `<span class="flex items-center gap-2 truncate"><span class="text-rose-500 text-[10px]">✕</span><span class="truncate text-gray-400">${dept}</span></span><span class="font-bold text-rose-400 ml-2">${percentage}%</span>`;
-                        missedContainer.appendChild(deptItemElement); missCounter++;
-                    }
+                const deptItemElement = document.createElement('div'); deptItemElement.className = "flex justify-between items-center bg-gray-900/30 border border-gray-800/60 p-2.5 rounded-xl text-xs font-semibold text-gray-300";
+                if (totalDeptRev >= totalDeptTarget) {
+                    deptItemElement.innerHTML = `<span class="flex items-center gap-2 truncate"><span class="text-emerald-400 text-[10px]">✓</span><span class="truncate text-gray-200">${dept}</span></span><span class="font-bold text-emerald-400 ml-2">${percentage}%</span>`;
+                    achievedContainer.appendChild(deptItemElement); hitCounter++;
+                } else {
+                    deptItemElement.innerHTML = `<span class="flex items-center gap-2 truncate"><span class="text-rose-500 text-[10px]">✕</span><span class="truncate text-gray-400">${dept}</span></span><span class="font-bold text-rose-400 ml-2">${percentage}%</span>`;
+                    missedContainer.appendChild(deptItemElement); missCounter++;
                 }
             });
-
-            centerDataArray.sort((a, b) => b.revenue - a.revenue);
-            const totalCenterRevSum = centerDataArray.reduce((acc, item) => acc + item.revenue, 0);
-            document.getElementById('centerTableTotal').innerHTML = `Total: ₱${totalCenterRevSum.toLocaleString()}`;
-
-            if (centerDataArray.length === 0) {
-                centerTableBody.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-gray-500 italic">No revenue recorded for selected timeline.</td></tr>';
-            } else {
-                centerDataArray.forEach(item => {
-                    const contributionPct = totalCenterRevSum > 0 ? ((item.revenue / totalCenterRevSum) * 100).toFixed(1) : "0.0";
-                    const tr = document.createElement('tr');
-                    tr.className = "hover:bg-gray-900/40 transition-colors";
-                    tr.innerHTML = `
-                        <td class="py-2.5 px-2 font-bold text-white">${item.department}</td>
-                        <td class="py-2.5 px-2 text-right font-semibold text-emerald-400">₱${item.revenue.toLocaleString()}</td>
-                        <td class="py-2.5 px-2 text-right font-bold text-indigo-300">${contributionPct}%</td>
-                        <td class="py-2.5 px-2 text-right">
-                            <div class="w-full bg-gray-900 h-2 rounded-full overflow-hidden border border-gray-800 inline-block align-middle">
-                                <div class="bg-gradient-to-r from-emerald-500 to-indigo-500 h-full rounded-full" style="width: ${contributionPct}%"></div>
-                            </div>
-                        </td>
-                    `;
-                    centerTableBody.appendChild(tr);
-                });
-            }
 
             if(hitCounter === 0) achievedContainer.innerHTML = '<p class="text-xs text-gray-600 italic p-2">No departments achieved quota.</p>';
             if(missCounter === 0) missedContainer.innerHTML = '<p class="text-xs text-gray-600 italic p-2">All departments hit targets!</p>';
@@ -620,34 +523,15 @@
             if (!isAuthed) return;
 
             initCharts();
-            const { data } = await sb.from('revenue_targets').select('department, month, year, revenue').limit(3000);
+            const { data } = await sb.from('revenue_targets').select('department, month, year, revenue').limit(2000);
             if (!data) return;
 
-            const deptSelect = document.getElementById('deptSelect');
-            const monthSelect = document.getElementById('monthSelect');
-            deptSelect.innerHTML = '<option value="ALL">Consolidated Hospital</option>';
-            monthSelect.innerHTML = '<option value="ALL">Year-to-Date (Dynamic Threshold)</option>';
-
-            const deptMap = new Map();
-            data.forEach(item => {
-                const clean = (item.department || "").trim();
-                const key = normalizeDept(clean);
-                if (clean && !deptMap.has(key)) {
-                    deptMap.set(key, clean);
-                }
+            [...new Set(data.map(item => item.department))].sort().forEach(dept => {
+                const opt = document.createElement('option'); opt.value = dept; opt.innerHTML = dept; document.getElementById('deptSelect').appendChild(opt);
             });
 
-            const sortedDepts = Array.from(deptMap.values()).sort();
-            sortedDepts.forEach(dept => {
-                const opt = document.createElement('option'); 
-                opt.value = dept; 
-                opt.innerHTML = dept; 
-                deptSelect.appendChild(opt);
-            });
-
-            const distinctMonths = [...new Set(data.filter(d => d.year == 2026 && parseVal(d.revenue) > 0).map(item => (item.month || "").trim()))].filter(Boolean).sort((a, b) => MONTH_ORDER.findIndex(m => normalizeMonth(a) === normalizeMonth(m)) - MONTH_ORDER.findIndex(m => normalizeMonth(b) === normalizeMonth(m)));
-            distinctMonths.forEach(m => {
-                const opt = document.createElement('option'); opt.value = m; opt.innerHTML = m; monthSelect.appendChild(opt);
+            [...new Set(data.filter(d => d.year == 2026 && parseVal(d.revenue) > 0).map(item => (item.month || "").trim()))].sort((a, b) => MONTH_ORDER.findIndex(m => a.startsWith(m)) - MONTH_ORDER.findIndex(m => b.startsWith(m))).forEach(m => {
+                const opt = document.createElement('option'); opt.value = m; opt.innerHTML = m; document.getElementById('monthSelect').appendChild(opt);
             });
 
             document.getElementById('monthSelect').addEventListener('change', refreshData);
