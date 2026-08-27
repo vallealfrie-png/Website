@@ -237,7 +237,7 @@
 
     <script>
     (() => {
-        // --- UNIFIED SUPABASE INSTANCE (PROJECT A) ---
+        // --- UNIFIED SUPABASE INSTANCE ---
         const SUPABASE_URL = 'https://gqlmaxlabfdvansqjufd.supabase.co'; 
         const SUPABASE_ANON_KEY = 'sb_publishable_N8eDSEMyu7iLtDscgOrBKQ_xo_mUpzi';
         const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -246,6 +246,11 @@
         const normalizeDept = (dept) => {
             if (!dept) return '';
             return dept.toString().trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+        };
+
+        const normalizeMonth = (m) => {
+            if (!m) return '';
+            return m.toString().trim().toLowerCase().slice(0, 3);
         };
 
         // --- HARD ENFORCED AUTHENTICATION GUARD ---
@@ -447,10 +452,10 @@
             const selectedDept = document.getElementById('deptSelect').value;
             const normSelectedDept = normalizeDept(selectedDept);
 
-            let { data: rawData } = await sb.from('revenue_targets').select('*').limit(2000);
+            let { data: rawData } = await sb.from('revenue_targets').select('*').limit(3000);
             if (!rawData) return;
 
-            // Normalize and trim DB values
+            // Clean & Normalize records
             rawData = rawData.map(d => ({
                 ...d, 
                 month: (d.month || "").trim(),
@@ -462,13 +467,15 @@
                 : rawData.filter(d => normalizeDept(d.department) === normSelectedDept);
 
             const monthsWith2026Data = [...new Set(deptData.filter(d => d.year == 2026 && parseVal(d.revenue) > 0).map(d => d.month))];
-            const activeIndices = monthsWith2026Data.map(m => MONTH_ORDER.findIndex(mo => m.startsWith(mo))).filter(idx => idx !== -1);
+            const activeIndices = monthsWith2026Data.map(m => MONTH_ORDER.findIndex(mo => normalizeMonth(m) === normalizeMonth(mo))).filter(idx => idx !== -1);
             const max2026MonthIndex = activeIndices.length > 0 ? Math.max(...activeIndices) : -1;
             const validComparisonMonths = max2026MonthIndex !== -1 ? MONTH_ORDER.slice(0, max2026MonthIndex + 1) : [];
 
             document.getElementById('applesToApplesBadge').innerHTML = selectedMonth !== 'ALL' ? selectedMonth : (validComparisonMonths.length > 0 ? `YTD (Jan-${validComparisonMonths[validComparisonMonths.length - 1]})` : "No Data");
 
-            let metricsData = selectedMonth === 'ALL' ? deptData : deptData.filter(d => d.month === selectedMonth);
+            let metricsData = selectedMonth === 'ALL' 
+                ? deptData 
+                : deptData.filter(d => normalizeMonth(d.month) === normalizeMonth(selectedMonth));
 
             const curRev = metricsData.filter(d => d.year == 2026).reduce((s, r) => s + parseVal(r.revenue), 0);
             const curTarget = metricsData.filter(d => d.year == 2026).reduce((s, r) => s + parseVal(r.target), 0);
@@ -478,8 +485,8 @@
                 oldRev = metricsData.filter(d => d.year == 2025).reduce((s, r) => s + parseVal(r.revenue), 0);
                 oldRev2024 = metricsData.filter(d => d.year == 2024).reduce((s, r) => s + parseVal(r.revenue), 0);
             } else {
-                oldRev = deptData.filter(d => d.year == 2025 && validComparisonMonths.some(vm => d.month.startsWith(vm))).reduce((s, r) => s + parseVal(r.revenue), 0);
-                oldRev2024 = deptData.filter(d => d.year == 2024 && validComparisonMonths.some(vm => d.month.startsWith(vm))).reduce((s, r) => s + parseVal(r.revenue), 0);
+                oldRev = deptData.filter(d => d.year == 2025 && validComparisonMonths.some(vm => normalizeMonth(d.month) === normalizeMonth(vm))).reduce((s, r) => s + parseVal(r.revenue), 0);
+                oldRev2024 = deptData.filter(d => d.year == 2024 && validComparisonMonths.some(vm => normalizeMonth(d.month) === normalizeMonth(vm))).reduce((s, r) => s + parseVal(r.revenue), 0);
             }
             
             const realAchieve = curTarget > 0 ? Math.round((curRev / curTarget) * 100) : 0;
@@ -514,18 +521,18 @@
             gaugeChart.yAxis[0].update({ plotBands: [{ from: 0, to: 100, color: gaugeColor, thickness: 40 }] }, false);
             gaugeChart.series[0].points[0].update({ y: realAchieve > 100 ? 100 : realAchieve, realValue: realAchieve }, true, { duration: 1000 });
 
-            const dynamicChartCategories = [...new Set(rawData.map(d => d.month))].sort((a, b) => MONTH_ORDER.findIndex(m => a.startsWith(m)) - MONTH_ORDER.findIndex(m => b.startsWith(m))).filter(m => {
-                if (selectedMonth !== 'ALL') return m === selectedMonth;
-                const checkIdx = MONTH_ORDER.findIndex(mo => m.startsWith(mo));
+            const dynamicChartCategories = [...new Set(rawData.map(d => d.month))].sort((a, b) => MONTH_ORDER.findIndex(m => normalizeMonth(a) === normalizeMonth(m)) - MONTH_ORDER.findIndex(m => normalizeMonth(b) === normalizeMonth(m))).filter(m => {
+                if (selectedMonth !== 'ALL') return normalizeMonth(m) === normalizeMonth(selectedMonth);
+                const checkIdx = MONTH_ORDER.findIndex(mo => normalizeMonth(m) === normalizeMonth(mo));
                 return checkIdx !== -1 && checkIdx <= max2026MonthIndex;
             });
             
             comparisonChart.update({ xAxis: { categories: dynamicChartCategories } }, false);
             growthStreamChart.update({ xAxis: { categories: dynamicChartCategories } }, false);
             
-            const revList2026 = dynamicChartCategories.map(m => deptData.filter(d => d.year == 2026 && d.month == m).reduce((s, r) => s + parseVal(r.revenue), 0));
-            const targetList2026 = dynamicChartCategories.map(m => deptData.filter(d => d.year == 2026 && d.month == m).reduce((s, r) => s + parseVal(r.target), 0));
-            const revList2025 = dynamicChartCategories.map(m => deptData.filter(d => d.year == 2025 && d.month == m).reduce((s, r) => s + parseVal(r.revenue), 0));
+            const revList2026 = dynamicChartCategories.map(m => deptData.filter(d => d.year == 2026 && normalizeMonth(d.month) === normalizeMonth(m)).reduce((s, r) => s + parseVal(r.revenue), 0));
+            const targetList2026 = dynamicChartCategories.map(m => deptData.filter(d => d.year == 2026 && normalizeMonth(d.month) === normalizeMonth(m)).reduce((s, r) => s + parseVal(r.target), 0));
+            const revList2025 = dynamicChartCategories.map(m => deptData.filter(d => d.year == 2025 && normalizeMonth(d.month) === normalizeMonth(m)).reduce((s, r) => s + parseVal(r.revenue), 0));
             const monthlyGrowthRates = revList2026.map((rev26, idx) => revList2025[idx] > 0 ? Math.round(((rev26 - revList2025[idx]) / revList2025[idx]) * 100) : 0);
             
             comparisonChart.series[0].setData(revList2026.map((rev, idx) => ({ y: rev, color: rev >= targetList2026[idx] ? '#228b22' : '#f43f5e', attainmentPct: targetList2026[idx] > 0 ? Math.round((rev / targetList2026[idx]) * 100) : 0, monthTarget: targetList2026[idx] })), false);
@@ -535,7 +542,7 @@
             growthStreamChart.series[1].setData(revList2026, false);
             growthStreamChart.series[2].setData(monthlyGrowthRates, true);
 
-            // Dynamic Distinct Departments grouping using key normalization
+            // Dynamic Distinct Departments
             const deptMap = new Map();
             rawData.forEach(item => {
                 const clean = (item.department || "").trim();
@@ -550,7 +557,6 @@
             achievedContainer.innerHTML = ''; missedContainer.innerHTML = '';
             let hitCounter = 0, missCounter = 0;
 
-            // --- CENTER REVENUE CONTRIBUTION TABLE RENDER ---
             const centerTableBody = document.getElementById('centerContributionBody');
             centerTableBody.innerHTML = '';
             
@@ -564,7 +570,6 @@
                     centerDataArray.push({ department: dept, revenue: totalDeptRev });
                 }
 
-                // Hit/Miss Target lists rendering
                 if (deptMetricsRows.length > 0) {
                     const totalDeptTarget = deptMetricsRows.reduce((acc, row) => acc + parseVal(row.target), 0);
                     const percentage = totalDeptTarget > 0 ? Math.round((totalDeptRev / totalDeptTarget) * 100) : 0;
@@ -615,16 +620,14 @@
             if (!isAuthed) return;
 
             initCharts();
-            const { data } = await sb.from('revenue_targets').select('department, month, year, revenue').limit(2000);
+            const { data } = await sb.from('revenue_targets').select('department, month, year, revenue').limit(3000);
             if (!data) return;
 
-            // Clear Dynamic Options
             const deptSelect = document.getElementById('deptSelect');
             const monthSelect = document.getElementById('monthSelect');
             deptSelect.innerHTML = '<option value="ALL">Consolidated Hospital</option>';
             monthSelect.innerHTML = '<option value="ALL">Year-to-Date (Dynamic Threshold)</option>';
 
-            // Build Normalized Unique Department Dropdown List
             const deptMap = new Map();
             data.forEach(item => {
                 const clean = (item.department || "").trim();
@@ -642,8 +645,7 @@
                 deptSelect.appendChild(opt);
             });
 
-            // Populate Months List
-            const distinctMonths = [...new Set(data.filter(d => d.year == 2026 && parseVal(d.revenue) > 0).map(item => (item.month || "").trim()))].filter(Boolean).sort((a, b) => MONTH_ORDER.findIndex(m => a.startsWith(m)) - MONTH_ORDER.findIndex(m => b.startsWith(m)));
+            const distinctMonths = [...new Set(data.filter(d => d.year == 2026 && parseVal(d.revenue) > 0).map(item => (item.month || "").trim()))].filter(Boolean).sort((a, b) => MONTH_ORDER.findIndex(m => normalizeMonth(a) === normalizeMonth(m)) - MONTH_ORDER.findIndex(m => normalizeMonth(b) === normalizeMonth(m)));
             distinctMonths.forEach(m => {
                 const opt = document.createElement('option'); opt.value = m; opt.innerHTML = m; monthSelect.appendChild(opt);
             });
