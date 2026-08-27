@@ -51,7 +51,7 @@
         }
 
         .chart-container {
-            min-height: 400px;
+            min-height: 420px;
         }
 
         .sidebar-link {
@@ -167,16 +167,17 @@
                 </div>
             </div>
 
-            <nav class="space-y-2">
-                <a href="#overview" class="sidebar-link block px-4 py-2.5 rounded-xl bg-sky-500/10 text-sky-400 text-sm">Overview</a>
-                <a href="#performance" class="sidebar-link block px-4 py-2.5 rounded-xl text-slate-400 text-sm">Performance</a>
-                <a href="#departments" class="sidebar-link block px-4 py-2.5 rounded-xl text-slate-400 text-sm">Departments</a>
-                <a href="#items" class="sidebar-link block px-4 py-2.5 rounded-xl text-slate-400 text-sm">Item Analytics</a>
-                <a href="#demographics" class="sidebar-link block px-4 py-2.5 rounded-xl text-slate-400 text-sm">Demographics</a>
-                <a href="#insights" class="sidebar-link block px-4 py-2.5 rounded-xl text-slate-400 text-sm">Executive Insights</a>
+            <nav class="space-y-2 overflow-y-auto pr-1">
+                <a href="#overview" class="sidebar-link block px-4 py-2 rounded-xl bg-sky-500/10 text-sky-400 text-xs font-medium">Overview</a>
+                <a href="#performance" class="sidebar-link block px-4 py-2 rounded-xl text-slate-400 text-xs font-medium">Performance</a>
+                <a href="#classifications" class="sidebar-link block px-4 py-2 rounded-xl text-slate-400 text-xs font-medium">Classifications</a>
+                <a href="#departments" class="sidebar-link block px-4 py-2 rounded-xl text-slate-400 text-xs font-medium">Departments</a>
+                <a href="#items" class="sidebar-link block px-4 py-2 rounded-xl text-slate-400 text-xs font-medium">Item Analytics</a>
+                <a href="#demographics" class="sidebar-link block px-4 py-2 rounded-xl text-slate-400 text-xs font-medium">Demographics</a>
+                <a href="#insights" class="sidebar-link block px-4 py-2 rounded-xl text-slate-400 text-xs font-medium">Executive Insights</a>
             </nav>
 
-            <div class="mt-auto">
+            <div class="mt-auto pt-4">
                 <div class="rounded-2xl p-4 bg-slate-900 border border-slate-800">
                     <p class="text-xs text-slate-500 uppercase">Data Source</p>
                     <p class="mt-1 font-medium text-sm">Supabase</p>
@@ -300,6 +301,26 @@
                         <div class="glass rounded-2xl p-6" data-aos="fade-up" data-aos-delay="100">
                             <h4 class="font-semibold mb-4 text-sm text-slate-300">Census Comparison</h4>
                             <div id="censusChart" class="chart-container"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- NEW SECTION: CLASSIFICATIONS (TYPE & PATIENT TYPE) -->
+                <section id="classifications" class="space-y-6">
+                    <div data-aos="fade-up">
+                        <p class="text-sky-400 text-xs font-semibold uppercase tracking-wider">CARE & PATIENT SEGMENTATION</p>
+                        <h3 class="text-2xl font-bold">Service Type & Patient Classification</h3>
+                    </div>
+
+                    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                        <div class="glass rounded-2xl p-6" data-aos="fade-up">
+                            <h4 class="font-semibold mb-4 text-sm text-slate-300">Distribution by Service/Visit Type (type)</h4>
+                            <div id="typeChart" class="chart-container"></div>
+                        </div>
+
+                        <div class="glass rounded-2xl p-6" data-aos="fade-up" data-aos-delay="100">
+                            <h4 class="font-semibold mb-4 text-sm text-slate-300">Distribution by Patient Classification (patient_type)</h4>
+                            <div id="patientTypeChart" class="chart-container"></div>
                         </div>
                     </div>
                 </section>
@@ -497,23 +518,17 @@
             window.location.replace("index.html");
         });
 
-        // GLOBAL HIGHCHARTS CONFIG (WHITE FONTS, NO CONTEXT MENU, MULTI-COLOR PALETTE)
+        // GLOBAL HIGHCHARTS CONFIG WITH VISIBLE DATA LABELS
         Highcharts.setOptions({
             colors: ['#38bdf8', '#818cf8', '#c084fc', '#f472b6', '#fb7185', '#34d399', '#fbbf24', '#a78bfa', '#2dd4bf', '#f43f5e'],
-            exporting: {
-                enabled: false
-            },
+            exporting: { enabled: false },
             chart: {
                 style: {
                     fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
                 }
             },
-            title: {
-                style: { color: '#f8fafc' }
-            },
-            subtitle: {
-                style: { color: '#cbd5e1' }
-            },
+            title: { style: { color: '#f8fafc' } },
+            subtitle: { style: { color: '#cbd5e1' } },
             xAxis: {
                 labels: { style: { color: '#f8fafc' } },
                 title: { style: { color: '#f8fafc' } }
@@ -529,12 +544,13 @@
             },
             plotOptions: {
                 series: {
-                    dataLabels: { style: { color: '#f8fafc' } }
+                    dataLabels: {
+                        enabled: true,
+                        style: { color: '#f8fafc', fontSize: '11px', fontWeight: 'bold', textOutline: 'none' }
+                    }
                 }
             },
-            tooltip: {
-                style: { color: '#f8fafc' }
-            }
+            tooltip: { style: { color: '#f8fafc' } }
         });
 
         let allData = [];
@@ -628,6 +644,18 @@
                     result[key] = { name: key, value: 0 };
                 }
                 result[key].value += Number(row.census) || 0;
+            });
+            return Object.values(result);
+        }
+
+        function groupByFieldRevenue(data, field) {
+            const result = {};
+            data.forEach(row => {
+                const key = row[field] || "Unknown";
+                if (!result[key]) {
+                    result[key] = { name: key, value: 0 };
+                }
+                result[key].value += Number(row.revenue) || 0;
             });
             return Object.values(result);
         }
@@ -730,6 +758,7 @@
 
             renderRevenueChart(summaryPrev, summaryTarget, prevYear, targetYear);
             renderCensusChart(summaryPrev, summaryTarget, prevYear, targetYear);
+            renderTypeCharts(dataTargetYear);
             renderDepartmentCharts(dataPrevYear, dataTargetYear, targetYear);
             renderItemTables(dataTargetYear);
             renderDemographicCharts(dataTargetYear);
@@ -745,7 +774,10 @@
             animateValue(elementId, Math.abs(value), val => val.toFixed(2) + "%", prefix);
         }
 
+        // --- REVENUE COMPARISON CHART ---
         function renderRevenueChart(summaryPrev, summaryTarget, prevYear, targetYear) {
+            const total = summaryPrev.revenue + summaryTarget.revenue;
+
             Highcharts.chart("revenueChart", {
                 chart: { type: "column", backgroundColor: "transparent" },
                 title: { text: null },
@@ -754,14 +786,26 @@
                 tooltip: { valuePrefix: "₱" },
                 legend: { enabled: false },
                 plotOptions: {
-                    column: { colorByPoint: true }
+                    column: {
+                        colorByPoint: true,
+                        dataLabels: {
+                            enabled: true,
+                            formatter: function () {
+                                const pct = total ? ((this.y / total) * 100).toFixed(1) : 0;
+                                return `${formatMillions(this.y)}<br/>(${pct}%)`;
+                            }
+                        }
+                    }
                 },
                 series: [{ name: "Revenue", data: [summaryPrev.revenue, summaryTarget.revenue] }],
                 credits: { enabled: false }
             });
         }
 
+        // --- CENSUS COMPARISON CHART ---
         function renderCensusChart(summaryPrev, summaryTarget, prevYear, targetYear) {
+            const total = summaryPrev.census + summaryTarget.census;
+
             Highcharts.chart("censusChart", {
                 chart: { type: "column", backgroundColor: "transparent" },
                 title: { text: null },
@@ -769,19 +813,81 @@
                 yAxis: { title: { text: "Census" } },
                 legend: { enabled: false },
                 plotOptions: {
-                    column: { colorByPoint: true }
+                    column: {
+                        colorByPoint: true,
+                        dataLabels: {
+                            enabled: true,
+                            formatter: function () {
+                                const pct = total ? ((this.y / total) * 100).toFixed(1) : 0;
+                                return `${numberFormatter.format(this.y)}<br/>(${pct}%)`;
+                            }
+                        }
+                    }
                 },
                 series: [{ name: "Census", data: [summaryPrev.census, summaryTarget.census] }],
                 credits: { enabled: false }
             });
         }
 
+        // --- NEW CHARTS: TYPE & PATIENT_TYPE ---
+        function renderTypeCharts(dataTarget) {
+            // Service / Visit Type Chart
+            const typeData = groupByField(dataTarget, "type").sort((a, b) => b.value - a.value);
+            const totalTypeCensus = typeData.reduce((sum, item) => sum + item.value, 0);
+
+            Highcharts.chart("typeChart", {
+                chart: { type: "pie", backgroundColor: "transparent" },
+                title: { text: null },
+                plotOptions: {
+                    pie: {
+                        innerSize: '50%',
+                        dataLabels: {
+                            enabled: true,
+                            formatter: function () {
+                                return `<b>${this.point.name}</b><br/>${numberFormatter.format(this.y)} (${this.percentage.toFixed(1)}%)`;
+                            }
+                        }
+                    }
+                },
+                series: [{ name: "Census", data: typeData.map(item => ({ name: item.name, y: item.value })) }],
+                credits: { enabled: false }
+            });
+
+            // Patient Classification Chart
+            const patientTypeData = groupByField(dataTarget, "patient_type").sort((a, b) => b.value - a.value);
+            const totalPatientTypeCensus = patientTypeData.reduce((sum, item) => sum + item.value, 0);
+
+            Highcharts.chart("patientTypeChart", {
+                chart: { type: "bar", backgroundColor: "transparent" },
+                title: { text: null },
+                xAxis: { categories: patientTypeData.map(item => item.name) },
+                yAxis: { title: { text: "Census Volume" } },
+                legend: { enabled: false },
+                plotOptions: {
+                    bar: {
+                        colorByPoint: true,
+                        dataLabels: {
+                            enabled: true,
+                            formatter: function () {
+                                const pct = totalPatientTypeCensus ? ((this.y / totalPatientTypeCensus) * 100).toFixed(1) : 0;
+                                return `${numberFormatter.format(this.y)} (${pct}%)`;
+                            }
+                        }
+                    }
+                },
+                series: [{ name: "Census", data: patientTypeData.map(item => item.value) }],
+                credits: { enabled: false }
+            });
+        }
+
+        // --- DEPARTMENT CHARTS ---
         function renderDepartmentCharts(dataPrev, dataTarget, targetYear) {
             const departmentsTarget = groupByDepartment(dataTarget);
 
             const topDeptRev = Object.values(departmentsTarget)
                 .sort((a, b) => b.revenue - a.revenue)
                 .slice(0, 10);
+            const totalDeptRev = topDeptRev.reduce((sum, d) => sum + d.revenue, 0);
 
             Highcharts.chart("departmentRevenueChart", {
                 chart: { type: "bar", backgroundColor: "transparent" },
@@ -790,7 +896,16 @@
                 yAxis: { title: { text: "Revenue" } },
                 legend: { enabled: false },
                 plotOptions: {
-                    bar: { colorByPoint: true }
+                    bar: {
+                        colorByPoint: true,
+                        dataLabels: {
+                            enabled: true,
+                            formatter: function () {
+                                const pct = totalDeptRev ? ((this.y / totalDeptRev) * 100).toFixed(1) : 0;
+                                return `${formatMillions(this.y)} (${pct}%)`;
+                            }
+                        }
+                    }
                 },
                 series: [{ name: `${targetYear} Revenue`, data: topDeptRev.map(item => item.revenue) }],
                 credits: { enabled: false }
@@ -799,6 +914,7 @@
             const topDeptCensus = Object.values(departmentsTarget)
                 .sort((a, b) => b.census - a.census)
                 .slice(0, 10);
+            const totalDeptCensus = topDeptCensus.reduce((sum, d) => sum + d.census, 0);
 
             Highcharts.chart("departmentCensusChart", {
                 chart: { type: "bar", backgroundColor: "transparent" },
@@ -807,13 +923,23 @@
                 yAxis: { title: { text: "Patient Volume (Census)" } },
                 legend: { enabled: false },
                 plotOptions: {
-                    bar: { colorByPoint: true }
+                    bar: {
+                        colorByPoint: true,
+                        dataLabels: {
+                            enabled: true,
+                            formatter: function () {
+                                const pct = totalDeptCensus ? ((this.y / totalDeptCensus) * 100).toFixed(1) : 0;
+                                return `${numberFormatter.format(this.y)} (${pct}%)`;
+                            }
+                        }
+                    }
                 },
                 series: [{ name: `${targetYear} Census`, data: topDeptCensus.map(item => item.census) }],
                 credits: { enabled: false }
             });
         }
 
+        // --- ITEM TABLES ---
         function renderItemTables(dataTarget) {
             const aggregatedItems = {};
 
@@ -899,6 +1025,7 @@
             renderItemTables(dataTargetYear);
         });
 
+        // --- DEPARTMENT TABLE ---
         function renderDepartmentTable(dataPrev, dataTarget) {
             const departmentsPrev = groupByDepartment(dataPrev);
             const departmentsTarget = groupByDepartment(dataTarget);
@@ -935,16 +1062,31 @@
             });
         }
 
+        // --- DEMOGRAPHIC CHARTS WITH LABELS AND PERCENTAGES ---
         function renderDemographicCharts(data) {
+            // Gender Chart
             const genderData = groupByField(data, "gender");
             Highcharts.chart("genderChart", {
                 chart: { type: "pie", backgroundColor: "transparent" },
                 title: { text: null },
+                plotOptions: {
+                    pie: {
+                        dataLabels: {
+                            enabled: true,
+                            formatter: function () {
+                                return `<b>${this.point.name}</b><br/>${numberFormatter.format(this.y)} (${this.percentage.toFixed(1)}%)`;
+                            }
+                        }
+                    }
+                },
                 series: [{ name: "Census", data: genderData.map(item => ({ name: item.name, y: item.value })) }],
                 credits: { enabled: false }
             });
 
+            // Age Bracket Chart
             const ageData = groupByField(data, "age_bracket").sort((a, b) => b.value - a.value);
+            const totalAgeCensus = ageData.reduce((sum, item) => sum + item.value, 0);
+
             Highcharts.chart("ageChart", {
                 chart: { type: "bar", backgroundColor: "transparent" },
                 title: { text: null },
@@ -952,13 +1094,25 @@
                 yAxis: { title: { text: "Census" } },
                 legend: { enabled: false },
                 plotOptions: {
-                    bar: { colorByPoint: true }
+                    bar: {
+                        colorByPoint: true,
+                        dataLabels: {
+                            enabled: true,
+                            formatter: function () {
+                                const pct = totalAgeCensus ? ((this.y / totalAgeCensus) * 100).toFixed(1) : 0;
+                                return `${numberFormatter.format(this.y)} (${pct}%)`;
+                            }
+                        }
+                    }
                 },
                 series: [{ name: "Census", data: ageData.map(item => item.value) }],
                 credits: { enabled: false }
             });
 
+            // Location Chart
             const locationData = groupByField(data, "location").sort((a, b) => b.value - a.value).slice(0, 10);
+            const totalLocationCensus = locationData.reduce((sum, item) => sum + item.value, 0);
+
             Highcharts.chart("locationChart", {
                 chart: { type: "bar", backgroundColor: "transparent" },
                 title: { text: null },
@@ -966,12 +1120,22 @@
                 yAxis: { title: { text: "Patient Census" } },
                 legend: { enabled: false },
                 plotOptions: {
-                    bar: { colorByPoint: true }
+                    bar: {
+                        colorByPoint: true,
+                        dataLabels: {
+                            enabled: true,
+                            formatter: function () {
+                                const pct = totalLocationCensus ? ((this.y / totalLocationCensus) * 100).toFixed(1) : 0;
+                                return `${numberFormatter.format(this.y)} (${pct}%)`;
+                            }
+                        }
+                    }
                 },
                 series: [{ name: "Census", data: locationData.map(item => item.value) }],
                 credits: { enabled: false }
             });
 
+            // Civil Status Chart
             const civilData = groupByField(data, "civil_status");
             Highcharts.chart("civilStatusChart", {
                 chart: { type: "pie", backgroundColor: "transparent" },
@@ -979,7 +1143,12 @@
                 plotOptions: {
                     pie: {
                         innerSize: '60%',
-                        dataLabels: { enabled: true }
+                        dataLabels: {
+                            enabled: true,
+                            formatter: function () {
+                                return `<b>${this.point.name}</b><br/>${numberFormatter.format(this.y)} (${this.percentage.toFixed(1)}%)`;
+                            }
+                        }
                     }
                 },
                 series: [{ name: "Census", data: civilData.map(item => ({ name: item.name, y: item.value })) }],
@@ -987,6 +1156,7 @@
             });
         }
 
+        // --- EXECUTIVE INSIGHTS ---
         function renderInsights(summaryPrev, summaryTarget, revenueGrowth, censusGrowth, rpcGrowth, dataTarget, prevYear, targetYear) {
             const departmentsTarget = Object.values(groupByDepartment(dataTarget));
             const topDepartment = departmentsTarget.sort((a, b) => b.revenue - a.revenue)[0];
