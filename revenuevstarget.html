@@ -205,6 +205,34 @@
                     <div id="growthStreamContainer" class="h-[360px]"></div>
                 </div>
             </div>
+
+            <!-- CENTER REVENUE CONTRIBUTION TABLE (BELOW YOY GRAPH) -->
+            <div class="bg-gray-950 neon-emerald rounded-2xl p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h4 class="text-xs font-bold text-emerald-400 uppercase tracking-widest flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Department Revenue Contribution (2026)
+                    </h4>
+                    <span id="centerTableTotal" class="text-xs font-extrabold text-gray-300">Total: ₱0</span>
+                </div>
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left text-xs">
+                        <thead>
+                            <tr class="border-b border-gray-800 text-gray-500 uppercase text-[10px] tracking-wider">
+                                <th scope="col" class="pb-3 px-2">Department / Center</th>
+                                <th scope="col" class="pb-3 px-2 text-right">Revenue (2026)</th>
+                                <th scope="col" class="pb-3 px-2 text-right">% Contribution</th>
+                                <th scope="col" class="pb-3 px-2 text-right w-1/3">Share</th>
+                            </tr>
+                        </thead>
+                        <tbody id="centerContributionBody" class="divide-y divide-gray-900/60 font-medium text-gray-300">
+                            <tr>
+                                <td colspan="4" class="py-4 text-center text-gray-500 italic">Loading contribution data...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -498,21 +526,59 @@
             achievedContainer.innerHTML = ''; missedContainer.innerHTML = '';
             let hitCounter = 0, missCounter = 0;
 
+            // --- CENTER REVENUE CONTRIBUTION TABLE RENDER ---
+            const centerTableBody = document.getElementById('centerContributionBody');
+            centerTableBody.innerHTML = '';
+            
+            let centerDataArray = [];
             distinctDepartments.forEach(dept => {
-                const deptMetricsRows = metricsData.filter(row => row.department === dept && row.year == 2026); if (deptMetricsRows.length === 0) return;
+                const deptMetricsRows = metricsData.filter(row => row.department === dept && row.year == 2026);
                 const totalDeptRev = deptMetricsRows.reduce((acc, row) => acc + parseVal(row.revenue), 0);
-                const totalDeptTarget = deptMetricsRows.reduce((acc, row) => acc + parseVal(row.target), 0);
-                const percentage = totalDeptTarget > 0 ? Math.round((totalDeptRev / totalDeptTarget) * 100) : 0;
+                if (totalDeptRev > 0 || selectedDept === 'ALL') {
+                    centerDataArray.push({ department: dept, revenue: totalDeptRev });
+                }
 
-                const deptItemElement = document.createElement('div'); deptItemElement.className = "flex justify-between items-center bg-gray-900/30 border border-gray-800/60 p-2.5 rounded-xl text-xs font-semibold text-gray-300";
-                if (totalDeptRev >= totalDeptTarget) {
-                    deptItemElement.innerHTML = `<span class="flex items-center gap-2 truncate"><span class="text-emerald-400 text-[10px]">✓</span><span class="truncate text-gray-200">${dept}</span></span><span class="font-bold text-emerald-400 ml-2">${percentage}%</span>`;
-                    achievedContainer.appendChild(deptItemElement); hitCounter++;
-                } else {
-                    deptItemElement.innerHTML = `<span class="flex items-center gap-2 truncate"><span class="text-rose-500 text-[10px]">✕</span><span class="truncate text-gray-400">${dept}</span></span><span class="font-bold text-rose-400 ml-2">${percentage}%</span>`;
-                    missedContainer.appendChild(deptItemElement); missCounter++;
+                // Hit/Miss Target lists rendering
+                if (deptMetricsRows.length > 0) {
+                    const totalDeptTarget = deptMetricsRows.reduce((acc, row) => acc + parseVal(row.target), 0);
+                    const percentage = totalDeptTarget > 0 ? Math.round((totalDeptRev / totalDeptTarget) * 100) : 0;
+                    const deptItemElement = document.createElement('div');
+                    deptItemElement.className = "flex justify-between items-center bg-gray-900/30 border border-gray-800/60 p-2.5 rounded-xl text-xs font-semibold text-gray-300";
+
+                    if (totalDeptRev >= totalDeptTarget) {
+                        deptItemElement.innerHTML = `<span class="flex items-center gap-2 truncate"><span class="text-emerald-400 text-[10px]">✓</span><span class="truncate text-gray-200">${dept}</span></span><span class="font-bold text-emerald-400 ml-2">${percentage}%</span>`;
+                        achievedContainer.appendChild(deptItemElement); hitCounter++;
+                    } else {
+                        deptItemElement.innerHTML = `<span class="flex items-center gap-2 truncate"><span class="text-rose-500 text-[10px]">✕</span><span class="truncate text-gray-400">${dept}</span></span><span class="font-bold text-rose-400 ml-2">${percentage}%</span>`;
+                        missedContainer.appendChild(deptItemElement); missCounter++;
+                    }
                 }
             });
+
+            centerDataArray.sort((a, b) => b.revenue - a.revenue);
+            const totalCenterRevSum = centerDataArray.reduce((acc, item) => acc + item.revenue, 0);
+            document.getElementById('centerTableTotal').innerHTML = `Total: ₱${totalCenterRevSum.toLocaleString()}`;
+
+            if (centerDataArray.length === 0) {
+                centerTableBody.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-gray-500 italic">No revenue recorded for selected timeline.</td></tr>';
+            } else {
+                centerDataArray.forEach(item => {
+                    const contributionPct = totalCenterRevSum > 0 ? ((item.revenue / totalCenterRevSum) * 100).toFixed(1) : "0.0";
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-gray-900/40 transition-colors";
+                    tr.innerHTML = `
+                        <td class="py-2.5 px-2 font-bold text-white">${item.department}</td>
+                        <td class="py-2.5 px-2 text-right font-semibold text-emerald-400">₱${item.revenue.toLocaleString()}</td>
+                        <td class="py-2.5 px-2 text-right font-bold text-indigo-300">${contributionPct}%</td>
+                        <td class="py-2.5 px-2 text-right">
+                            <div class="w-full bg-gray-900 h-2 rounded-full overflow-hidden border border-gray-800 inline-block align-middle">
+                                <div class="bg-gradient-to-r from-emerald-500 to-indigo-500 h-full rounded-full" style="width: ${contributionPct}%"></div>
+                            </div>
+                        </td>
+                    `;
+                    centerTableBody.appendChild(tr);
+                });
+            }
 
             if(hitCounter === 0) achievedContainer.innerHTML = '<p class="text-xs text-gray-600 italic p-2">No departments achieved quota.</p>';
             if(missCounter === 0) missedContainer.innerHTML = '<p class="text-xs text-gray-600 italic p-2">All departments hit targets!</p>';
