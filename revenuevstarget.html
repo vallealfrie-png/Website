@@ -30,7 +30,6 @@
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #374151; border-radius: 2px; }
 
-        /* Force option background colors on browser engines to avoid white dropdown flashes */
         select option {
             background-color: #030712 !important;
             color: #e5e7eb !important;
@@ -444,7 +443,13 @@
             let { data: rawData } = await sb.from('revenue_targets').select('*').limit(2000);
             if (!rawData) return;
 
-            rawData = rawData.map(d => ({...d, month: (d.month || "").trim()}));
+            // SANITIZE STRINGS
+            rawData = rawData.map(d => ({
+                ...d, 
+                month: (d.month || "").trim(),
+                department: (d.department || "").trim()
+            }));
+
             let deptData = selectedDept === 'ALL' ? rawData : rawData.filter(d => d.department === selectedDept);
 
             const monthsWith2026Data = [...new Set(deptData.filter(d => d.year == 2026 && parseVal(d.revenue) > 0).map(d => d.month))];
@@ -592,12 +597,22 @@
             const { data } = await sb.from('revenue_targets').select('department, month, year, revenue').limit(2000);
             if (!data) return;
 
-            [...new Set(data.map(item => item.department))].sort().forEach(dept => {
-                const opt = document.createElement('option'); opt.value = dept; opt.innerHTML = dept; document.getElementById('deptSelect').appendChild(opt);
+            // CLEAR DYNAMIC DROPDOWNS EXCEPT DEFAULTS
+            const deptSelect = document.getElementById('deptSelect');
+            const monthSelect = document.getElementById('monthSelect');
+            deptSelect.innerHTML = '<option value="ALL">Consolidated Hospital</option>';
+            monthSelect.innerHTML = '<option value="ALL">Year-to-Date (Dynamic Threshold)</option>';
+
+            // POPULATE DEPARTMENTS WITH TRIM SANITIZATION
+            const distinctDepts = [...new Set(data.map(item => (item.department || "").trim()))].filter(Boolean).sort();
+            distinctDepts.forEach(dept => {
+                const opt = document.createElement('option'); opt.value = dept; opt.innerHTML = dept; deptSelect.appendChild(opt);
             });
 
-            [...new Set(data.filter(d => d.year == 2026 && parseVal(d.revenue) > 0).map(item => (item.month || "").trim()))].sort((a, b) => MONTH_ORDER.findIndex(m => a.startsWith(m)) - MONTH_ORDER.findIndex(m => b.startsWith(m))).forEach(m => {
-                const opt = document.createElement('option'); opt.value = m; opt.innerHTML = m; document.getElementById('monthSelect').appendChild(opt);
+            // POPULATE MONTHS WITH TRIM SANITIZATION
+            const distinctMonths = [...new Set(data.filter(d => d.year == 2026 && parseVal(d.revenue) > 0).map(item => (item.month || "").trim()))].filter(Boolean).sort((a, b) => MONTH_ORDER.findIndex(m => a.startsWith(m)) - MONTH_ORDER.findIndex(m => b.startsWith(m)));
+            distinctMonths.forEach(m => {
+                const opt = document.createElement('option'); opt.value = m; opt.innerHTML = m; monthSelect.appendChild(opt);
             });
 
             document.getElementById('monthSelect').addEventListener('change', refreshData);
