@@ -284,6 +284,13 @@
             return parseFloat(val.toString().replace(/[₱, ]/g, '')) || 0;
         };
 
+        const isMatchingMonth = (rowMonth, monthName) => {
+            if (!rowMonth || !monthName) return false;
+            const cleanRow = rowMonth.toString().trim().toLowerCase();
+            const cleanTarget = monthName.toString().trim().toLowerCase();
+            return cleanRow === cleanTarget || cleanRow.startsWith(cleanTarget);
+        };
+
         window.toggle2024Data = function() {
             const panel = document.getElementById('hidden2024Panel');
             const arrow = document.getElementById('toggleTriangle');
@@ -442,9 +449,6 @@
             });
         }
 
-        // Fetch all revenue_targets rows in pages.
-        // Supabase can cap a single request at 1,000 rows, so .limit(2000)
-        // does not guarantee that all rows are returned.
         async function fetchAllRevenueTargets() {
             const pageSize = 1000;
             let allRows = [];
@@ -492,14 +496,17 @@
                 ? rawData 
                 : rawData.filter(d => normalizeDept(d.department) === normSelectedDept);
 
+            // Cap comparisons strictly to active months in 2026 up to July (index 6)
             const monthsWith2026Data = [...new Set(deptData.filter(d => d.year == 2026 && parseVal(d.revenue) > 0).map(d => d.month))];
-            const activeIndices = monthsWith2026Data.map(m => MONTH_ORDER.findIndex(mo => m.startsWith(mo))).filter(idx => idx !== -1);
-            const max2026MonthIndex = activeIndices.length > 0 ? Math.max(...activeIndices) : -1;
-            const validComparisonMonths = max2026MonthIndex !== -1 ? MONTH_ORDER.slice(0, max2026MonthIndex + 1) : [];
+            const activeIndices = monthsWith2026Data.map(m => MONTH_ORDER.findIndex(mo => isMatchingMonth(m, mo))).filter(idx => idx !== -1);
+            
+            // Limit YTD threshold index to maximum July (Index 6)
+            const max2026MonthIndex = activeIndices.length > 0 ? Math.min(Math.max(...activeIndices), 6) : 6;
+            const validComparisonMonths = MONTH_ORDER.slice(0, max2026MonthIndex + 1);
 
             document.getElementById('applesToApplesBadge').innerHTML = selectedMonth !== 'ALL' ? selectedMonth : (validComparisonMonths.length > 0 ? `YTD (Jan-${validComparisonMonths[validComparisonMonths.length - 1]})` : "No Data");
 
-            let metricsData = selectedMonth === 'ALL' ? deptData : deptData.filter(d => d.month === selectedMonth);
+            let metricsData = selectedMonth === 'ALL' ? deptData : deptData.filter(d => isMatchingMonth(d.month, selectedMonth));
 
             const curRev = metricsData.filter(d => d.year == 2026).reduce((s, r) => s + parseVal(r.revenue), 0);
             const curTarget = metricsData.filter(d => d.year == 2026).reduce((s, r) => s + parseVal(r.target), 0);
@@ -509,8 +516,8 @@
                 oldRev = metricsData.filter(d => d.year == 2025).reduce((s, r) => s + parseVal(r.revenue), 0);
                 oldRev2024 = metricsData.filter(d => d.year == 2024).reduce((s, r) => s + parseVal(r.revenue), 0);
             } else {
-                oldRev = deptData.filter(d => d.year == 2025 && validComparisonMonths.some(vm => d.month.startsWith(vm))).reduce((s, r) => s + parseVal(r.revenue), 0);
-                oldRev2024 = deptData.filter(d => d.year == 2024 && validComparisonMonths.some(vm => d.month.startsWith(vm))).reduce((s, r) => s + parseVal(r.revenue), 0);
+                oldRev = deptData.filter(d => d.year == 2025 && validComparisonMonths.some(vm => isMatchingMonth(d.month, vm))).reduce((s, r) => s + parseVal(r.revenue), 0);
+                oldRev2024 = deptData.filter(d => d.year == 2024 && validComparisonMonths.some(vm => isMatchingMonth(d.month, vm))).reduce((s, r) => s + parseVal(r.revenue), 0);
             }
             
             const realAchieve = curTarget > 0 ? Math.round((curRev / curTarget) * 100) : 0;
@@ -545,18 +552,18 @@
             gaugeChart.yAxis[0].update({ plotBands: [{ from: 0, to: 100, color: gaugeColor, thickness: 40 }] }, false);
             gaugeChart.series[0].points[0].update({ y: realAchieve > 100 ? 100 : realAchieve, realValue: realAchieve }, true, { duration: 1000 });
 
-            const dynamicChartCategories = [...new Set(rawData.map(d => d.month))].sort((a, b) => MONTH_ORDER.findIndex(m => a.startsWith(m)) - MONTH_ORDER.findIndex(m => b.startsWith(m))).filter(m => {
-                if (selectedMonth !== 'ALL') return m === selectedMonth;
-                const checkIdx = MONTH_ORDER.findIndex(mo => m.startsWith(mo));
+            const dynamicChartCategories = [...new Set(rawData.map(d => d.month))].sort((a, b) => MONTH_ORDER.findIndex(m => isMatchingMonth(a, m)) - MONTH_ORDER.findIndex(m => isMatchingMonth(b, m))).filter(m => {
+                if (selectedMonth !== 'ALL') return isMatchingMonth(m, selectedMonth);
+                const checkIdx = MONTH_ORDER.findIndex(mo => isMatchingMonth(m, mo));
                 return checkIdx !== -1 && checkIdx <= max2026MonthIndex;
             });
             
             comparisonChart.update({ xAxis: { categories: dynamicChartCategories } }, false);
             growthStreamChart.update({ xAxis: { categories: dynamicChartCategories } }, false);
             
-            const revList2026 = dynamicChartCategories.map(m => deptData.filter(d => d.year == 2026 && d.month == m).reduce((s, r) => s + parseVal(r.revenue), 0));
-            const targetList2026 = dynamicChartCategories.map(m => deptData.filter(d => d.year == 2026 && d.month == m).reduce((s, r) => s + parseVal(r.target), 0));
-            const revList2025 = dynamicChartCategories.map(m => deptData.filter(d => d.year == 2025 && d.month == m).reduce((s, r) => s + parseVal(r.revenue), 0));
+            const revList2026 = dynamicChartCategories.map(m => deptData.filter(d => d.year == 2026 && isMatchingMonth(d.month, m)).reduce((s, r) => s + parseVal(r.revenue), 0));
+            const targetList2026 = dynamicChartCategories.map(m => deptData.filter(d => d.year == 2026 && isMatchingMonth(d.month, m)).reduce((s, r) => s + parseVal(r.target), 0));
+            const revList2025 = dynamicChartCategories.map(m => deptData.filter(d => d.year == 2025 && isMatchingMonth(d.month, m)).reduce((s, r) => s + parseVal(r.revenue), 0));
             const monthlyGrowthRates = revList2026.map((rev26, idx) => revList2025[idx] > 0 ? Math.round(((rev26 - revList2025[idx]) / revList2025[idx]) * 100) : 0);
             
             comparisonChart.series[0].setData(revList2026.map((rev, idx) => ({ y: rev, color: rev >= targetList2026[idx] ? '#228b22' : '#f43f5e', attainmentPct: targetList2026[idx] > 0 ? Math.round((rev / targetList2026[idx]) * 100) : 0, monthTarget: targetList2026[idx] })), false);
@@ -677,7 +684,7 @@
             });
 
             // Populate Months List
-            const distinctMonths = [...new Set(data.filter(d => d.year == 2026 && parseVal(d.revenue) > 0).map(item => (item.month || "").trim()))].filter(Boolean).sort((a, b) => MONTH_ORDER.findIndex(m => a.startsWith(m)) - MONTH_ORDER.findIndex(m => b.startsWith(m)));
+            const distinctMonths = [...new Set(data.filter(d => d.year == 2026 && parseVal(d.revenue) > 0).map(item => (item.month || "").trim()))].filter(Boolean).sort((a, b) => MONTH_ORDER.findIndex(m => isMatchingMonth(a, m)) - MONTH_ORDER.findIndex(m => isMatchingMonth(b, m)));
             distinctMonths.forEach(m => {
                 const opt = document.createElement('option'); opt.value = m; opt.innerHTML = m; monthSelect.appendChild(opt);
             });
