@@ -262,35 +262,40 @@
         }
 
         function updateMetrics(mVal, data) {
-            const years = [maxYear - 2, maxYear - 1, maxYear]; 
-            const stats = years.map(yr => {
-                const sub = mVal === "all" 
-                    ? data.filter(d => d.y === yr && activeMonths.includes(d.m)) 
-                    : data.filter(d => d.y === yr && d.m === parseInt(mVal));
-                return { yr, r: sub.reduce((s,d)=>s+d.amt,0), n: sub.reduce((s,d)=>s+d.patientsCount,0) };
-            });
-            
-            animateNumber('valYear3', stats[2].r, '₱');
-            animateNumber('cenYear3', stats[2].n, '', ' Patients');
-            animateNumber('valYear2', stats[1].r, '₱');
-            animateNumber('cenYear2', stats[1].n, '', ' Patients');
+    const years = [maxYear - 2, maxYear - 1, maxYear]; 
+    const stats = years.map(yr => {
+        const sub = mVal === "all" 
+            ? data.filter(d => d.y === yr && activeMonths.includes(d.m)) 
+            : data.filter(d => d.y === yr && d.m === parseInt(mVal));
+        return { yr, r: sub.reduce((s,d)=>s+d.amt,0), n: sub.reduce((s,d)=>s+d.patientsCount,0) };
+    });
+    
+    animateNumber('valYear3', stats[2].r, '₱');
+    animateNumber('cenYear3', stats[2].n, '', ' Patients');
+    animateNumber('valYear2', stats[1].r, '₱');
+    animateNumber('cenYear2', stats[1].n, '', ' Patients');
 
-            const targetedMonths = mVal === "all" ? activeMonths : [parseInt(mVal)];
-            const totalOverallRev = overallRevenueData
-                .filter(o => targetedMonths.includes(o.m))
-                .reduce((s, o) => s + o.amt, 0);
+    const targetedMonths = mVal === "all" ? activeMonths : [parseInt(mVal)];
+    const totalOverallRev = overallRevenueData
+        .filter(o => targetedMonths.includes(o.m))
+        .reduce((s, o) => s + o.amt, 0);
 
-            const contributionPct = totalOverallRev > 0 ? (stats[2].r / totalOverallRev) * 100 : 0;
-            animateNumber('sharePct', contributionPct, '', '%', 1);
+    const contributionPct = totalOverallRev > 0 ? (stats[2].r / totalOverallRev) * 100 : 0;
+    animateNumber('sharePct', contributionPct, '', '%', 1);
 
-            const diff = stats[1].r ? ((stats[2].r - stats[1].r) / stats[1].r * 100) : 0;
-            const vEl = document.getElementById('varRev');
-            vEl.textContent = `${diff >= 0 ? '+' : ''}${diff.toFixed(1)}%`;
-            vEl.className = `text-3xl font-black mt-1 ${diff >= 0 ? 'text-emerald-400 glow-text-white' : 'text-rose-400'}`;
-            
-            drawSpark('sparkLineChart', stats.map(s => s.r));
-            document.getElementById('sparkLabels').innerHTML = years.map(y => `<span>${y}</span>`).join('');
-        }
+    const diff = stats[1].r ? ((stats[2].r - stats[1].r) / stats[1].r * 100) : 0;
+    const vEl = document.getElementById('varRev');
+    vEl.textContent = `${diff >= 0 ? '+' : ''}${diff.toFixed(1)}%`;
+    vEl.className = `text-3xl font-black mt-1 ${diff >= 0 ? 'text-emerald-400 glow-text-white' : 'text-rose-400'}`;
+    
+    drawSpark('sparkLineChart', stats.map(s => s.r));
+    document.getElementById('sparkLabels').innerHTML = years.map(y => `<span>${y}</span>`).join('');
+
+    // --- DEBUG LOGS ---
+    console.log("Package Revenue (Numerator):", stats[2].r);
+    console.log("Overall Revenue (Denominator):", totalOverallRev);
+    console.log("Calculated Contribution:", contributionPct + "%");
+}
 
         function updateTrends(mVal, data) {
             let curSet = [], preSet = [];
