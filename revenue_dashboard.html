@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Revenue Intelligence Dashboard</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://code.highcharts.com/11.4.0/highcharts.js"></script>
+<script src="https://code.highcharts.com/11.4.0/highcharts-more.js"></script>
+<script src="https://code.highcharts.com/11.4.0/modules/exporting.js"></script>
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    :root { color-scheme: dark; }
+    body {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        background:
+            radial-gradient(circle at 15% 0%, rgba(16,185,129,.08), transparent 30%),
+            radial-gradient(circle at 85% 5%, rgba(99,102,241,.08), transparent 30%),
+            #030712;
+        color: #f3f4f6;
+    }
+    .panel {
+        background: rgba(3,7,18,.88);
+        border: 1px solid rgba(148,163,184,.12);
+        box-shadow: 0 10px 35px rgba(0,0,0,.22);
+    }
+    .panel:hover { border-color: rgba(148,163,184,.2); }
+    .metric {
+        background: linear-gradient(145deg, rgba(15,23,42,.94), rgba(3,7,18,.92));
+        border: 1px solid rgba(148,163,184,.13);
+    }
+    .metric-green { border-color: rgba(16,185,129,.24); }
+    .metric-indigo { border-color: rgba(99,102,241,.24); }
+    .metric-amber { border-color: rgba(245,158,11,.24); }
+    .metric-blue { border-color: rgba(59,130,246,.24); }
+    .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #374151; border-radius: 999px; }
+    select option { background:#030712; color:#e5e7eb; }
+    .loader {
+        width: 18px; height: 18px; border: 2px solid #374151;
+        border-top-color: #10b981; border-radius: 50%;
+        animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .highcharts-background { fill: transparent; }
+    .highcharts-grid-line { stroke: rgba(255,255,255,.045); }
+    .highcharts-axis-line, .highcharts-tick { stroke: transparent; }
+    .highcharts-tooltip-box { fill:#0b1220; stroke:#334155; }
+</style>
+</head>
+
+<body class="min-h-screen pb-12">
+
+<!-- AUTH BLOCK -->
+<div id="deniedScreen" class="hidden fixed inset-0 z-[100] bg-black/95 items-center justify-center p-6">
+    <div class="max-w-md w-full panel rounded-3xl p-8 text-center border-rose-900/60">
+        <div class="mx-auto mb-5 w-16 h-16 rounded-full bg-rose-950/60 border border-rose-700 flex items-center justify-center text-rose-400 text-2xl">✕</div>
+        <h1 class="text-2xl font-extrabold text-white">Access Denied</h1>
+        <p class="text-xs text-gray-500 mt-2">An active Supabase session is required to view this dashboard.</p>
+        <button onclick="window.location.replace('index.html')" class="mt-6 w-full rounded-xl bg-rose-600 hover:bg-rose-500 py-3 text-xs font-extrabold uppercase tracking-widest">Return to Login</button>
+    </div>
+</div>
+
+<div id="app" class="hidden">
+    <nav class="sticky top-0 z-50 border-b border-gray-800/80 bg-gray-950/80 backdrop-blur-xl">
+        <div class="max-w-[1500px] mx-auto px-5 lg:px-8 py-4 flex items-center justify-between gap-4">
+            <div class="flex items-center gap-3 min-w-0">
+                <a href="website.html" class="text-gray-500 hover:text-emerald-400 text-xs font-bold uppercase tracking-wider">Home</a>
+                <span class="text-gray-800">/</span>
+                <div class="min-w-0">
+                    <div class="text-[10px] text-emerald-400 font-extrabold uppercase tracking-[.18em]">Revenue Intelligence</div>
+                    <h1 class="text-sm sm:text-base font-extrabold text-white truncate">Department Revenue & Target Dashboard</h1>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <span id="dataStatus" class="hidden sm:flex items-center gap-2 text-[10px] font-bold text-gray-500">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Live Supabase
+                </span>
+                <button id="logoutBtn" class="px-3 py-2 rounded-lg bg-rose-950/50 border border-rose-900/60 text-rose-300 text-[10px] font-extrabold uppercase tracking-wider hover:bg-rose-900/60">Sign Out</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-[1500px] mx-auto px-5 lg:px-8 py-6 space-y-6">
+
+        <!-- FILTERS -->
+        <section class="panel rounded-2xl p-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-3">
+                <label class="block">
+                    <span class="block text-[9px] font-extrabold text-gray-500 uppercase tracking-widest mb-1.5">Year</span>
+                    <select id="yearSelect" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2.5 text-xs font-bold outline-none focus:border-emerald-500/60"></select>
+                </label>
+                <label class="block">
+                    <span class="block text-[9px] font-extrabold text-gray-500 uppercase tracking-widest mb-1.5">Timeline</span>
+                    <select id="monthSelect" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2.5 text-xs font-bold outline-none focus:border-emerald-500/60"></select>
+                </label>
+                <label class="block md:col-span-2 xl:col-span-2">
+                    <span class="block text-[9px] font-extrabold text-gray-500 uppercase tracking-widest mb-1.5">Department / Scope</span>
+                    <select id="deptSelect" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2.5 text-xs font-bold outline-none focus:border-indigo-500/60"></select>
+                </label>
+                <div class="flex items-end">
+                    <button id="resetBtn" class="w-full rounded-xl border border-gray-800 bg-gray-900/60 hover:bg-gray-800 py-2.5 text-[10px] font-extrabold uppercase tracking-widest text-gray-300">Reset Filters</button>
+                </div>
+            </div>
+            <div class="mt-3 flex flex-wrap items-center justify-between gap-2 text-[9px] text-gray-600 font-semibold">
+                <span id="periodLabel">Loading...</span>
+                <span id="rowCountLabel"></span>
+            </div>
+        </section>
+
+        <!-- KPI BOARD -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+            <div class="metric metric-green rounded-2xl p-5">
+                <p id="currentYearLabel" class="text-[10px] font-extrabold text-emerald-400 uppercase tracking-widest">Selected Year Revenue</p>
+                <div id="currentRevenue" class="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-white">₱0</div>
+                <p id="currentRevenueSub" class="mt-2 text-[9px] text-gray-500">—</p>
+            </div>
+
+            <div class="metric metric-indigo rounded-2xl p-5">
+                <p id="priorYearLabel" class="text-[10px] font-extrabold text-indigo-400 uppercase tracking-widest">Prior-Year Revenue</p>
+                <div id="priorRevenue" class="mt-2 text-2xl sm:text-3xl font-extrabold tracking-tight text-white">₱0</div>
+                <p id="priorRevenueSub" class="mt-2 text-[9px] text-gray-500">Same comparison period</p>
+            </div>
+
+            <div class="metric metric-amber rounded-2xl p-5">
+                <p class="text-[10px] font-extrabold text-amber-400 uppercase tracking-widest">YoY Growth</p>
+                <div id="growthValue" class="mt-2 text-2xl sm:text-3xl font-extrabold">0%</div>
+                <p id="growthSub" class="mt-2 text-[9px] text-gray-500">Compared with prior year</p>
+            </div>
+
+            <div class="metric metric-blue rounded-2xl p-5">
+                <p class="text-[10px] font-extrabold text-blue-400 uppercase tracking-widest">Target Attainment</p>
+                <div id="attainmentValue" class="mt-2 text-2xl sm:text-3xl font-extrabold">—</div>
+                <p id="attainmentSub" class="mt-2 text-[9px] text-gray-500">Target data unavailable</p>
+            </div>
+        </section>
+
+        <!-- MAIN CHARTS -->
+        <section class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            <div class="panel rounded-2xl p-5 xl:col-span-2">
+                <div class="flex items-start justify-between gap-4 mb-2">
+                    <div>
+                        <h2 class="text-xs font-extrabold text-white uppercase tracking-widest">Monthly Revenue Performance</h2>
+                        <p class="text-[9px] text-gray-500 mt-1">Selected year vs prior year, with target where available.</p>
+                    </div>
+                    <span id="chartPeriodBadge" class="text-[9px] font-extrabold text-gray-500 uppercase"></span>
+                </div>
+                <div id="monthlyChart" class="h-[370px]"></div>
+            </div>
+
+            <div class="panel rounded-2xl p-5">
+                <div>
+                    <h2 class="text-xs font-extrabold text-white uppercase tracking-widest">Target Gauge</h2>
+                    <p class="text-[9px] text-gray-500 mt-1">Revenue against available target.</p>
+                </div>
+                <div id="gaugeChart" class="h-[300px]"></div>
+                <div class="grid grid-cols-2 gap-3 border-t border-gray-900 pt-4">
+                    <div>
+                        <div class="text-[9px] text-gray-600 uppercase font-bold">Revenue</div>
+                        <div id="gaugeRevenue" class="text-sm font-extrabold text-white mt-1">₱0</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-[9px] text-gray-600 uppercase font-bold">Target</div>
+                        <div id="gaugeTarget" class="text-sm font-extrabold text-white mt-1">—</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <div class="panel rounded-2xl p-5">
+                <h2 class="text-xs font-extrabold text-white uppercase tracking-widest">Department Revenue</h2>
+                <p class="text-[9px] text-gray-500 mt-1">Revenue contribution within the selected scope.</p>
+                <div id="departmentChart" class="h-[410px]"></div>
+            </div>
+            <div class="panel rounded-2xl p-5">
+                <h2 class="text-xs font-extrabold text-white uppercase tracking-widest">Revenue Mix</h2>
+                <p class="text-[9px] text-gray-500 mt-1">Selected-year revenue share by department.</p>
+                <div id="mixChart" class="h-[410px]"></div>
+            </div>
+        </section>
+
+        <!-- TARGET TABLE -->
+        <section class="panel rounded-2xl p-5">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <div>
+                    <h2 class="text-xs font-extrabold text-white uppercase tracking-widest">Department Target Performance</h2>
+                    <p class="text-[9px] text-gray-500 mt-1">Departments are evaluated only when target values exist for the selected period.</p>
+                </div>
+                <div id="targetSummary" class="text-[10px] font-extrabold text-gray-400">—</div>
+            </div>
+            <div class="overflow-auto custom-scrollbar max-h-[460px]">
+                <table class="w-full min-w-[760px] text-xs">
+                    <thead class="sticky top-0 bg-gray-950">
+                        <tr class="border-b border-gray-800 text-[9px] text-gray-600 uppercase tracking-widest">
+                            <th class="text-left px-3 py-3">Department</th>
+                            <th class="text-right px-3 py-3">Revenue</th>
+                            <th class="text-right px-3 py-3">Target</th>
+                            <th class="text-right px-3 py-3">Attainment</th>
+                            <th class="text-left px-3 py-3 w-[32%]">Progress</th>
+                            <th class="text-right px-3 py-3">Variance</th>
+                        </tr>
+                    </thead>
+                    <tbody id="targetTable" class="divide-y divide-gray-900/80"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- DATA QUALITY / STATUS -->
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="panel rounded-2xl p-4">
+                <div class="text-[9px] font-extrabold text-gray-600 uppercase tracking-widest">Loaded Rows</div>
+                <div id="loadedRows" class="text-xl font-extrabold text-white mt-1">0</div>
+                <div class="text-[9px] text-gray-600 mt-1">From revenue_targets</div>
+            </div>
+            <div class="panel rounded-2xl p-4">
+                <div class="text-[9px] font-extrabold text-gray-600 uppercase tracking-widest">Departments</div>
+                <div id="loadedDepts" class="text-xl font-extrabold text-white mt-1">0</div>
+                <div class="text-[9px] text-gray-600 mt-1">Distinct department names</div>
+            </div>
+            <div class="panel rounded-2xl p-4">
+                <div class="text-[9px] font-extrabold text-gray-600 uppercase tracking-widest">Target Coverage</div>
+                <div id="targetCoverage" class="text-xl font-extrabold text-white mt-1">0%</div>
+                <div class="text-[9px] text-gray-600 mt-1">Rows containing a target</div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<script>
+(() => {
+    // Credentials copied from the supplied previous dashboard.
+    const SUPABASE_URL = 'https://gqlmaxlabfdvansqjufd.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_N8eDSEMyu7iLtDscgOrBKQ_xo_mUpzi';
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    const MONTH_INDEX = Object.fromEntries(MONTHS.map((m,i) => [m,i]));
+
+    let rows = [];
+    let charts = {};
+
+    const $ = id => document.getElementById(id);
+    const money = n => '₱' + Math.round(Number(n) || 0).toLocaleString('en-PH');
+    const number = n => Math.round(Number(n) || 0).toLocaleString('en-PH');
+    const pct = n => (Number.isFinite(n) ? n.toFixed(1) : '0.0') + '%';
+
+    function clean(v) {
+        return v === null || v === undefined ? '' : String(v).trim();
+    }
+
+    function num(v) {
+        if (v === null || v === undefined || v === '') return 0;
+        return parseFloat(String(v).replace(/[₱,\s]/g,'')) || 0;
+    }
+
+    function normDept(v) {
+        return clean(v).toLowerCase().replace(/[^a-z0-9]/g,'');
+    }
+
+    function monthIndex(m) {
+        const s = clean(m);
+        const found = MONTHS.find(x => s.toLowerCase().startsWith(x.toLowerCase()));
+        return found ? MONTH_INDEX[found] : 99;
+    }
+
+    function canonicalMonth(m) {
+        const s = clean(m);
+        return MONTHS.find(x => s.toLowerCase().startsWith(x.toLowerCase())) || s;
+    }
+
+    async function checkAuth() {
+        const { data, error } = await sb.auth.getSession();
+        if (error || !data.session) {
+            $('deniedScreen').classList.remove('hidden');
+            $('deniedScreen').classList.add('flex');
+            return false;
+        }
+        $('app').classList.remove('hidden');
+        return true;
+    }
+
+    sb.auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_OUT' || !session) {
+            $('app').classList.add('hidden');
+            $('deniedScreen').classList.remove('hidden');
+            $('deniedScreen').classList.add('flex');
+        }
+    });
+
+    $('logoutBtn').addEventListener('click', async () => {
+        await sb.auth.signOut();
+        window.location.replace('index.html');
+    });
+
+    async function fetchAllRows() {
+        const pageSize = 1000;
+        let all = [];
+        let from = 0;
+
+        while (true) {
+            const { data, error } = await sb
+                .from('revenue_targets')
+                .select('department,year,month,revenue,target')
+                .range(from, from + pageSize - 1);
+
+            if (error) throw error;
+            if (!data || data.length === 0) break;
+
+            all = all.concat(data);
+            if (data.length < pageSize) break;
+            from += pageSize;
+        }
+        return all.map(r => ({
+            department: clean(r.department),
+            year: Number(r.year),
+            month: canonicalMonth(r.month),
+            revenue: num(r.revenue),
+            target: r.target === null || r.target === undefined || r.target === '' ? null : num(r.target)
+        }));
+    }
+
+    function availableYears() {
+        return [...new Set(rows.map(r => r.year))].sort((a,b) => b-a);
+    }
+
+    function latestMonthForYear(year, scopedRows = rows) {
+        const indexes = scopedRows
+            .filter(r => r.year === year && r.revenue > 0)
+            .map(r => monthIndex(r.month))
+            .filter(x => x < 99);
+        return indexes.length ? Math.max(...indexes) : -1;
+    }
+
+    function buildFilters() {
+        const ys = availableYears();
+        const yearSelect = $('yearSelect');
+        yearSelect.innerHTML = ys.map(y => `<option value="${y}">${y}</option>`).join('');
+        yearSelect.value = String(ys[0] ?? '');
+
+        const depts = [...new Map(
+            rows.map(r => [normDept(r.department), r.department]).filter(([k,v]) => k && v)
+        ).values()].sort((a,b) => a.localeCompare(b));
+
+        $('deptSelect').innerHTML =
+            `<option value="ALL">Consolidated Hospital</option>` +
+            depts.map(d => `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`).join('');
+
+        updateMonthOptions();
+    }
+
+    function updateMonthOptions() {
+        const year = Number($('yearSelect').value);
+        const dept = $('deptSelect').value;
+        const scoped = dept === 'ALL'
+            ? rows
+            : rows.filter(r => normDept(r.department) === normDept(dept));
+
+        const indexes = [...new Set(scoped.filter(r => r.year === year && r.revenue > 0).map(r => monthIndex(r.month)))]
+            .filter(x => x < 99).sort((a,b) => a-b);
+
+        const current = $('monthSelect').value;
+        $('monthSelect').innerHTML =
+            `<option value="ALL">Year-to-Date / Available Months</option>` +
+            indexes.map(i => `<option value="${MONTHS[i]}">${MONTHS[i]}</option>`).join('');
+
+        if (indexes.map(i=>MONTHS[i]).includes(current)) $('monthSelect').value = current;
+        else $('monthSelect').value = 'ALL';
+    }
+
+    function getState() {
+        const year = Number($('yearSelect').value);
+        const selectedMonth = $('monthSelect').value;
+        const dept = $('deptSelect').value;
+        const scoped = dept === 'ALL'
+            ? rows
+            : rows.filter(r => normDept(r.department) === normDept(dept));
+
+        const latestIdx = latestMonthForYear(year, scoped);
+        const ytdMonths = latestIdx >= 0 ? MONTHS.slice(0, latestIdx + 1) : [];
+
+        const activeMonths = selectedMonth === 'ALL' ? ytdMonths : [selectedMonth];
+        const priorYear = year - 1;
+
+        const currentRows = scoped.filter(r =>
+            r.year === year && activeMonths.includes(r.month)
+        );
+        const priorRows = scoped.filter(r =>
+            r.year === priorYear && activeMonths.includes(r.month)
+        );
+
+        return { year, priorYear, selectedMonth, dept, scoped, activeMonths, currentRows, priorRows, latestIdx };
+    }
+
+    function sum(rows, field) {
+        return rows.reduce((s,r) => s + (field === 'target' ? (r.target ?? 0) : (r[field] || 0)), 0);
+    }
+
+    function renderKpis(state) {
+        const currentRevenue = sum(state.currentRows, 'revenue');
+        const priorRevenue = sum(state.priorRows, 'revenue');
+        const targetRows = state.currentRows.filter(r => r.target !== null);
+        const target = sum(targetRows, 'target');
+        const attainment = target > 0 ? (currentRevenue / target) * 100 : null;
+        const growth = priorRevenue > 0 ? ((currentRevenue - priorRevenue) / priorRevenue) * 100 : null;
+
+        $('currentYearLabel').textContent = `${state.year} Revenue`;
+        $('priorYearLabel').textContent = `${state.priorYear} Revenue`;
+        $('currentRevenue').textContent = money(currentRevenue);
+        $('priorRevenue').textContent = money(priorRevenue);
+
+        $('currentRevenueSub').textContent =
+            state.selectedMonth === 'ALL'
+                ? `${state.activeMonths.length ? 'Jan–' + state.activeMonths[state.activeMonths.length-1] : 'No available months'}`
+                : state.selectedMonth;
+
+        $('priorRevenueSub').textContent =
+            priorRevenue > 0 ? `Same ${state.activeMonths.length === 1 ? 'month' : 'comparison period'}` : 'No prior-year data for this period';
+
+        $('growthValue').textContent = growth === null ? '—' : (growth >= 0 ? '+' : '') + pct(growth);
+        $('growthValue').className = 'mt-2 text-2xl sm:text-3xl font-extrabold ' + (growth === null ? 'text-gray-500' : growth >= 0 ? 'text-emerald-400' : 'text-rose-400');
+        $('growthSub').textContent = `${state.priorYear} vs ${state.year}`;
+
+        $('attainmentValue').textContent = attainment === null ? '—' : pct(attainment);
+        $('attainmentValue').className = 'mt-2 text-2xl sm:text-3xl font-extrabold ' + (attainment === null ? 'text-gray-500' : attainment >= 100 ? 'text-emerald-400' : 'text-rose-400');
+        $('attainmentSub').textContent = target > 0 ? `${money(target)} available target` : 'No target values for this period';
+
+        $('gaugeRevenue').textContent = money(currentRevenue);
+        $('gaugeTarget').textContent = target > 0 ? money(target) : '—';
+
+        $('periodLabel').textContent =
+            `${state.year} • ${state.selectedMonth === 'ALL' ? (state.activeMonths.length ? 'Jan–' + state.activeMonths[state.activeMonths.length-1] : 'No period') : state.selectedMonth}` +
+            ` • ${state.dept === 'ALL' ? 'Consolidated Hospital' : state.dept}`;
+
+        $('chartPeriodBadge').textContent = state.selectedMonth === 'ALL'
+            ? `YTD • ${state.activeMonths.length} month${state.activeMonths.length === 1 ? '' : 's'}`
+            : state.selectedMonth;
+    }
+
+    function makeMonthlySeries(state) {
+        const cats = state.activeMonths;
+        const current = cats.map(m => sum(state.scoped.filter(r => r.year === state.year && r.month === m), 'revenue'));
+        const prior = cats.map(m => sum(state.scoped.filter(r => r.year === state.priorYear && r.month === m), 'revenue'));
+        const target = cats.map(m => {
+            const tRows = state.scoped.filter(r => r.year === state.year && r.month === m && r.target !== null);
+            return tRows.length ? sum(tRows, 'target') : null;
+        });
+        return { cats, current, prior, target };
+    }
+
+    function renderMonthly(state) {
+        const s = makeMonthlySeries(state);
+
+        if (charts.monthly) charts.monthly.destroy();
+        charts.monthly = Highcharts.chart('monthlyChart', {
+            chart: { backgroundColor:'transparent', spacing:[10,5,5,0] },
+            title: { text:null },
+            xAxis: { categories:s.cats, labels:{style:{color:'#64748b',fontWeight:'700',fontSize:'10px'}}, lineWidth:0 },
+            yAxis: { title:{text:null}, labels:{style:{color:'#475569',fontSize:'9px'}, formatter(){return '₱'+Highcharts.numberFormat(this.value/1000000,0)+'M';}}, gridLineColor:'rgba(255,255,255,.045)' },
+            tooltip: {
+                shared:true, backgroundColor:'#0b1220', borderColor:'#334155', style:{color:'#fff'},
+                formatter:function() {
+                    let x = `<b>${this.x}</b><br>`;
+                    this.points.forEach(p => { if (p.y !== null) x += `<span style="color:${p.color}">●</span> ${p.series.name}: <b>${money(p.y)}</b><br>`; });
+                    return x;
+                }
+            },
+            legend:{itemStyle:{color:'#94a3b8',fontSize:'10px'}, itemHoverStyle:{color:'#fff'}},
+            series:[
+                {type:'column', name:String(state.year), data:s.current, color:'#10b981', borderRadius:4},
+                {type:'spline', name:String(state.priorYear), data:s.prior, color:'#6366f1', dashStyle:'ShortDash', lineWidth:2, marker:{radius:3}},
+                ...(s.target.some(v=>v !== null) ? [{type:'line',name:'Target',data:s.target,color:'#f59e0b',lineWidth:2,dashStyle:'Dot',marker:{radius:3}}] : [])
+            ],
+            credits:{enabled:false},
+            exporting:{enabled:false}
+        });
+    }
+
+    function renderGauge(state) {
+        const revenue = sum(state.currentRows,'revenue');
+        const target = sum(state.currentRows.filter(r=>r.target !== null),'target');
+        const value = target > 0 ? (revenue/target)*100 : 0;
+        const display = Math.min(100, value);
+
+        if (charts.gauge) charts.gauge.destroy();
+        charts.gauge = Highcharts.chart('gaugeChart', {
+            chart:{type:'gauge',backgroundColor:'transparent',spacing:[0,0,0,0]},
+            title:{text:null},
+            pane:{startAngle:-120,endAngle:120,center:['50%','72%'],size:'95%',background:null},
+            yAxis:{
+                min:0,max:100,lineWidth:0,tickWidth:0,minorTickWidth:0,labels:{enabled:false},
+                plotBands:[{from:0,to:100,color: value >= 100 ? '#064e3b' : '#4c0519',thickness:35}]
+            },
+            series:[{
+                name:'Attainment', data:[display],
+                dial:{radius:'86%',backgroundColor:value >= 100 ? '#10b981' : '#f43f5e',baseWidth:4,topWidth:1},
+                pivot:{backgroundColor:'#94a3b8',radius:5},
+                dataLabels:{
+                    enabled:true,useHTML:true,y:-35,borderWidth:0,
+                    formatter:function(){
+                        const text = target > 0 ? pct(value) : 'N/A';
+                        return `<div style="text-align:center"><div style="font-size:26px;font-weight:800;color:#fff">${text}</div><div style="font-size:9px;color:#64748b;text-transform:uppercase;letter-spacing:.12em">attainment</div></div>`;
+                    }
+                }
+            }],
+            credits:{enabled:false}
+        });
+    }
+
+    function renderDepartmentCharts(state) {
+        let deptRows = state.currentRows;
+        if (state.dept !== 'ALL') deptRows = state.currentRows;
+
+        const map = new Map();
+        deptRows.forEach(r => {
+            const key = normDept(r.department);
+            if (!map.has(key)) map.set(key,{department:r.department,revenue:0,target:0,targetRows:0});
+            const x = map.get(key);
+            x.revenue += r.revenue;
+            if (r.target !== null) { x.target += r.target; x.targetRows++; }
+        });
+
+        const data = [...map.values()].filter(x => x.revenue > 0).sort((a,b)=>b.revenue-a.revenue);
+        const top = data.slice(0, 15);
+
+        if (charts.department) charts.department.destroy();
+        charts.department = Highcharts.chart('departmentChart',{
+            chart:{type:'bar',backgroundColor:'transparent',spacing:[8,5,5,0]},
+            title:{text:null},
+            xAxis:{categories:top.map(x=>x.department),labels:{style:{color:'#94a3b8',fontSize:'9px',fontWeight:'600'}},lineWidth:0},
+            yAxis:{title:{text:null},labels:{style:{color:'#475569',fontSize:'9px'},formatter(){return '₱'+Highcharts.numberFormat(this.value/1000000,0)+'M';}},gridLineColor:'rgba(255,255,255,.04)'},
+            tooltip:{backgroundColor:'#0b1220',borderColor:'#334155',style:{color:'#fff'},formatter:function(){return `<b>${this.point.category}</b><br>Revenue: <b>${money(this.y)}</b>`;}},
+            legend:{enabled:false},
+            series:[{name:'Revenue',data:top.map(x=>x.revenue),color:'#0ea5e9',borderRadius:3}],
+            credits:{enabled:false}, exporting:{enabled:false}
+        });
+
+        if (charts.mix) charts.mix.destroy();
+        charts.mix = Highcharts.chart('mixChart',{
+            chart:{type:'pie',backgroundColor:'transparent',spacing:[0,0,0,0]},
+            title:{text:null},
+            tooltip:{backgroundColor:'#0b1220',borderColor:'#334155',style:{color:'#fff'},pointFormat:'<b>{point.y:,.0f}</b> ({point.percentage:.1f}%)'},
+            plotOptions:{
+                pie:{
+                    innerSize:'58%',borderWidth:2,borderColor:'#030712',
+                    dataLabels:{enabled:true,style:{color:'#94a3b8',fontSize:'9px',textOutline:'none'},formatter:function(){return this.point.name.length>20 ? this.point.name.slice(0,18)+'…' : this.point.name;}},
+                    showInLegend:true
+                }
+            },
+            legend:{align:'right',verticalAlign:'middle',layout:'vertical',itemStyle:{color:'#94a3b8',fontSize:'9px'},itemHoverStyle:{color:'#fff'}},
+            series:[{name:'Revenue',data:top.map(x=>({name:x.department,y:x.revenue}))}],
+            credits:{enabled:false}, exporting:{enabled:false}
+        });
+    }
+
+    function renderTargetTable(state) {
+        const map = new Map();
+        state.currentRows.forEach(r => {
+            const key = normDept(r.department);
+            if (!map.has(key)) map.set(key,{department:r.department,revenue:0,target:0,hasTarget:false});
+            const x = map.get(key);
+            x.revenue += r.revenue;
+            if (r.target !== null) { x.target += r.target; x.hasTarget = true; }
+        });
+
+        const data = [...map.values()].filter(x => x.revenue > 0).sort((a,b)=>b.revenue-a.revenue);
+        const targetData = data.filter(x => x.hasTarget && x.target > 0);
+        const achieved = targetData.filter(x=>x.revenue >= x.target).length;
+        const totalRevenue = sum(state.currentRows,'revenue');
+        const totalTarget = sum(state.currentRows.filter(r=>r.target !== null),'target');
+
+        $('targetSummary').textContent = targetData.length
+            ? `${achieved} of ${targetData.length} departments at or above target`
+            : 'No target data for selected period';
+
+        $('targetTable').innerHTML = data.map(x => {
+            const a = x.hasTarget && x.target > 0 ? (x.revenue/x.target)*100 : null;
+            const variance = a === null ? null : ((x.revenue-x.target)/x.target)*100;
+            const width = a === null ? 0 : Math.min(100,a);
+            const cls = a === null ? 'text-gray-600' : a >= 100 ? 'text-emerald-400' : 'text-rose-400';
+            const bar = a === null ? 'bg-gray-800' : a >= 100 ? 'bg-emerald-500' : 'bg-rose-500';
+
+            return `<tr class="hover:bg-gray-900/50">
+                <td class="px-3 py-3 font-bold text-gray-200">${escapeHtml(x.department)}</td>
+                <td class="px-3 py-3 text-right font-semibold text-white">${money(x.revenue)}</td>
+                <td class="px-3 py-3 text-right text-gray-400">${x.hasTarget ? money(x.target) : '—'}</td>
+                <td class="px-3 py-3 text-right font-extrabold ${cls}">${a === null ? '—' : pct(a)}</td>
+                <td class="px-3 py-3">
+                    <div class="h-2 rounded-full bg-gray-900 overflow-hidden border border-gray-800">
+                        <div class="${bar} h-full rounded-full" style="width:${width}%"></div>
+                    </div>
+                </td>
+                <td class="px-3 py-3 text-right font-bold ${cls}">${variance === null ? '—' : (variance >= 0 ? '+' : '') + pct(variance)}</td>
+            </tr>`;
+        }).join('');
+
+        if (!data.length) $('targetTable').innerHTML = `<tr><td colspan="6" class="py-10 text-center text-gray-600">No revenue data for the selected filters.</td></tr>`;
+    }
+
+    function renderStatus() {
+        const targetRows = rows.filter(r => r.target !== null).length;
+        $('loadedRows').textContent = number(rows.length);
+        $('loadedDepts').textContent = number(new Set(rows.map(r=>normDept(r.department))).size);
+        $('targetCoverage').textContent = pct(rows.length ? targetRows / rows.length * 100 : 0);
+        $('rowCountLabel').textContent = `${number(rows.length)} rows loaded • ${number(new Set(rows.map(r=>r.year)).size)} years`;
+    }
+
+    function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+    }
+
+    function refresh() {
+        const state = getState();
+        renderKpis(state);
+        renderMonthly(state);
+        renderGauge(state);
+        renderDepartmentCharts(state);
+        renderTargetTable(state);
+    }
+
+    async function init() {
+        const authenticated = await checkAuth();
+        if (!authenticated) return;
+
+        try {
+            $('dataStatus').innerHTML = `<span class="loader"></span> Loading`;
+            rows = await fetchAllRows();
+
+            if (!rows.length) throw new Error('No rows returned from revenue_targets.');
+
+            buildFilters();
+            renderStatus();
+            refresh();
+
+            $('dataStatus').innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span> Live Supabase`;
+
+        } catch (err) {
+            console.error(err);
+            $('dataStatus').innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-500"></span> Data Error`;
+            document.querySelector('main').innerHTML = `
+                <div class="panel rounded-2xl p-8 border-rose-900/50">
+                    <h2 class="text-lg font-extrabold text-rose-400">Unable to load dashboard data</h2>
+                    <p class="text-xs text-gray-500 mt-2">${escapeHtml(err.message || 'Unknown error')}</p>
+                    <p class="text-[10px] text-gray-600 mt-4">Confirm that the authenticated user can SELECT from the <b>revenue_targets</b> table and that Row Level Security policies permit the dashboard query.</p>
+                </div>`;
+        }
+    }
+
+    $('yearSelect').addEventListener('change', () => { updateMonthOptions(); refresh(); });
+    $('monthSelect').addEventListener('change', refresh);
+    $('deptSelect').addEventListener('change', () => { updateMonthOptions(); refresh(); });
+    $('resetBtn').addEventListener('click', () => {
+        const ys = availableYears();
+        $('yearSelect').value = String(ys[0] ?? '');
+        $('deptSelect').value = 'ALL';
+        updateMonthOptions();
+        $('monthSelect').value = 'ALL';
+        refresh();
+    });
+
+    window.addEventListener('resize', () => Object.values(charts).forEach(c => c && c.reflow()));
+
+    document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+</body>
+</html>
