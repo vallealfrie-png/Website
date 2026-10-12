@@ -11,6 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet">
   <style>
     :root { --bg:#071b15; --panel:#0d2820; --lime:#b8d96b; --mint:#d9f1b0; --muted:#9bb0a5; }
     * { box-sizing:border-box; }
@@ -25,12 +26,6 @@
     .site-header { height:78px; border-bottom:1px solid rgba(255,255,255,.09); }
     .nav-link { color:#c4d2ca; font-size:.78rem; font-weight:700; transition:color .2s; white-space:nowrap; }
     .nav-link:hover,.nav-link:focus { color:var(--lime); }
-    .nav-item { position:relative; display:flex; align-items:center; height:100%; }
-    .dropdown-menu { display:none; position:absolute; top:calc(100% - 5px); left:-12px; width:265px; padding:9px; border:1px solid rgba(255,255,255,.12); border-radius:16px; background:rgba(7,27,21,.98); box-shadow:0 24px 65px rgba(0,0,0,.4); z-index:80; }
-    .nav-item:hover .dropdown-menu,.nav-item:focus-within .dropdown-menu { display:block; animation:dropIn .18s ease-out; }
-    .dropdown-link { display:flex; align-items:center; gap:12px; padding:12px; border-radius:10px; color:#c8d5ce; font-size:.76rem; transition:background .2s,color .2s; text-decoration:none; }
-    .dropdown-link:hover { background:rgba(184,217,107,.1); color:var(--lime); }
-    @keyframes dropIn { from {opacity:0;transform:translateY(7px)} to {opacity:1;transform:translateY(0)} }
     .btn-primary { display:inline-flex; align-items:center; justify-content:center; gap:10px; border-radius:999px; background:var(--lime); color:#102218; font-size:.76rem; font-weight:800; padding:14px 21px; transition:transform .2s,box-shadow .2s,background .2s; }
     .btn-primary:hover { transform:translateY(-2px); background:#c8e887; box-shadow:0 12px 30px rgba(184,217,107,.16); }
     .btn-secondary { display:inline-flex; align-items:center; justify-content:center; gap:10px; border:1px solid rgba(255,255,255,.2); border-radius:999px; color:#f2f7f3; font-size:.76rem; font-weight:700; padding:13px 19px; transition:background .2s,border .2s; }
@@ -51,10 +46,10 @@
     .feature-card:hover { transform:translateY(-5px); border-color:rgba(184,217,107,.42); background:linear-gradient(145deg,rgba(24,65,47,.96),rgba(10,31,23,.9)); }
     .feature-card:hover::after { transform:scale(1.35); }
     .feature-icon { display:flex; align-items:center; justify-content:center; width:48px;height:48px;border:1px solid rgba(184,217,107,.24);border-radius:15px;background:rgba(184,217,107,.1);color:var(--lime);font-size:1.05rem; }
+    .dashboard-card { display:flex; align-items:center; gap:16px; min-height:108px; padding:20px; border:1px solid rgba(255,255,255,.1); border-radius:18px; background:linear-gradient(145deg,rgba(20,53,40,.88),rgba(10,31,23,.82)); color:#f6faf7; text-decoration:none; transition:transform .22s,border-color .22s,background .22s; }
+    .dashboard-card:hover { transform:translateY(-4px); border-color:rgba(184,217,107,.45); background:linear-gradient(145deg,rgba(24,65,47,.96),rgba(10,31,23,.9)); }
+    .dashboard-card .dashboard-icon { flex:0 0 46px; width:46px;height:46px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(184,217,107,.24);border-radius:14px;background:rgba(184,217,107,.1);color:var(--lime); }
     .section-line { height:1px; background:linear-gradient(90deg,rgba(184,217,107,.45),rgba(255,255,255,.05),transparent); }
-    .leadership-panel { position:relative; overflow:hidden; border:1px solid rgba(255,255,255,.1); border-radius:28px; background:linear-gradient(120deg,rgba(16,48,35,.92),rgba(8,27,20,.94)); }
-    .leadership-panel::before { content:""; position:absolute; width:380px;height:380px;right:-100px;top:-170px;border-radius:50%;background:rgba(184,217,107,.1);filter:blur(80px);pointer-events:none; }
-    .leader-image { width:100%; aspect-ratio:4/4.5; object-fit:cover; object-position:center; display:block; filter:saturate(.82); }
     .mobile-menu { display:none; }
     #access-denied-screen { background:radial-gradient(ellipse at top,rgba(30,104,72,.25),transparent 45%),rgba(3,12,9,.98); }
     .access-card { border:1px solid rgba(255,255,255,.12); background:rgba(12,35,26,.8); box-shadow:0 30px 100px rgba(0,0,0,.45); }
@@ -107,19 +102,8 @@
         </a>
 
         <nav class="desktop-nav flex h-full items-center gap-7" aria-label="Main navigation">
-          <div class="nav-item">
-            <a href="#" class="nav-link flex items-center gap-2 py-3">Dashboard <i class="fa-solid fa-chevron-down text-[9px] opacity-60"></i></a>
-            <div class="dropdown-menu">
-              <p class="px-3 py-2 text-[9px] font-extrabold uppercase tracking-[.2em] text-lime-300/70">Intelligence hub</p>
-              <a href="Doctor_Performance.html" class="dropdown-link dashboard-gate"><i class="fa-solid fa-user-doctor w-4"></i>Doctor Performance</a>
-              <a href="revenuevstarget.html" class="dropdown-link dashboard-gate"><i class="fa-solid fa-chart-column w-4"></i>Revenue vs Target</a>
-              <a href="package.html" class="dropdown-link dashboard-gate"><i class="fa-solid fa-boxes-stacked w-4"></i>Package Availment</a>
-              <a href="hospital-perf.html" class="dropdown-link dashboard-gate"><i class="fa-solid fa-gauge-high w-4"></i>Centers Performance</a>
-              <div class="my-2 border-t border-white/10"></div>
-              <span class="dropdown-link cursor-not-allowed opacity-40"><i class="fa-solid fa-plus w-4"></i>Future System <span class="ml-auto text-[9px]">SOON</span></span>
-            </div>
-          </div>
-          <a href="#about" class="nav-link">About us</a>
+          <a href="#dashboards" class="nav-link">Dashboards</a>
+          <a href="#intelligence" class="nav-link">About us</a>
           <a href="#contact" class="nav-link">Contact us</a>
           <a href="inquiry.html" class="nav-link dashboard-gate">Pricing inquiry <i class="fa-solid fa-arrow-up-right-from-square ml-1 text-[9px] opacity-50"></i></a>
         </nav>
@@ -133,19 +117,15 @@
         </div>
       </div>
       <nav id="mobile-nav-panel" class="mobile-nav-panel" aria-label="Mobile navigation">
-        <a href="#" class="nav-link">Dashboard overview</a>
-        <a href="Doctor_Performance.html" class="nav-link dashboard-gate">Doctor Performance</a>
-        <a href="revenuevstarget.html" class="nav-link dashboard-gate">Revenue vs Target</a>
-        <a href="package.html" class="nav-link dashboard-gate">Package Availment</a>
-        <a href="hospital-perf.html" class="nav-link dashboard-gate">Centers Performance</a>
-        <a href="#about" class="nav-link">About us</a>
+        <a href="#dashboards" class="nav-link">Dashboards</a>
+        <a href="#intelligence" class="nav-link">About us</a>
         <a href="#contact" class="nav-link">Contact us</a>
         <a href="inquiry.html" class="nav-link dashboard-gate">Pricing inquiry</a>
       </nav>
     </header>
 
     <main class="mx-auto max-w-[1440px] px-4 pb-16 pt-[104px] md:px-8 md:pt-[118px] xl:px-12">
-      <section class="hero-shell">
+      <section class="hero-shell" data-aos="fade-up" data-aos-duration="900">
         <!-- Original hero video retained; now used as a cinematic background layer. -->
         <video class="hero-video" autoplay muted loop playsinline preload="metadata" aria-label="Abstract technology background video">
           <source src="https://i.imgur.com/f0hf38l.mp4" type="video/mp4">
@@ -188,7 +168,31 @@
         </div>
       </section>
 
-      <section id="intelligence" class="pt-24 md:pt-28">
+      <section id="dashboards" class="pt-20 md:pt-24" data-aos="fade-up">
+        <div class="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
+          <div>
+            <p class="eyebrow mb-3">Intelligence hub</p>
+            <h2 class="text-3xl font-extrabold tracking-tight md:text-4xl">Your dashboards, in one place.</h2>
+          </div>
+          <p class="max-w-md text-sm leading-6 text-muted">Choose a reporting area to review performance, monitor targets, and uncover opportunities.</p>
+        </div>
+        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <a href="Doctor_Performance.html" class="dashboard-card dashboard-gate" data-aos="fade-up" data-aos-delay="0">
+            <span class="dashboard-icon"><i class="fa-solid fa-user-doctor"></i></span><span class="min-w-0 flex-1"><span class="mb-1 block text-sm font-extrabold">Doctor Performance</span><span class="block text-xs leading-5 text-muted">Review doctor-level performance.</span></span><i class="fa-solid fa-arrow-up-right-from-square text-xs text-white/35"></i>
+          </a>
+          <a href="revenuevstarget.html" class="dashboard-card dashboard-gate" data-aos="fade-up" data-aos-delay="80">
+            <span class="dashboard-icon"><i class="fa-solid fa-chart-column"></i></span><span class="min-w-0 flex-1"><span class="mb-1 block text-sm font-extrabold">Revenue vs Target</span><span class="block text-xs leading-5 text-muted">Compare revenue against goals.</span></span><i class="fa-solid fa-arrow-up-right-from-square text-xs text-white/35"></i>
+          </a>
+          <a href="package.html" class="dashboard-card dashboard-gate" data-aos="fade-up" data-aos-delay="160">
+            <span class="dashboard-icon"><i class="fa-solid fa-boxes-stacked"></i></span><span class="min-w-0 flex-1"><span class="mb-1 block text-sm font-extrabold">Package Availment</span><span class="block text-xs leading-5 text-muted">Track package utilization.</span></span><i class="fa-solid fa-arrow-up-right-from-square text-xs text-white/35"></i>
+          </a>
+          <a href="hospital-perf.html" class="dashboard-card dashboard-gate" data-aos="fade-up" data-aos-delay="240">
+            <span class="dashboard-icon"><i class="fa-solid fa-gauge-high"></i></span><span class="min-w-0 flex-1"><span class="mb-1 block text-sm font-extrabold">Centers Performance</span><span class="block text-xs leading-5 text-muted">Explore center-level results.</span></span><i class="fa-solid fa-arrow-up-right-from-square text-xs text-white/35"></i>
+          </a>
+        </div>
+      </section>
+
+      <section id="intelligence" class="pt-20 md:pt-24" data-aos="fade-up">
         <div class="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
           <div>
             <p class="eyebrow mb-3">Your next move starts here</p>
@@ -198,21 +202,21 @@
         </div>
 
         <div class="grid gap-4 md:grid-cols-3">
-          <article class="feature-card">
+          <article class="feature-card" data-aos="fade-up" data-aos-delay="0">
             <div class="feature-icon mb-7"><i class="fa-solid fa-chart-pie"></i></div>
             <p class="eyebrow mb-2">01 / Services</p>
             <h3 class="mb-3 text-xl font-bold">Our Services</h3>
             <p class="mb-7 text-sm leading-6 text-muted">Discover the services and capabilities that help turn business goals into a focused marketing plan.</p>
-            <a href="#about" class="mt-auto inline-flex items-center gap-2 text-xs font-extrabold text-[#b8d96b]">Explore services <i class="fa-solid fa-arrow-right text-[10px]"></i></a>
+            <a href="#intelligence" class="mt-auto inline-flex items-center gap-2 text-xs font-extrabold text-[#b8d96b]">Explore services <i class="fa-solid fa-arrow-right text-[10px]"></i></a>
           </article>
-          <article class="feature-card">
+          <article class="feature-card" data-aos="fade-up" data-aos-delay="100">
             <div class="feature-icon mb-7"><i class="fa-solid fa-magnifying-glass-chart"></i></div>
             <p class="eyebrow mb-2">02 / Intelligence</p>
             <h3 class="mb-3 text-xl font-bold">Strategy Hub</h3>
             <p class="mb-7 text-sm leading-6 text-muted">Bring evidence, analysis, and strategic thinking together to identify opportunities and priorities.</p>
             <a href="hospital-perf.html" class="dashboard-gate mt-auto inline-flex items-center gap-2 text-xs font-extrabold text-[#b8d96b]">Open intelligence <i class="fa-solid fa-arrow-right text-[10px]"></i></a>
           </article>
-          <article class="feature-card">
+          <article class="feature-card" data-aos="fade-up" data-aos-delay="200">
             <div class="feature-icon mb-7"><i class="fa-solid fa-calendar-check"></i></div>
             <p class="eyebrow mb-2">03 / Partnership</p>
             <h3 class="mb-3 text-xl font-bold">Consultation</h3>
@@ -222,36 +226,7 @@
         </div>
       </section>
 
-      <section id="about" class="pt-24 md:pt-28">
-        <div class="leadership-panel p-6 md:p-10 lg:p-14">
-          <div class="relative z-10 grid items-center gap-10 md:grid-cols-[.72fr_1.28fr] md:gap-14">
-            <div class="mx-auto w-full max-w-[310px]">
-              <div class="overflow-hidden rounded-[22px] border border-white/15 bg-white/5 p-2">
-                <img src="https://i.imgur.com/bAhRhlV.jpeg" alt="Rosalie C. Operaña" class="leader-image rounded-[16px]" loading="lazy">
-                <div class="px-3 py-5 text-center">
-                  <p class="text-xs font-extrabold uppercase tracking-[.14em]">Rosalie C. Operaña</p>
-                  <p class="mt-2 text-[10px] font-bold uppercase tracking-[.1em] text-[#b8d96b]">Sales and Marketing Director</p>
-                </div>
-              </div>
-              <p class="mt-4 text-center text-[9px] uppercase tracking-[.2em] text-white/35">Leadership • Vision • Execution</p>
-            </div>
-            <div>
-              <p class="eyebrow mb-5">A strategy-first mindset</p>
-              <div class="mb-7 text-5xl leading-none text-[#b8d96b]/50">“</div>
-              <h2 class="text-2xl font-medium leading-[1.45] tracking-tight md:text-3xl lg:text-[2.15rem]">
-                Data tells you <span class="font-extrabold text-[#b8d96b]">what happened.</span> Strategy tells you why. Creative tells you <span class="font-extrabold text-[#b8d96b]">how to make it happen again.</span>
-              </h2>
-              <div class="section-line my-8"></div>
-              <div class="flex items-center gap-4">
-                <div class="h-[2px] w-12 bg-[#b8d96b]"></div>
-                <div><p class="text-xs font-extrabold uppercase tracking-[.2em]">Strategic vision</p><p class="mt-1 text-xs text-muted">Insight with purpose. Action with direction.</p></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="contact" class="pt-20">
+      <section id="contact" class="pt-20" data-aos="fade-up">
         <div class="flex flex-col justify-between gap-6 rounded-[22px] border border-white/10 bg-white/[.035] p-7 md:flex-row md:items-center md:p-10">
           <div><p class="eyebrow mb-3">Let's move forward</p><h2 class="text-2xl font-extrabold md:text-3xl">Have a goal to work toward?</h2><p class="mt-2 max-w-xl text-sm leading-6 text-muted">Start a conversation about your needs and the right next step.</p></div>
           <a href="inquiry.html" class="btn-primary dashboard-gate shrink-0">Contact our team <i class="fa-solid fa-arrow-right"></i></a>
@@ -265,6 +240,8 @@
     </main>
   </div>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
   <script>
     // Supabase configuration retained from the original page.
     const _supabaseUrl = 'https://gqlmaxlabfdvansqjufd.supabase.co';
@@ -328,6 +305,14 @@
     document.addEventListener('DOMContentLoaded', () => {
       checkUserSession();
       document.getElementById('year').textContent = new Date().getFullYear();
+      if (window.AOS) AOS.init({ duration: 750, easing: 'ease-out-cubic', once: true, offset: 70, disable: window.matchMedia('(prefers-reduced-motion: reduce)').matches });
+      if (window.gsap && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        gsap.from('.site-header', { y: -24, opacity: 0, duration: .75, ease: 'power3.out' });
+        gsap.from('.hero-shell .eyebrow, .hero-shell h1, .hero-shell p, .hero-shell .btn-primary, .hero-shell .btn-secondary', {
+          y: 22, opacity: 0, duration: .8, stagger: .12, ease: 'power3.out', delay: .12
+        });
+        gsap.from('.metric-strip .metric', { y: 18, opacity: 0, duration: .65, stagger: .12, ease: 'power2.out', delay: .45 });
+      }
     });
 
     // Accessible mobile navigation.
